@@ -862,7 +862,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	}
 	//// Define the input layout
 	//5.3.7
-	T3d::CreateT3dInputLayout(pd3dDevice, g_Pass1_Mesh, &g_MeshInputLayout);
+	//T3d::CreateT3dInputLayout(pd3dDevice, g_Pass1_Mesh, &g_MeshInputLayout);
 
 
 	// BEGIN: Assignment 3.2.2
@@ -1517,7 +1517,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
-	DWORD tMove = GetTickCount();
 	// Update the camera's position based on user input 
 	g_Camera.FrameMove( fElapsedTime );
 
@@ -1595,7 +1594,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	//MovingObjects
 	g_ObjectTransformations[10].rotate(0,50.f*fElapsedTime,0);
-		g_ObjectTransformations[10].calculateWorldMatrix();
+	g_ObjectTransformations[10].calculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
 	{
 		ei->move(fElapsedTime);
@@ -1718,11 +1717,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
 	}
 */
-	stringstream t; t << "Dauer Move ";
-	DWORD d = GetTickCount();
-	t << (int(d)-int(tMove));
-	if(int(d)-int(tMove) > 0)
-	pushText(t.str(), D3DXCOLOR(1.f,1.f,0.f, 1.0f) ,TEXTPOSITION::left);
 }
 
 
@@ -1751,7 +1745,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 	float fElapsedTime, void* pUserContext )
 {
-	DWORD tRender = GetTickCount();
 	HRESULT hr;
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
@@ -1834,34 +1827,11 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	DWORD tForShadow = GetTickCount();
 	
 	//****Shadowmap of Meshes*****///
-	pd3dImmediateContext->IASetInputLayout(g_MeshInputLayout);
-	stride = sizeof(T3dVertex);
-	offset = 0;
-	for(auto ot = g_ObjectTransformations.begin(); ot != g_ObjectTransformations.end(); ot++){
-		Mesh* mesh = MeshRenderer::g_Meshes[ot->getName()];
-		vbs[0] = mesh->GetVertexBuffer();
+	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_ObjectTransformations);
+	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_ObjectTransformations);
 
-		g_WorldEV->SetMatrix(ot->g_World);
 
-		g_Pass_ShadowMesh->Apply(0, pd3dImmediateContext);
-		pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-		pd3dImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
-		pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		pd3dImmediateContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
-	}
-	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++){
-		Mesh* mesh = ei->getObject()->getObjectMesh();
-		vbs[0] = mesh->GetVertexBuffer();
-
-		g_WorldEV->SetMatrix(ei->getObject()->g_World);
-
-		g_Pass_ShadowMesh->Apply(0, pd3dImmediateContext);
-		pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-		pd3dImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
-		pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		pd3dImmediateContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
-	}
-	//normal Scene Rendering
+	//*****normal Scene Rendering*****//
 	if(g_Effect == NULL) {
 		g_TxtHelper->Begin();
 		g_TxtHelper->SetInsertionPos( 5, 5 );
@@ -1910,32 +1880,14 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	pd3dImmediateContext->Draw(static_cast<UINT>(std::powf(static_cast<float>(g_TerrainResolution-1),2.f)*6), 0);
 
-	//6.2.3
-	pd3dImmediateContext->IASetInputLayout(g_MeshInputLayout);
-	stride = sizeof(T3dVertex);
-	offset = 0;
-
 	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_ObjectTransformations);
 	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances);
-	//for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++){
-	//	Mesh* mesh = ei->getObject()->getObjectMesh();
-	//	vbs[0] = mesh->GetVertexBuffer();
-	//	//Inverse transposed pf worldView for transformation of normals
 
-	//	g_DiffuseEV->SetResource(mesh->GetDiffuseSRV()); //benötigt: MeshPS
-	//	g_SpecularEV->SetResource(mesh->GetSpecularSRV()); //benötigt: MeshPS
-	//	g_GlowEV->SetResource(mesh->GetGlowSRV()); //benötigt: MeshPS
-	//	g_NormalEV->SetResource(mesh->GetNormalSRV()); //benötigt: MeshPS
-	//	g_WorldEV->SetMatrix(ei->getObject()->g_World);
-
-	//	g_Pass1_Mesh->Apply(0, pd3dImmediateContext);
-	//	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-	//	pd3dImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
-	//	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//	pd3dImmediateContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
-	//}
 	if(g_SpritesToRender.size() >0)
 		g_SpriteRenderer->RenderSprites(pd3dDevice, g_SpritesToRender, g_Camera);
+	stringstream ss;
+	ss << "Sprites: " << g_SpritesToRender.size();
+	pushText(ss.str(), TEXTPOSITION::left);
 
 	//render shadow map billboard
 	//***************************************************************************
@@ -1957,11 +1909,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_SampleUI.OnRender( fElapsedTime );
 	RenderText();
 	DXUT_EndPerfEvent();
-	stringstream t;
-	DWORD d = GetTickCount();
-	t << "Dauer Render ";
-	t << (d-tRender) << " : " << (d - tForShadow);
-	pushText(t.str(), TEXTPOSITION::right);
+
 	static DWORD dwTimefirst = GetTickCount();
 	if ( GetTickCount() - dwTimefirst > 5000 )
 	{    

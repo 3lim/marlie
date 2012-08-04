@@ -20,30 +20,29 @@ std::map<std::string, Mesh*> MeshRenderer::g_Meshes;
 MeshRenderer::MeshRenderer(void) :
 m_pEffect(NULL),
 	m_RenderET(NULL),
-	m_pInputLayout(NULL),
+	m_MeshInputLayout(NULL),
 	m_pVertexBuffer(NULL),
+	m_Pass1_Mesh(NULL),
+	m_ShadowMesh(NULL),
+	m_DiffuseEV(NULL),
+	m_ShadowMapEV(NULL),
+	m_GlowEV(NULL),
+	m_SpecularEV(NULL),
+	m_NormalEV(NULL),
+	m_WorldEV(NULL),
+	m_isCameraObjectEV(NULL),
 	//stride(0),
 	offset(0)
 {
 	//stride = sizeof(T3dVertex);
 	vbs[1] = NULL;
+
 }
 
 MeshRenderer::~MeshRenderer(void)
 {
 }
 
-
-	//Effectvariablen
-	ID3DX11EffectPass*						m_Pass1_Mesh = NULL;
-	ID3DX11EffectPass*						m_ShadowMesh = NULL;
-	ID3DX11EffectShaderResourceVariable*	m_DiffuseEV = NULL;
-	ID3DX11EffectShaderResourceVariable*	m_ShadowMapEV = NULL;
-	ID3DX11EffectShaderResourceVariable*	m_GlowEV = NULL;
-	ID3DX11EffectShaderResourceVariable*	m_SpecularEV = NULL;
-	ID3DX11EffectShaderResourceVariable*	m_NormalEV = NULL;
-	ID3DX11EffectMatrixVariable*			m_WorldEV = NULL;
-	ID3DX11EffectScalarVariable*			m_isCameraObjectEV = NULL;
 
 void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<ObjectTransformation>* o)
 {
@@ -90,6 +89,8 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation
 	ID3D11Buffer* vbs[] = { mesh->GetVertexBuffer()};
 	//vbs[0] = mesh->GetVertexBuffer();
 
+	pd3DContext->IASetInputLayout(m_MeshInputLayout);
+
 	m_DiffuseEV->SetResource(mesh->GetDiffuseSRV());//benötigt: MeshPS
 	m_SpecularEV->SetResource(mesh->GetSpecularSRV());//benötigt: MeshPS
 	m_GlowEV->SetResource(mesh->GetGlowSRV());//benötigt: MeshPS
@@ -107,16 +108,18 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation
 
 void inline MeshRenderer::ShadowMesh(ID3D11Device* pDevice, ObjectTransformation* object)
 {
-		Mesh* mesh = MeshRenderer::g_Meshes[object->getName()];
-		vbs[0] = mesh->GetVertexBuffer();
+	mesh = MeshRenderer::g_Meshes[object->getName()];
+	vbs[0] = mesh->GetVertexBuffer();
 
-		m_WorldEV->SetMatrix(object->g_World);
+	pd3DContext->IASetInputLayout(m_MeshInputLayout);
 
-		m_ShadowMesh->Apply(0, pd3DContext);
-		pd3DContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-		pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
-		pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	m_WorldEV->SetMatrix(object->g_World);
+
+	m_ShadowMesh->Apply(0, pd3DContext);
+	pd3DContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
+	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
 }
 
 HRESULT MeshRenderer::CreateResources(ID3D11Device* pDevice)
@@ -125,6 +128,7 @@ HRESULT MeshRenderer::CreateResources(ID3D11Device* pDevice)
 		it->second->CreateResources(pDevice);
 
 	pDevice->GetImmediateContext(&pd3DContext);
+	T3d::CreateT3dInputLayout(pDevice, m_Pass1_Mesh, &m_MeshInputLayout);
 	return S_OK;
 }
 
@@ -162,7 +166,7 @@ void MeshRenderer::ReleaseResources()
 	pd3DContext->Release();
 	for(auto it=g_Meshes.begin(); it!=g_Meshes.end(); it++)
 		it->second->ReleaseResources();
-	
+	SAFE_RELEASE(m_MeshInputLayout);
 }
 
 void MeshRenderer::Deinit()

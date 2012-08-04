@@ -38,12 +38,24 @@ private:
 	ID3DX11EffectTechnique* m_ShadowET;
 
 	ID3D11Buffer* m_pVertexBuffer;
-	ID3D11InputLayout* m_pInputLayout;
+	ID3D11InputLayout* m_MeshInputLayout;
 
 	ID3D11DeviceContext* pd3DContext;
 	ID3D11Buffer* vbs[1];
 	UINT offset;
 	UINT stride;
 	Mesh* mesh;
+
+		//Effectvariablen
+	ID3DX11EffectPass*						m_Pass1_Mesh;
+	ID3DX11EffectPass*						m_ShadowMesh;
+	ID3DX11EffectShaderResourceVariable*	m_DiffuseEV;
+	ID3DX11EffectShaderResourceVariable*	m_ShadowMapEV;
+	ID3DX11EffectShaderResourceVariable*	m_GlowEV;
+	ID3DX11EffectShaderResourceVariable*	m_SpecularEV;
+	ID3DX11EffectShaderResourceVariable*	m_NormalEV;
+	ID3DX11EffectMatrixVariable*			m_WorldEV;
+	ID3DX11EffectScalarVariable*			m_isCameraObjectEV;
+
 };
 
