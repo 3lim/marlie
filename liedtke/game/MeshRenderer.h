@@ -24,7 +24,10 @@ public:
 	void ReleaseResources();
 	void RenderMeshes(ID3D11Device* pDevice, std::vector<ObjectTransformation>* object);
 	void RenderMeshes(ID3D11Device* pDevice, std::list<EnemyInstance>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::vector<ObjectTransformation>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::list<EnemyInstance>* object);
 	void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object);
+	void ShadowMesh(ID3D11Device* pDevice, ObjectTransformation* object);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);
@@ -32,6 +35,7 @@ public:
 private:
 	ID3DX11Effect* m_pEffect;
 	ID3DX11EffectTechnique* m_RenderET;
+	ID3DX11EffectTechnique* m_ShadowET;
 
 	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11InputLayout* m_pInputLayout;

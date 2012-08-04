@@ -508,7 +508,7 @@ void loadConfig(bool reload = false)
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
-			g_EnemyTyp[name] = new EnemyTransformation(name, hitpoints, units, static_cast<int>(speed), MeshRenderer::g_Meshes[meshName], scale, rotX, rotY, rotZ, transX, transY, transZ, sphere);
+			g_EnemyTyp[name] = new EnemyTransformation(meshName, hitpoints, units, static_cast<int>(speed), MeshRenderer::g_Meshes[meshName], scale, rotX, rotY, rotZ, transX, transY, transZ, sphere);
 			if( effect.size() > 0  && effect.compare("-") != 0)
 				g_EnemyTyp[name]->setDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);
@@ -1595,6 +1595,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	//MovingObjects
 	g_ObjectTransformations[10].rotate(0,50.f*fElapsedTime,0);
+		g_ObjectTransformations[10].calculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
 	{
 		ei->move(fElapsedTime);
@@ -1605,9 +1606,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 	if(p_Fire1){
 		g_ObjectTransformations[2].rotate(0,0,170*fElapsedTime);
+		g_ObjectTransformations[2].calculateWorldMatrix();
 	}
 	if(p_Fire2){
 		g_ObjectTransformations[4].translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
+		g_ObjectTransformations[4].calculateWorldMatrix();
 	}
 
 	bool del = false;
@@ -1669,8 +1672,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			ei++;
 			ei_rem->getObject()->SpawnedEnemies--;
 			g_EnemyInstances.erase(ei_rem);
-		} else
+		} else {
+			ei->calculateWorldMatrix();
 			ei++;
+		}
 	}
 	for(auto ei = g_Particles.begin(); ei != g_Particles.end();)
 	{
@@ -1753,7 +1758,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	{
 		g_SettingsDlg.OnRender( fElapsedTime );
 		return;
-	}     
+	}
 
 	pDSV = DXUTGetD3D11DepthStencilView();
 	pRTV = DXUTGetD3D11RenderTargetView();
@@ -1836,7 +1841,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		Mesh* mesh = MeshRenderer::g_Meshes[ot->getName()];
 		vbs[0] = mesh->GetVertexBuffer();
 
-		ot->calculateWorldMatrix();
 		g_WorldEV->SetMatrix(ot->g_World);
 
 		g_Pass_ShadowMesh->Apply(0, pd3dImmediateContext);
@@ -1849,7 +1853,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		Mesh* mesh = ei->getObject()->getObjectMesh();
 		vbs[0] = mesh->GetVertexBuffer();
 
-		ei->calculateWorldMatrix();
 		g_WorldEV->SetMatrix(ei->getObject()->g_World);
 
 		g_Pass_ShadowMesh->Apply(0, pd3dImmediateContext);
@@ -2006,6 +2009,7 @@ void AutomaticPositioning()
 	{
 		if(it->automaticHeight())
 			it->translateTo(it->getTranslationX(), getHeightAtPoint(it->getTranslationX(), it->getTranslationZ())+ it->getTranslationY(), it->getTranslationZ());
+		it->calculateWorldMatrix();
 	}
 }
 

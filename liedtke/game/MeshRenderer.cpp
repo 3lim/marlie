@@ -36,6 +36,7 @@ MeshRenderer::~MeshRenderer(void)
 
 	//Effectvariablen
 	ID3DX11EffectPass*						m_Pass1_Mesh = NULL;
+	ID3DX11EffectPass*						m_ShadowMesh = NULL;
 	ID3DX11EffectShaderResourceVariable*	m_DiffuseEV = NULL;
 	ID3DX11EffectShaderResourceVariable*	m_ShadowMapEV = NULL;
 	ID3DX11EffectShaderResourceVariable*	m_GlowEV = NULL;
@@ -43,6 +44,27 @@ MeshRenderer::~MeshRenderer(void)
 	ID3DX11EffectShaderResourceVariable*	m_NormalEV = NULL;
 	ID3DX11EffectMatrixVariable*			m_WorldEV = NULL;
 	ID3DX11EffectScalarVariable*			m_isCameraObjectEV = NULL;
+
+void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<ObjectTransformation>* o)
+{
+	stride = sizeof(T3dVertex);
+	//UINT offset = 0;
+	for(auto object = o->begin(); object != o->end(); object++)
+	{
+		ShadowMesh(pDevice, object._Ptr);
+	}
+}
+
+void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<EnemyInstance>* o)
+{
+	stride = sizeof(T3dVertex);
+	//UINT offset = 0;
+	for(auto object = o->begin(); object != o->end(); object++)
+	{
+		ShadowMesh(pDevice, object->getObject());
+	}
+}
+
 void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<ObjectTransformation>* o)
 {
 	stride = sizeof(T3dVertex);
@@ -83,6 +105,20 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation
 	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
 }
 
+void inline MeshRenderer::ShadowMesh(ID3D11Device* pDevice, ObjectTransformation* object)
+{
+		Mesh* mesh = MeshRenderer::g_Meshes[object->getName()];
+		vbs[0] = mesh->GetVertexBuffer();
+
+		m_WorldEV->SetMatrix(object->g_World);
+
+		m_ShadowMesh->Apply(0, pd3DContext);
+		pd3DContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+		pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
+		pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+}
+
 HRESULT MeshRenderer::CreateResources(ID3D11Device* pDevice)
 {
 	for(auto it=g_Meshes.begin(); it!=g_Meshes.end(); it++)
@@ -96,14 +132,14 @@ HRESULT MeshRenderer::ReloadShader(ID3D11Device* pDevice, ID3DX11Effect* m_pEffe
 {
 	assert(pDevice != NULL);
 
-	HRESULT hr;
-
 	ReleaseShader();
 
 	
 	SAFE_GET_TECHNIQUE(m_pEffect, "Render", m_RenderET);
+	SAFE_GET_TECHNIQUE(m_pEffect, "Shadow", m_ShadowET);
 
 	SAFE_GET_PASS(m_RenderET, "P1_Mesh", m_Pass1_Mesh);
+	SAFE_GET_PASS(m_ShadowET, "P1_ShadowMesh", m_ShadowMesh);
 
 	SAFE_GET_RESOURCE(m_pEffect, "g_Diffuse", m_DiffuseEV);
 	SAFE_GET_RESOURCE(m_pEffect, "g_Normal", m_NormalEV);
