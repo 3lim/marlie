@@ -1,0 +1,8 @@
+{
+"+X" : "../../external/textures/skyboxsun5deg2/skyrender0001.bmp",
+"-Z" : "../../external/textures/skyboxsun5deg2/skyrender0002.bmp",
+"+Y" : "../../external/textures/skyboxsun5deg2/skyrender0003.bmp",
+"-X" : "../../external/textures/skyboxsun5deg2/skyrender0004.bmp",
+"+Z" : "../../external/textures/skyboxsun5deg2/skyrender0005.bmp",
+"-Y" : "../../external/textures/skyboxsun5deg2/skyrender0006.bmp"
+}
