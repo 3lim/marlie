@@ -1,7 +1,7 @@
 #include "EnemyTransformation.h"
 
 
-EnemyTransformation::EnemyTransformation(std::string name, int hitpoint, int CountUnits, int speed, Mesh* object, float scale, float rotX, float rotY, float rotZ, float transX, float transY, float transZ, float shpereSize)
+EnemyTransformation::EnemyTransformation(std::string name, int hitpoint, int CountUnits, float speed, Mesh* object, float scale, float rotX, float rotY, float rotZ, float transX, float transY, float transZ, float shpereSize)
 	: ObjectTransformation(name, false, scale, rotX, rotY, rotZ, transX, transY, transZ),
 	 e_Hitpoint(hitpoint),
 	 e_CountUnits(CountUnits),

@@ -8,11 +8,11 @@ class EnemyTransformation :
 	public ObjectTransformation
 {
 public:
-	EnemyTransformation(std::string name, int hitpoint, int CountUnits, int speed, Mesh* object, float scale, float rotX, float rotY, float rotZ, float transX, float transY, float ransZ, float SpereSize);
+	EnemyTransformation(std::string name, int hitpoint, int CountUnits, float speed, Mesh* object, float scale, float rotX, float rotY, float rotZ, float transX, float transY, float ransZ, float SpereSize);
 	~EnemyTransformation(void);
 	int getHitpoints(){ return e_Hitpoint; }
 	int getCountUnits() { return e_CountUnits; }
-	int getSpeed() { return e_Speed; }
+	float getSpeed() { return e_Speed; }
 	Mesh* getObjectMesh() { return e_Object; }
 	float getSphereSize() { return e_SphereSize*getScale(); }
 	ParticleEffect* getDeathEffect() { return e_DeathEffect; }
@@ -22,7 +22,7 @@ public:
 private:
 	int e_Hitpoint;
 	int e_CountUnits;
-	int e_Speed;
+	float e_Speed;
 	Mesh* e_Object;
 	float e_SphereSize;
 	int e_Points;

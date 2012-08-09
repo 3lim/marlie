@@ -271,7 +271,7 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	float i = saturate(dot(n, -g_LightDir.xyz));
 	if(Input.LightPos.z > shadowDepth) //wenn im Schatten
 	  return float4(cA/2*g_LightColor.rgb*matDiffuse.rgb, 1);
-	return float4(i*matDiffuse.rgb*g_LightColor*(1-cA)
+	return float4(i*matDiffuse.rgb*g_LightColor.rgb*(1-cA)
 		//g_LightDirView.xyz
 		//n.xyz
 		//matDiffuse.rgb*g_LightColor*(1-cA)

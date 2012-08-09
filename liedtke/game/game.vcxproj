@@ -154,6 +154,7 @@
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -200,6 +201,7 @@
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
