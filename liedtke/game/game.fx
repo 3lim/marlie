@@ -27,7 +27,6 @@ cbuffer cbChangesEveryFrame
 	matrix	g_World; //für jedes Object anders
     float4  g_LightDir; // Object space
     matrix  g_WorldViewProjection;
-    matrix  g_invViewProjection;
     float   g_Time;
 	matrix g_Proj;
 	matrix g_WorldView;
@@ -59,17 +58,6 @@ struct PosTexLi
     float4 Pos : SV_POSITION;
     float2 Tex : TEXCOORD;
     float   Li : LIGHT_INTENSITY;
-};
-
-struct VSSkyIn 
-{
-	float4 Pos : POSITION;
-};
-
-struct VSSkyOut
-{
-	float4 Pos : SV_POSITION;
-	float3 Tex : TEXCOORD0;
 };
 
 struct PosTex
@@ -337,22 +325,7 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 		+ cG*glow;
 }
 
-VSSkyOut SkyboxVS(VSSkyIn input)
-{
-	VSSkyOut output;
 
-	output.Pos = input.Pos;
-	//output.Pos.xyz /= input.Pos.w;
-	output.Tex = normalize(mul(input.Pos, mul(g_World, g_invViewProjection)));
-
-	return output;
-}
-
-float4 SkyboxPS(VSSkyOut input) : SV_TARGET
-{
-	return g_SkyBoxTex.Sample(samEnvironment, input.Tex);
-	//return g_ShadowMap.Sample(samEnvironment, input.Tex);
-}
 
 float4 VS2( void ) : SV_POSITION
 {
@@ -415,15 +388,6 @@ technique11 Render
         SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
     }
 
-	pass P2_Sky
-	{
-		SetVertexShader( CompileShader(vs_4_0, SkyboxVS()));
-		SetGeometryShader( NULL);
-		SetPixelShader( CompileShader( ps_4_0, SkyboxPS()));
-		SetDepthStencilState(EnableDepth, 0);
-		SetRasterizerState(rsCullNone);
-        SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
-	}
 	
 }
 technique11 Shadow

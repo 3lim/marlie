@@ -58,6 +58,7 @@
     <ClCompile Include="ParticleEffect.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -122,13 +123,21 @@
     <ClInclude Include="ParticleEffect.h" />
     <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="Macros.h" />
+    <ClInclude Include="Skybox.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
   </ItemGroup>
   <ItemGroup>
-    <FX_HLSL Include="game.fx" />
-    <FX_HLSL Include="SpriteRender.fx" />
+    <FX_HLSL Include="game.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="SpriteRender.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="Skybox.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DXUT">
@@ -139,6 +148,9 @@
     </Filter>
     <Filter Include="DXUT\Optional">
       <UniqueIdentifier>{3b052faf-3892-4e65-9d1f-18189bc766f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{7d920030-3466-426e-b8f4-7c8e1509fd01}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

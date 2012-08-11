@@ -13,7 +13,6 @@
   <ItemGroup>
     <None Include="skybox.json" />
     <None Include="skybox_2.json" />
-    <None Include="skybox_3.json" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{77E95BCC-67FD-4089-9563-27D66A7423E5}</ProjectGuid>
@@ -145,6 +144,7 @@ mkdir "$(OutDir)textures"
 cd "$(SolutionDir)"
 
 "$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox.json" -p "Output=$(OutDir)textures/SkyboxCube.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
+"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox_2.json" -p "Output=$(OutDir)textures/SkyboxCube_withoutSun.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
 
 "$(OutDir)TerrainGenerator.exe" -r 4096 -o "$(OutDir)$(TargetName)\terrain_height.raw"
 "$(SolutionDir)../../external/terrain_tools/texture_generator.exe" -r 4096 -i "$(OutDir)$(TargetName)\terrain_height.raw" -o_color "$(OutDir)$(TargetName)\terrain_diffuse.png" -o_normal "$(OutDir)$(TargetName)\terrain_normal.png"

@@ -39,16 +39,10 @@
 #include "debug.h"
 #include "Particle.h"
 #include "ParticleEffect.h"
-
+#include "Skybox.h"
+#include "Macros.h"
 
 // Convenience macros for safe effect variable retrieval
-#define SAFE_GET_PASS(Technique, name, var)   {assert(Technique!=NULL); var = Technique->GetPassByName( name );						assert(var->IsValid());}
-#define SAFE_GET_TECHNIQUE(effect, name, var) {assert(effect!=NULL); var = effect->GetTechniqueByName( name );						assert(var->IsValid());}
-#define SAFE_GET_SCALAR(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsScalar();			assert(var->IsValid());}
-#define SAFE_GET_VECTOR(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsVector();			assert(var->IsValid());}
-#define SAFE_GET_MATRIX(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsMatrix();			assert(var->IsValid());}
-#define SAFE_GET_SAMPLER(effect, name, var)   {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsSampler();			assert(var->IsValid());}
-#define SAFE_GET_RESOURCE(effect, name, var)  {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsShaderResource();	assert(var->IsValid());}
 #define random(a, b, outP){ outP = ((float)rand()/RAND_MAX)*(max(a,b)-min(a,b))+min(a,b); }
 #if defined(DEBUG)
 const std::string TARGETNAME = "Debug";
@@ -107,8 +101,8 @@ bool									g_drawShadows = true;
 CDXUTDialogResourceManager              g_DialogResourceManager; // manager for shared resources of dialogs
 CD3DSettingsDlg                         g_SettingsDlg;          // Device settings dialog
 CDXUTTextHelper*                        g_TxtHelper = NULL;
-	CDXUTTextHelper* g_leftText = NULL;
-	CDXUTTextHelper* g_rightText = NULL;
+CDXUTTextHelper*						g_leftText = NULL;
+CDXUTTextHelper*						g_rightText = NULL;
 CDXUTDialog                             g_HUD;                  // dialog for standard controls
 CDXUTDialog                             g_SampleUI;             // dialog for sample specific controls
 
@@ -128,16 +122,9 @@ ID3DX11EffectShaderResourceVariable*	g_HeightEV = NULL;
 ID3DX11EffectShaderResourceVariable*	g_NormalEV = NULL; 
 ID3DX11EffectScalarVariable*			g_TerrainResEV = NULL;
 ID3DX11EffectScalarVariable*			g_TerrainQuadResEV = NULL; 
-// END: Assignment 4.2.1
-//Skybox Deklaration
-ID3DX11EffectShaderResourceVariable*	g_SkyboxEV = NULL;
-ID3D11ShaderResourceView*				g_SkyboxSRV = NULL;
-ID3D11Texture2D*						g_SkyboxTex = NULL;
 
 CHAR									g_SkyboxPath[MAX_PATH] = {'\0'};
 bool									g_UseSkybox = false;
-ID3D11Buffer*							g_SkyboxVB = NULL;
-ID3D11InputLayout*						g_SkyboxLayout = NULL;
 
 //5.3.1
 ID3DX11EffectScalarVariable*			g_isCameraObecjtEV = NULL;
@@ -149,7 +136,6 @@ ID3DX11EffectVectorVariable*			g_LightDirViewEV = NULL;
 ID3DX11EffectMatrixVariable*			g_LightPorjektionMatrixEV = NULL;
 ID3DX11EffectMatrixVariable*			g_LightViewMatrixEV = NULL;
 ID3DX11EffectPass*						g_Pass1_Mesh = NULL;
-ID3DX11EffectPass*						g_Pass2_Sky = NULL;
 
 ID3DX11EffectTechnique*					g_Shadow = NULL;
 ID3DX11EffectTechnique*					g_BillboardTechnique = NULL;
@@ -186,6 +172,8 @@ list<DISPLAYTEXT> g_DisplayTextBox;
 list<DISPLAYTEXT> g_DisplayTextLeft;
 list<DISPLAYTEXT> g_DisplayTextRight;
 int g_TerrainVertexCount;
+Skybox* g_SkyboxRenderer;
+
 //map<string, ParticleEffect> g_ParticleEffects;
 //list<ParticleEffect> g_ActiveEffects;
 
@@ -237,7 +225,6 @@ SpriteVertex							pSun;
 float									pow2Border;
 
 
-	D3DXMATRIX invViewProj;
 	D3DXMATRIX worldViewNormals;
 	D3DXMATRIX mTrans, mScale, mRot;
 	D3DXMATRIX inverseTerrainWorldDir;
@@ -251,7 +238,7 @@ float									pow2Border;
 	D3DXMATRIX inversView;
 	D3DXVECTOR4 lightDirView;
 	D3D11_TEXTURE2D_DESC shadowMap_desc;
-	D3D11_VIEWPORT CameraVP;
+	D3D11_VIEWPORT cameraVP;
 	D3D11_VIEWPORT shadowVP;
 	ID3D11Buffer* vbs[] = { NULL, };
 	ID3D11DepthStencilView* pDSV;
@@ -486,7 +473,7 @@ void loadConfig(bool reload = false)
 		else if ( var.compare("TerrainDepth")      ==0 ) stream >> g_TerrainDepth;
 		else if ( var.compare("TerrainHeight")      ==0 ) stream >> g_TerrainHeight;
 		else if ( var.compare("SkyboxTexture")	==0) {
-			stream >>g_SkyboxPath;
+			stream >> g_SkyboxPath;
 			g_UseSkybox = true;}
 		else if ( var.compare("Sun") == 0){
 			float x2, y2, z2, r, g, b;
@@ -612,7 +599,6 @@ void loadConfig(bool reload = false)
 	}
 
 	stream.close();
-	g_BoundingBox = sqrt(sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)*sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)+g_TerrainHeight*g_TerrainHeight);
 
 }
 //--------------------------------------------------------------------------------------
@@ -642,19 +628,18 @@ void InitApp()
 	//g_SampleUI.AddCheckBox( IDC_TOGGLESPIN, L"Toggle Spinning", 0, iY += 24, 125, 22, g_TerrainSpinning );		//7.2.2
 	g_SpriteRenderer = new SpriteRenderer(g_SpriteFiles);
 	g_MeshRenderer = new MeshRenderer();
+	g_SkyboxRenderer = new Skybox(g_SkyboxPath);
 }
 
 //5.2.6
 void DeinitApp(){
-	//SAFE_DELETE(g_CockpitMesh);
-	//for(auto it=g_Meshes.begin(); it!= g_Meshes.end(); it++)
-	//	SAFE_DELETE(it->second);
 	g_MeshRenderer->Deinit();
 	for(auto it=g_EnemyTyp.begin(); it!= g_EnemyTyp.end(); it++)
 		SAFE_DELETE(it->second);
 	g_EnemyTyp.clear();
 	SAFE_DELETE(g_SpriteRenderer);
 	SAFE_DELETE(g_MeshRenderer);
+	SAFE_DELETE(g_SkyboxRenderer);
 	ShowCursor(true);
 }
 
@@ -937,6 +922,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	assert((g_TerrainHeader.heightSize / 2) == g_TerrainNumVertices);
 	g_TerrainVertexCount = g_TerrainNumTriangles*3;
 	pow2Border = g_TerrainWidth*0.5f*(g_MaxCircle+0.2f)*g_TerrainWidth*0.5f*(g_MaxCircle+0.2f);
+	g_BoundingBox = sqrt(sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)*sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)+g_TerrainHeight*g_TerrainHeight);
 	// read the terrain heights
 	terrainHeights.resize(g_TerrainNumVertices);
 	{
@@ -1042,27 +1028,11 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	//Skybox
 	if(g_UseSkybox){
-		bool rgb;
-		vector<unsigned char> data;
-		vector<vector<unsigned char>> tetureData;
-		V_RETURN(LoadFile(g_SkyboxPath, data));
-		V_RETURN(LoadNtx(data, &tex2DDesc, textureData, subresourceData, rgb));
-		// Define the input layout
-		const D3D11_INPUT_ELEMENT_DESC layout[] = // http://msdn.microsoft.com/en-us/library/bb205117%28v=vs.85%29.aspx
-		{
-			{ "POSITION",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-		UINT numElements = sizeof( layout ) / sizeof( layout[0] );
-
-		// Create the input layout
-		D3DX11_PASS_DESC pd;
-		V(g_Pass2_Sky->GetDesc(&pd));
-		V( pd3dDevice->CreateInputLayout( layout, numElements, pd.pIAInputSignature,
-			pd.IAInputSignatureSize, &g_SkyboxLayout ) );
-		V(pd3dDevice->CreateTexture2D(&tex2DDesc, &subresourceData[0], &g_SkyboxTex));
-		V(pd3dDevice->CreateShaderResourceView(g_SkyboxTex, NULL, &g_SkyboxSRV));
+		V(g_SkyboxRenderer->CreateResources(pd3dDevice));
 	}
+
 	pSun.a = 1;
+	//nun im onMove
 	//pSun.Position = (D3DXVECTOR3)(g_LightDir)*g_BoundingBox*-1.f;
 	pSun.Radius = 100.0f;
 	pSun.TextureIndex = 0;
@@ -1131,10 +1101,6 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_RELEASE(g_TerrainNormalSRV);
 	SAFE_RELEASE(g_TerrainHeightBuf);
 	SAFE_RELEASE(g_TerrainHeightSRV);
-	SAFE_RELEASE(g_SkyboxTex);
-	SAFE_RELEASE(g_SkyboxSRV);
-	SAFE_RELEASE(g_SkyboxVB);
-	SAFE_RELEASE(g_SkyboxLayout);
 
 	SAFE_RELEASE(g_ShadowMap);
 	SAFE_RELEASE(g_ShadowMapSRV);
@@ -1154,6 +1120,7 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 
 	//7.2.2
 	g_SpriteRenderer->ReleaseResources();
+	g_SkyboxRenderer->ReleaseResources();
 }
 
 
@@ -1190,36 +1157,6 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 	g_Camera.SetNumberOfFramesToSmoothMouseData(5);
 
 	g_Camera.SetDrag( true );
-
-	//Skybox
-
-	// Fill the vertex buffer
-	SKYBOX_VERTEX* pVertex = new SKYBOX_VERTEX[ 4 ];
-	if( !pVertex )
-		return hr;
-	pVertex[0].pos = D3DXVECTOR4( 1, 1, 1.0f, 1.0f );
-	pVertex[1].pos = D3DXVECTOR4( 1, -1, 1.0f, 1.0f );
-	pVertex[2].pos = D3DXVECTOR4( -1, 1, 1.0f, 1.0f );
-	pVertex[3].pos = D3DXVECTOR4( -1, -1, 1.0f, 1.0f );
-
-
-	UINT uiVertBufSize = 4 * sizeof( SKYBOX_VERTEX );
-	D3D11_BUFFER_DESC vbdesc =
-	{
-		uiVertBufSize,
-		D3D11_USAGE_IMMUTABLE,
-		D3D11_BIND_VERTEX_BUFFER,
-		0,
-		0
-	};
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = pVertex;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
-	V( pd3dDevice->CreateBuffer( &vbdesc, &InitData, &g_SkyboxVB) );
-	SAFE_DELETE_ARRAY( pVertex );
-
 
 	return S_OK;
 }
@@ -1270,7 +1207,6 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	// Obtain the effect pass
 	SAFE_GET_PASS(g_Technique, "P0", g_Pass0);
 	SAFE_GET_PASS(g_Technique, "P1_Mesh", g_Pass1_Mesh);
-	SAFE_GET_PASS(g_Technique, "P2_Sky", g_Pass2_Sky);
 	SAFE_GET_PASS(g_Shadow, "P0_ShadowTerrain", g_Pass_ShadowTerrain);
 	SAFE_GET_PASS(g_Shadow, "P1_ShadowMesh", g_Pass_ShadowMesh);
 
@@ -1278,7 +1214,6 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	SAFE_GET_RESOURCE(g_Effect, "g_Diffuse", g_DiffuseEV);
 	SAFE_GET_MATRIX(g_Effect, "g_World", g_WorldEV);
 	SAFE_GET_MATRIX(g_Effect, "g_WorldViewProjection", g_WorldViewProjectionEV);   
-	SAFE_GET_MATRIX(g_Effect, "g_invViewProjection", g_invWorldViewProjectionEV);   
 	SAFE_GET_VECTOR(g_Effect, "g_LightDir", g_LightDirEV);
 	SAFE_GET_MATRIX(g_Effect, "g_LightWorldViewProjMatrix", g_LightWorldViewProjMatrixEV);
 	SAFE_GET_RESOURCE(g_Effect, "g_Height", g_HeightEV);
@@ -1292,10 +1227,6 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	SAFE_GET_MATRIX(g_Effect, "g_WorldView", g_WorldViewEV);
 	SAFE_GET_MATRIX(g_Effect, "g_WorldViewNormals", g_WorldViewNormalsEV);
 	SAFE_GET_VECTOR(g_Effect, "g_LightDirView", g_LightDirViewEV);
-	if(g_UseSkybox){
-		SAFE_GET_RESOURCE(g_Effect, "g_SkyBoxTex", g_SkyboxEV);
-		//SAFE_GET_VECTOR(g_Effect, "g_CameraPos", g_CameraPosEV);
-	}
 	SAFE_GET_MATRIX(g_Effect, "g_LightProjectionMatrix", g_LightPorjektionMatrixEV);
 	SAFE_GET_MATRIX(g_Effect, "g_LightViewMatrix", g_LightViewMatrixEV);
 	SAFE_GET_VECTOR(g_Effect, "g_LightColor", g_LightColorEV);
@@ -1305,7 +1236,7 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	//7.2.2
 	g_MeshRenderer->ReloadShader(pd3dDevice, g_Effect);
 	g_SpriteRenderer->ReloadShader(pd3dDevice);
-
+	g_SkyboxRenderer->ReloadShader(pd3dDevice);
 	return S_OK;
 }
 
@@ -1343,6 +1274,7 @@ void ReleaseShader()
 	SAFE_RELEASE( g_Effect );
 	g_MeshRenderer->ReleaseShader();
 	g_SpriteRenderer->ReleaseShader();
+	g_SkyboxRenderer->ReleaseShader();
 }
 
 //--------------------------------------------------------------------------------------
@@ -1782,8 +1714,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	D3DXMatrixInverse(&inversView,NULL, g_Camera.GetViewMatrix());
 	D3DXMatrixTranspose(&inversView, &inversView);
 	g_WorldViewProjectionEV->SetMatrix( ( float* )&g_ViewProj ); //benötigt: TerrainVS
-	D3DXMatrixInverse(&invViewProj, NULL, &g_ViewProj);
-	g_invWorldViewProjectionEV->SetMatrix((float*)&invViewProj); //benötigt: SkyboxVS
+	//D3DXMatrixInverse(&invViewProj, NULL, &g_ViewProj);
+	//g_invWorldViewProjectionEV->SetMatrix((float*)&invViewProj); //benötigt: SkyboxVS
 	
 	//D3DXMatrixInverse(&worldViewNormals, NULL, view);
 	D3DXMatrixTranspose(&worldViewNormals, &inversView);
@@ -1797,8 +1729,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
 	g_ShadowMap->GetDesc(&shadowMap_desc);
 	UINT one = 1;
-	pd3dImmediateContext->RSGetViewports(&one, &CameraVP);
-	shadowVP = D3D11_VIEWPORT(CameraVP);
+	pd3dImmediateContext->RSGetViewports(&one, &cameraVP);
+	shadowVP = D3D11_VIEWPORT(cameraVP);
 	shadowVP.Width = static_cast<float>(shadowMap_desc.Width);
 	shadowVP.Height = static_cast<float>(shadowMap_desc.Height);
 	shadowVP.MinDepth = 0.f;
@@ -1844,24 +1776,14 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 	// Clear the depth stencil
 	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
-	pd3dImmediateContext->RSSetViewports(1, &CameraVP);
+	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
 
 	g_ShadowMapEV->SetResource(g_ShadowMapSRV);//benötigt: TerrainPS/MeshPS
 	//Skybox render
 	if(g_UseSkybox){
-		stride = sizeof(SKYBOX_VERTEX);
-		offset = 0;
-		V(g_SkyboxEV->SetResource(g_SkyboxSRV));//benötigt: SkyboxPS
-		V(g_WorldEV->SetMatrix(D3DXMATRIX(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)));
-
-		pd3dImmediateContext->IASetInputLayout(g_SkyboxLayout);
-		pd3dImmediateContext->IASetVertexBuffers( 0,1, &g_SkyboxVB, &stride, &offset);
-		pd3dImmediateContext->IASetIndexBuffer(NULL, DXGI_FORMAT_R32_UINT, 0);
-		pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		V(g_Pass2_Sky->Apply(0, pd3dImmediateContext));
-		pd3dImmediateContext->Draw(4,0);
+		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera);
 	}
 
 

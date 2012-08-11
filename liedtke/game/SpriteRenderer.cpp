@@ -12,7 +12,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
-#include <fstream>
+
 #include <vector>
 #include <cstdint>
 #include "ntx\NTX.h"
