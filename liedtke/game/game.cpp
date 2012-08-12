@@ -316,7 +316,7 @@ void loadConfig(bool reload);
 
 bool VertexSort(SpriteVertex& a, SpriteVertex& b)
 {
-	return D3DXVec3Dot(&a.Position, g_Camera.GetWorldAhead()) > D3DXVec3Dot(&b.Position, g_Camera.GetWorldAhead());
+	return (double)D3DXVec3Dot(&a.Position, g_Camera.GetWorldAhead()) > (double)D3DXVec3Dot(&b.Position, g_Camera.GetWorldAhead());
 }
 
 //=====================================================================================
@@ -516,7 +516,7 @@ void loadConfig(bool reload = false)
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
-			g_EnemyTyp[name] = new EnemyTransformation(meshName, hitpoints, units, static_cast<int>(speed), MeshRenderer::g_Meshes[meshName], scale, rotX, rotY, rotZ, transX, transY, transZ, sphere);
+			g_EnemyTyp[name] = new EnemyTransformation(meshName, hitpoints, units, speed, MeshRenderer::g_Meshes[meshName], scale, rotX, rotY, rotZ, transX, transY, transZ, sphere);
 			if( effect.size() > 0  && effect.compare("-") != 0)
 				g_EnemyTyp[name]->setDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);
@@ -1539,10 +1539,18 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			pushText("Achtung: Ein neuer Feind ist nun in Reichweite!", D3DXCOLOR(1.0f, 0.15f, 0.f, 1.f));
 		}
 	}
-	if(p_Fire1)
+	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
-	if(p_Fire2)
+		//move
+		g_ObjectTransformations[2].rotate(0,0,170*fElapsedTime);
+		g_ObjectTransformations[2].calculateWorldMatrix();
+	}
+	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
+		//move
+		g_ObjectTransformations[4].translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
+		g_ObjectTransformations[4].calculateWorldMatrix();
+	}
 
 
 	//MovingObjects
@@ -1555,14 +1563,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for(auto pi = g_Particles.begin(); pi != g_Particles.end(); pi++)
 	{
 		pi->move(fElapsedTime);
-	}
-	if(p_Fire1){
-		g_ObjectTransformations[2].rotate(0,0,170*fElapsedTime);
-		g_ObjectTransformations[2].calculateWorldMatrix();
-	}
-	if(p_Fire2){
-		g_ObjectTransformations[4].translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
-		g_ObjectTransformations[4].calculateWorldMatrix();
 	}
 
 	bool del = false;
@@ -1679,6 +1679,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 	float fElapsedTime, void* pUserContext )
 {
+	cout << "render begin";
 	HRESULT hr;
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
@@ -1840,9 +1841,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		OutputDebugString( L"\n" );
 		dwTimefirst = GetTickCount();
 	}
+	cout << "render ende";
 }
 
-float inline getHeightAtPoint(float x, float y) {
+inline float getHeightAtPoint(float x, float y) {
 	return getHeightAtPoint(static_cast<int>(min(g_TerrainResolution - 1, (0.5f + x / g_TerrainWidth) * g_TerrainResolution)), static_cast<int>(min(g_TerrainResolution - 1, (0.5f - y / g_TerrainDepth) * g_TerrainResolution)));
 }
 
