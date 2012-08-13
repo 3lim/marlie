@@ -225,7 +225,7 @@ cd "$(SolutionDir)"
 
 "$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailGatlingDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailGatlingDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
 "$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailPlasmaDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailPlasmaDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=D:\GED-SVN\contest\liedtke\art\gui\radar.png" -p "Output=$(OutDir)gameObjects/radar_gui.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
+"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)art\gui\radar.png" -p "Output=$(OutDir)gameObjects/radar_gui.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
 </NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

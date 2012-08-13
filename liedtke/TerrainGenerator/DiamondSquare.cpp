@@ -160,6 +160,7 @@ void DiamondSquare::GenerateField_v2(int size, float roughness)
 	do{
 		//std::vector<point> pointsOfDiamonds;
 		//Solange nicht alle Felder gefüllt sind suche alle Quadrate
+		int sqHalf = static_cast<int>(squareSize*0.5f);
 		for(int x = 0; x < size; x += squareSize){
 			for(int y = 0; y < size; y += squareSize){
 				/*
@@ -168,7 +169,7 @@ void DiamondSquare::GenerateField_v2(int size, float roughness)
 				point untenLinks = getPointOfField(x,y+squareSize);
 				point untenRects = getPointOfField(x+squareSize, y+squareSize);
 				*/
-				insertIntoField(x+squareSize*0.5f,y+squareSize*0.5f,calculateCenterSquare(getHeightOfField(x,y),getHeightOfField(x+squareSize, y), getHeightOfField(x,y+squareSize), getHeightOfField(x+squareSize, y+squareSize)), randVariance(iteration));
+				insertIntoField(x+sqHalf,y+sqHalf,calculateCenterSquare(getHeightOfField(x,y),getHeightOfField(x+squareSize, y), getHeightOfField(x,y+squareSize), getHeightOfField(x+squareSize, y+squareSize)), randVariance(iteration));
 			}
 		}
 		writeArray(false);
