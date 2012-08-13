@@ -12,7 +12,7 @@
 #include <Windows.h>
 
 
-const bool compression = false;
+const bool compression = true;
 
 struct Mesh{std::map<std::string,std::vector<std::string>> Builds;};
 struct BuildDefinition{std::string Comparer;std::string Command;std::string Output;};
