@@ -216,6 +216,7 @@ float                                   g_TerrainHeight = 400.0f;
 bool                                    g_TerrainSpinning = true;
 float                                   g_TerrainSpinSpeed = 0.0f;
 float									g_BoundingBox = 0.f;
+string									g_ResourcesPath;
 D3DXMATRIX								g_ViewProj;
 D3DXMATRIX                              g_TerrainWorld; // object- to world-space transformation
 D3DXMATRIX								g_MeshWorld;
@@ -462,6 +463,7 @@ void loadConfig(bool reload = false)
 			std::getline(stream, comment);
 			continue;
 		}
+		if(var.compare("Resources_Dir") == 0) stream >> g_ResourcesPath; 
 		else if ( var.compare("DebugTexPath")   ==0 ) stream >> g_DebugTexPath;
 		else if ( var.compare("Spinning")       ==0 ) stream >> g_TerrainSpinning;
 		else if ( var.compare("SpinSpeed")      ==0 ) stream >> g_TerrainSpinSpeed;
@@ -493,7 +495,7 @@ void loadConfig(bool reload = false)
 		else if(var.compare("Mesh") == 0 && !reload){
 			char normal[MAX_PATH] = { '\0'};
 			stream >> name >> T3dPath >> DiffusePath >> SpecularPath >> GlowPath >> normal;
-			MeshRenderer::g_Meshes[name] = new Mesh(T3dPath, DiffusePath, SpecularPath, GlowPath, normal);
+			MeshRenderer::g_Meshes[name] = new Mesh((g_ResourcesPath + T3dPath).c_str(), (g_ResourcesPath+DiffusePath).c_str(), (g_ResourcesPath+SpecularPath).c_str(), (g_ResourcesPath+GlowPath).c_str(), (g_ResourcesPath+normal).c_str());
 		}
 		else if(var.compare("CameraObject") == 0) {
 			stream >> name >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
@@ -529,6 +531,7 @@ void loadConfig(bool reload = false)
 		{
 			pair<string,int> p;
 			stream>>p.first>>p.second;
+			p.first = g_ResourcesPath+p.first;
 			spriteFileNames.push_back(p);
 		} else if(var.compare("Projectile") == 0)
 		{

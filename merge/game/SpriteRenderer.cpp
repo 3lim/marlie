@@ -91,7 +91,7 @@ HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice)
 		tD_type t;
 		bool sRgb;
 
-		LoadNtxArrayFromFiles(it->first,0,it->second-1,&t.first,t.second.second,t.second.first,sRgb);
+		V(LoadNtxArrayFromFiles(it->first,0,it->second-1,&t.first,t.second.second,t.second.first,sRgb));
 
 		for(unsigned int j=0;j<t.first.ArraySize*t.first.MipLevels;j++)
 		{
