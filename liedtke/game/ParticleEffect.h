@@ -33,7 +33,7 @@ private:
 	float randomAngle(float min, float max);
 
 	//Subparticle system
-	int m_countSubParticle;
+	size_t m_countSubParticle;
 	float m_sizeSubParticle;
 	std::vector<ParticleEffect*> m_Child;
 };

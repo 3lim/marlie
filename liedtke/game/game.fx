@@ -327,12 +327,12 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 
 
 
-float4 VS2( void ) : SV_POSITION
+float4 VS_Billboard( void ) : SV_POSITION
 {
 	return float4(0,0,0,0);
 }
 [maxvertexcount(6)]
-void GS( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex> triStream )
+void GS_Billboard( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex> triStream )
 {
 	PosTex p;
 	p.LightPos = float4(0,0,0,0);
@@ -353,7 +353,7 @@ void GS( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex> triStream
 	p.Tex = float2(1,0);
 	triStream.Append(p);
 }
-float4 PS2( PosTex input ) : SV_TARGET
+float4 PS_Billboard( PosTex input ) : SV_TARGET
 {		
 	float r = g_ShadowMap.Sample(samAnisotropic, input.Tex).r;
 	return float4(r, r, r, 1);	
@@ -418,9 +418,9 @@ technique10 RenderBillboard
 {
     pass P0
     {
-        SetVertexShader( CompileShader( vs_4_0, VS2() ) );
-        SetGeometryShader( CompileShader( gs_4_0, GS() ) );
-        SetPixelShader( CompileShader( ps_4_0, PS2() ) );	
+        SetVertexShader( CompileShader( vs_4_0, VS_Billboard() ) );
+        SetGeometryShader( CompileShader( gs_4_0, GS_Billboard() ) );
+        SetPixelShader( CompileShader( ps_4_0, PS_Billboard() ) );	
 		SetRasterizerState( rsCullBack );		
     }
 }

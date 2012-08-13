@@ -160,6 +160,7 @@
     <None Include="DXUT\Optional\DXUTOpt_2010.vcxproj">
       <Filter>DXUT\Optional</Filter>
     </None>
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="DXUT\Core\dpiaware.manifest">

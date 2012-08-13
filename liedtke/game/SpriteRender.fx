@@ -52,11 +52,11 @@ BlendState BSBlendOver
 }; 
 
 //Shaders
-SpriteVertex DummyVS(SpriteVertex input) { 
+SpriteVertex SpriteVS(SpriteVertex input) { 
 	//output.Pos = mul(input.Pos, g_ViewProjection);
 	return input;
 } 
-float4 DummyPS(PSVertex input /*: SV_Target*/) : SV_Target0 { 
+float4 SpritePS(PSVertex input /*: SV_Target*/) : SV_Target0 { 
 	//return float4(input.TexPos, 1);
 	float3 dims;
 	float4 color;
@@ -81,6 +81,10 @@ float4 DummyPS(PSVertex input /*: SV_Target*/) : SV_Target0 {
 		case 4://Animated
 			g_SpriteDiffuseArray[4].GetDimensions(dims.x, dims.y, dims.z);
 			color= g_SpriteDiffuseArray[4].Sample(samAnisotropic, float3(input.TexPos.xy, int(dims.z*input.t)));
+		break;
+		case 5:
+			g_SpriteDiffuseArray[5].GetDimensions(dims.x, dims.y, dims.z);
+			color = g_SpriteDiffuseArray[5].Sample(samAnisotropic, float3(input.TexPos.xy, dims.z*input.t));
 		break;
 	default:
 			return float4(1,1,1,0);
@@ -120,9 +124,43 @@ void SpriteGS(point SpriteVertex vertex[1], inout TriangleStream<PSVertex> strea
 	
 }
 
+[maxvertexcount(4)]
+void GuiGS(point SpriteVertex vertex[1], inout TriangleStream<PSVertex> stream){
+	SpriteVertex input = vertex[0];
+	PSVertex v;
+	v.Color = input.Color;
+	v.TexIndex = input.TexIndex;
+	v.TexPos.z = input.TexIndex;
+	v.t = input.t;
+	v.alpha = input.alpha;
+	float3 offsetX = float3(input.Radius,0,0)*9/16;
+	float3 offsetY = float3(0,input.Radius,0);
+	v.Pos = float4(input.Pos.xy+offsetX+offsetY,0,1);
+	//v.Pos = mul(v.Pos, g_ViewProjection);
+	v.TexPos.xy = float2(0,0);
+	stream.Append(v);
+	v.Pos = float4(input.Pos.xy+offsetX-offsetY,0,1);
+	//v.Pos = mul(v.Pos, g_ViewProjection);
+	v.TexPos.xy = float2(0,1);
+	stream.Append(v);
+	v.Pos = float4(input.Pos.xy-offsetX+offsetY,0,1);
+	//v.Pos = mul(v.Pos, g_ViewProjection);
+	v.TexPos.xy = float2(1,0);
+	stream.Append(v);
+	v.Pos = float4(input.Pos.xy-offsetX-offsetY,0,1);
+	//v.Pos = mul(v.Pos, g_ViewProjection);
+	v.TexPos.xy = float2(1,1);
+	stream.Append(v);
+	stream.RestartStrip();
+	
+}
+
 //Rasterizer States
 RasterizerState rsCullNone {
 	CullMode = None; 
+};
+RasterizerState rsCullBack {
+	CullMode = Back; 
 };
 
 //DepthStates
@@ -143,12 +181,22 @@ technique11 Render
 {
 	pass P0_Sprite
 	{
-	SetVertexShader(CompileShader(vs_4_0, DummyVS()));
-	SetGeometryShader(CompileShader(gs_4_0, SpriteGS()));
-	SetPixelShader(CompileShader(ps_4_0, DummyPS()));
+		SetVertexShader(CompileShader(vs_4_0, SpriteVS()));
+		SetGeometryShader(CompileShader(gs_4_0, SpriteGS()));
+		SetPixelShader(CompileShader(ps_4_0, SpritePS()));
 
-	SetRasterizerState(rsCullNone);
-	SetDepthStencilState(EnableDepth, 0);
-	SetBlendState(BSBlendOver, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(BSBlendOver, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass P1_SpriteGUI
+	{
+		SetVertexShader(CompileShader(vs_4_0, SpriteVS()));
+		SetGeometryShader(CompileShader(gs_4_0, GuiGS()));
+		SetPixelShader(CompileShader(ps_4_0, SpritePS()));
+
+		SetRasterizerState(rsCullBack);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(BSBlendOver, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
 }

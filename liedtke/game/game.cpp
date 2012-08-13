@@ -65,11 +65,11 @@ struct SKYBOX_VERTEX
 	D3DXVECTOR4 pos;
 };
 
-enum TextPosition
+enum TEXTPOSITION
 {
-	textBox,
-	left,
-	right
+	TEXTBOX,
+	LEFT,
+	RIGHT
 };
 
 struct DISPLAYTEXT
@@ -77,7 +77,7 @@ struct DISPLAYTEXT
 	wstring Message;
 	float alpha;
 	float lifeTime;
-	TextPosition pos;
+	TEXTPOSITION pos;
 	D3DXCOLOR color;
 };
 
@@ -168,7 +168,7 @@ vector<SpriteVertex>		g_SpritesToRender;
 map<string, ProjectileType>  g_ProjectileTypes;
 list<Particle> g_Particles;
 vector<WeaponType>		g_WeaponTypes;
-list<DISPLAYTEXT> g_DisplayTextBox;
+list<DISPLAYTEXT> g_DisplayTEXTBOX;
 list<DISPLAYTEXT> g_DisplayTextLeft;
 list<DISPLAYTEXT> g_DisplayTextRight;
 int g_TerrainVertexCount;
@@ -409,7 +409,6 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	DXUTSetCallbackD3D11SwapChainReleasing( OnD3D11ReleasingSwapChain );
 	DXUTSetCallbackD3D11DeviceDestroyed( OnD3D11DestroyDevice );
 	DXUTSetCallbackD3D11FrameRender( OnD3D11FrameRender );
-
 	InitApp();
 	DXUTInit( true, true, NULL ); // Parse the command line, show msgboxes on error, no extra command line params
 	DXUTSetCursorSettings( true, true );
@@ -608,6 +607,9 @@ void InitApp()
 {
 	ShowCursor(false);
 	loadConfig();
+	g_SpriteRenderer = new SpriteRenderer(g_SpriteFiles);
+	g_MeshRenderer = new MeshRenderer();
+	g_SkyboxRenderer = new Skybox(g_SkyboxPath);
 	// Intialize the user interface
 	g_SettingsDlg.Init( &g_DialogResourceManager );
 	g_HUD.Init( &g_DialogResourceManager );
@@ -626,9 +628,14 @@ void InitApp()
 	g_SampleUI.SetCallback( OnGUIEvent ); iY = 10;
 	iY += 24;
 	//g_SampleUI.AddCheckBox( IDC_TOGGLESPIN, L"Toggle Spinning", 0, iY += 24, 125, 22, g_TerrainSpinning );		//7.2.2
-	g_SpriteRenderer = new SpriteRenderer(g_SpriteFiles);
-	g_MeshRenderer = new MeshRenderer();
-	g_SkyboxRenderer = new Skybox(g_SkyboxPath);
+	//**********GUI*************//
+	SpriteVertex pRadar;
+	pRadar.a = 0.8f;
+	pRadar.Position = D3DXVECTOR3(0.f,-0.68f,0);
+	pRadar.Radius = .08f;
+	pRadar.TextureIndex = 5;
+	pRadar.t = 0;
+	SpriteRenderer::g_GUISprites.push_back(pRadar);
 }
 
 //5.2.6
@@ -670,7 +677,7 @@ void RenderText()
 	points << "Your Points: " << g_PlayerPoints;
 	g_TxtHelper->DrawTextLine(points.str().c_str());
 	g_TxtHelper->SetInsertionPos(5, 160);
-	for(auto s = g_DisplayTextBox.begin(); s != g_DisplayTextBox.end();)
+	for(auto s = g_DisplayTEXTBOX.begin(); s != g_DisplayTEXTBOX.end();)
 	{
 		g_TxtHelper->SetForegroundColor(D3DXCOLOR(s->color.r, s->color.g, s->color.b, s->alpha));
 		g_TxtHelper->DrawTextLine(s->Message.c_str());
@@ -680,7 +687,7 @@ void RenderText()
 		{
 			auto rem = s;
 			s++;
-			g_DisplayTextBox.erase(rem);
+			g_DisplayTEXTBOX.erase(rem);
 		}
 		else
 			s++;
@@ -717,15 +724,15 @@ void RenderText()
 		else
 			s++;
 	}
-	if(g_DisplayTextBox.size() > 4)
+	if(g_DisplayTEXTBOX.size() > 4)
 	{
-		g_DisplayTextBox.begin()->alpha -= 0.01f;
+		g_DisplayTEXTBOX.begin()->alpha -= 0.01f;
 	}
 
 	g_TxtHelper->End();
 }
 
-void pushText(const char* s, D3DXCOLOR c, TextPosition pos)
+void pushText(const char* s, D3DXCOLOR c, TEXTPOSITION pos)
 {
 	wstringstream wss;
 	wss << s;
@@ -737,15 +744,15 @@ void pushText(const char* s, D3DXCOLOR c, TextPosition pos)
 	newEntry.pos = pos;
 	switch(pos)
 	{
-	case TextPosition::textBox:
-		g_DisplayTextBox.push_back(newEntry);
+	case TEXTBOX:
+		g_DisplayTEXTBOX.push_back(newEntry);
 		break;
-	case TextPosition::left:
+	case LEFT:
 		g_DisplayTextLeft.push_back(newEntry);
 		if(g_DisplayTextLeft.size() > 1)
 			g_DisplayTextLeft.pop_front();
 		break;
-	case TextPosition::right:
+	case RIGHT:
 		g_DisplayTextRight.push_back(newEntry);
 		if(g_DisplayTextRight.size() > 1)
 			g_DisplayTextRight.pop_front();
@@ -753,20 +760,20 @@ void pushText(const char* s, D3DXCOLOR c, TextPosition pos)
 	}
 }
 
-void inline pushText(string& s, D3DXCOLOR c, TextPosition pos)
+void inline pushText(string& s, D3DXCOLOR c, TEXTPOSITION pos)
 {
 	pushText(s.c_str(), c, pos);
 }
 
 void inline pushText(const char* s, D3DXCOLOR c)
 {
-	pushText(s, c, TextPosition::textBox);
+	pushText(s, c, TEXTBOX);
 }
 void inline pushText(const char* s)
 {
 	pushText(s, D3DXCOLOR(0.9f, 1.0f, 0.3f, 1.f));
 }
-void inline pushText(const char* s, TextPosition pos)
+void inline pushText(const char* s, TEXTPOSITION pos)
 {
 	pushText(s, D3DXCOLOR(0.9f, 1.0f, 0.3f, 1.f), pos);
 }
@@ -778,7 +785,7 @@ void inline pushText(string& s, D3DXCOLOR c)
 {
 	pushText(s.c_str(), c);
 }
-void inline pushText(string& s, TextPosition pos)
+void inline pushText(string& s, TEXTPOSITION pos)
 {
 	pushText(s.c_str(), pos);
 }
@@ -1480,7 +1487,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_Camera.FrameMove( fElapsedTime );
 
 	//Update HUD Text
-	for(auto s = g_DisplayTextBox.begin(); s != g_DisplayTextBox.end(); s++)
+	for(auto s = g_DisplayTEXTBOX.begin(); s != g_DisplayTEXTBOX.end(); s++)
 		s->lifeTime -= fElapsedTime;
 
 	D3DXMATRIX mTmp;
@@ -1809,9 +1816,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 	if(g_SpritesToRender.size() >0)
 		g_SpriteRenderer->RenderSprites(pd3dDevice, g_SpritesToRender, g_Camera);
+	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
 	stringstream ss;
 	ss << "Sprites: " << g_SpritesToRender.size();
-	pushText(ss.str(), TextPosition::left);
+	pushText(ss.str(), LEFT);
 
 	//render shadow map billboard
 	//***************************************************************************

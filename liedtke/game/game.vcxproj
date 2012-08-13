@@ -490,6 +490,7 @@
     </FX_HLSL>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram1.cd" />
     <None Include="DXUT\Optional\DXUTOpt_2010.sln" />
     <None Include="DXUT\Optional\DXUTOpt_2010.vcxproj" />
   </ItemGroup>

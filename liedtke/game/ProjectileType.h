@@ -13,13 +13,14 @@ public:
 	~ProjectileType(void);
 	bool fire(Particle* p, D3DXVECTOR3 direction, double& gameTime);
 private:
+	
 	std::string m_TypeName;
 	SpriteVertex m_Sprite;
 	float m_Speed;
 	float m_Mass;
 	float m_Cooldown;
 	float m_Damage;
-	float m_NextSpawn;
+	double m_NextSpawn;
 
 	
 };

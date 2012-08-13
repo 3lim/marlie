@@ -52,7 +52,9 @@ public:
 
 	// Render the given sprites. They must already be sorted into back-to-front order.
 	void RenderSprites(ID3D11Device* pDevice, const std::vector<SpriteVertex>& sprites, const CFirstPersonCamera& camera);
+	void RenderGUI(ID3D11Device* pDevice, const CFirstPersonCamera& camera);
 
+	static std::vector<SpriteVertex> g_GUISprites;
 private:
 	HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data);
 	std::vector<SpriteFile> m_textureFilenames;

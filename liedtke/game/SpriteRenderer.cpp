@@ -34,6 +34,7 @@ std::vector<ID3D11ShaderResourceView*> g_TextureSRVA;
 std::vector<ID3D11Texture2D*> g_DiffuseTexA;
 ID3DX11EffectShaderResourceVariable* g_TextureEVA(NULL);
 
+std::vector<SpriteVertex> SpriteRenderer::g_GUISprites;
 
 using namespace std;
 
@@ -157,7 +158,6 @@ void SpriteRenderer::ReleaseResources(){
 }
 
 void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const std::vector<SpriteVertex>& sprites, const CFirstPersonCamera& camera){
-	HRESULT hr;
 	ID3D11DeviceContext* pd3DContext;
 	ID3DX11EffectPass* myPass = m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0_Sprite");
 	pDevice->GetImmediateContext(&pd3DContext);
@@ -186,9 +186,40 @@ void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const std::vector<Spri
 	myPass->Apply(0,pd3DContext);
 	pd3DContext->Draw(sprites.size(),0);
 	SAFE_RELEASE(pd3DContext);
-
-
 }
+
+void SpriteRenderer::RenderGUI(ID3D11Device* pDevice, const CFirstPersonCamera& camera)
+{
+	ID3D11DeviceContext* pd3DContext;
+	ID3DX11EffectPass* myPass = m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1_SpriteGUI");
+	pDevice->GetImmediateContext(&pd3DContext);
+	D3D11_BOX box; 
+	box.left  = 0;
+	box.right = g_GUISprites.size() * sizeof(SpriteVertex); 
+	box.top   = 0;
+	box.bottom = 1; 
+	box.front = 0;
+	box.back   = 1; 
+	pd3DContext->UpdateSubresource(m_pVertexBuffer, 0, &box, &g_GUISprites[0], 0,0);
+	UINT stride[1] = {sizeof(SpriteVertex)};
+	UINT offset[1] = {0};
+	ID3D11Buffer* vertexbuffer[] = { m_pVertexBuffer};
+	pd3DContext->IASetVertexBuffers(0, 1, vertexbuffer, stride, offset);
+	pd3DContext->IASetInputLayout(m_pInputLayout);
+	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	D3DXMATRIX viewProjection = (*camera.GetViewMatrix())*(*camera.GetProjMatrix());
+	g_ViewProjectionEV->SetMatrix((float*)viewProjection);
+	//g_CameraRightEV->SetFloatVector(*camera.GetWorldRight());
+	//g_CameraUpEV->SetFloatVector(*camera.GetWorldUp());
+	for(size_t i = 0; i < m_textureFilenames.size(); i++)
+		g_TextureEVA->GetElement(i)->AsShaderResource()->SetResource(g_TextureSRVA[i]);
+
+	myPass->Apply(0,pd3DContext);
+	pd3DContext->Draw(g_GUISprites.size(),0);
+	SAFE_RELEASE(pd3DContext);
+}
+
 HRESULT SpriteRenderer::LoadFile(const char * filename, std::vector<uint8_t>& data)
 {
 	FILE * filePointer = NULL;
