@@ -222,6 +222,7 @@ D3DXVECTOR3								g_CameraPos;
 D3DXVECTOR3								g_CameraLookAt;
 string									g_SolutionDir;
 SpriteVertex							pSun;
+SpriteVertex							g_Radar;
 float									pow2Border;
 
 
@@ -629,13 +630,12 @@ void InitApp()
 	iY += 24;
 	//g_SampleUI.AddCheckBox( IDC_TOGGLESPIN, L"Toggle Spinning", 0, iY += 24, 125, 22, g_TerrainSpinning );		//7.2.2
 	//**********GUI*************//
-	SpriteVertex pRadar;
-	pRadar.a = 0.8f;
-	pRadar.Position = D3DXVECTOR3(0.f,-0.68f,0);
-	pRadar.Radius = .08f;
-	pRadar.TextureIndex = 5;
-	pRadar.t = 0;
-	SpriteRenderer::g_GUISprites.push_back(pRadar);
+	g_Radar.a = 0.8f;
+	g_Radar.Position = D3DXVECTOR3(0.f,-0.68f,0);
+	g_Radar.Radius = .08f;
+	g_Radar.TextureIndex = 5;
+	g_Radar.t = 0;
+	SpriteRenderer::g_GUISprites.push_back(g_Radar);
 }
 
 //5.2.6
@@ -1044,7 +1044,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	pSun.Radius = 100.0f;
 	pSun.TextureIndex = 0;
 	pSun.t = 0;
-	pSun.color = D3DXVECTOR4(g_LightColor.x,g_LightColor.y, g_LightColor.z, 0.4f);
+	pSun.color = D3DXCOLOR(g_LightColor.x,g_LightColor.y, g_LightColor.z, 0.4f);
 
 	//7.2.2
 	g_SpriteRenderer->CreateResources(pd3dDevice);
@@ -1891,6 +1891,23 @@ void AutomaticPositioning()
 	}
 }
 
+void drawShipsOnRadar()
+{
+	SpriteVertex pShip;
+	pShip.a = 1;
+	pShip.color = D3DXCOLOR(1,0,0,1);
+	pShip.Radius = 0.01f;
+	pShip.t = 0;
+	pShip.TextureIndex = 0;
+	vector<SpriteVertex> radarShips;
+
+	for_each(g_EnemyInstances.begin(), g_EnemyInstances.end(), [&](EnemyInstance it){
+		float x = it.getCurrentPosition().x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float y = it.getCurrentPosition().x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+			pShip.Position = D3DXVECTOR3(x,y,0);
+			radarShips.push_back(SpriteVertex(pShip));
+	});
+}
 
 HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data)
 {

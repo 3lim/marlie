@@ -13,14 +13,14 @@
 struct SpriteVertex 
 {
 	SpriteVertex(){
-		color = D3DXVECTOR4(0,0,0,0);
+		color = D3DXCOLOR(0,0,0,0);
 	}
 	D3DXVECTOR3 Position; // world-space position (sprite center)
 	float Radius;         // world-space radius (= half side length of the sprite quad)
 	int TextureIndex;     // which texture to use (out of SpriteRenderer::m_spriteSRV)
 	float t;			//describes the animation progress
 	float a;			//for fading the sprites
-	D3DXVECTOR4 color;  //Color for coloring the Sprites
+	D3DXCOLOR color;  //Color for coloring the Sprites
 };
 
 struct SpriteFile
