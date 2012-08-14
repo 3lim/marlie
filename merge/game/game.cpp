@@ -262,12 +262,6 @@ D3DXVECTOR4                             g_LightDir;
 D3DXVECTOR3								g_LightColor;
 ID3DX11EffectVectorVariable*			g_LightColorEV;
 
-// General meta data
-char                                    g_DebugTexPath[MAX_PATH] = { '\0' };
-
-// General resources
-ID3D11ShaderResourceView*               g_DebugSRV = NULL;
-
 //--------------------------------------------------------------------------------------
 // UI control IDs
 //--------------------------------------------------------------------------------------
@@ -464,7 +458,6 @@ void loadConfig(bool reload = false)
 			continue;
 		}
 		if(var.compare("Resources_Dir") == 0) stream >> g_ResourcesPath; 
-		else if ( var.compare("DebugTexPath")   ==0 ) stream >> g_DebugTexPath;
 		else if ( var.compare("Spinning")       ==0 ) stream >> g_TerrainSpinning;
 		else if ( var.compare("SpinSpeed")      ==0 ) stream >> g_TerrainSpinSpeed;
 		else if ( var.compare("BackgroundColor")==0 ) stream >> g_ClearColor.x >> g_ClearColor.y >> g_ClearColor.z >> g_ClearColor.w;
@@ -836,22 +829,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	//g_Camera.SetViewParams( &Eye, &g_CameraLookAt ); // http://msdn.microsoft.com/en-us/library/windows/desktop/bb206342%28v=vs.85%29.aspx
 	//g_Camera.SetScalers( g_CameraRotateScaler, g_CameraMoveScaler );
 
-	// Load the debug texture and create a shader resource view
-	wss.str(L""); wss << g_DebugTexPath;
-	V(DXUTFindDXSDKMediaFileCch( path, MAX_PATH, wss.str().c_str()));
-	if (hr != S_OK) {
-		ss.str();
-		ss << "Could not find '" << g_DebugTexPath << "'";
-		MessageBoxA (NULL, ss.str().c_str(), "Missing file", MB_ICONERROR | MB_OK);
-		return hr;
-	}
-	V(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, path, NULL, NULL, &g_DebugSRV, &hr));
-	if (hr != S_OK) {
-		ss.str();
-		ss << "Could not load texture '" << g_DebugTexPath << "'";
-		MessageBoxA (NULL, ss.str().c_str(), "Invalid texture", MB_ICONERROR | MB_OK);
-		return hr;
-	}
 	//// Define the input layout
 	//5.3.7
 	//T3d::CreateT3dInputLayout(pd3dDevice, g_Pass1_Mesh, &g_MeshInputLayout);
@@ -1083,7 +1060,6 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	g_DialogResourceManager.OnD3D11DestroyDevice();
 	g_SettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
-	SAFE_RELEASE( g_DebugSRV );
 
 	//5.3.7
 	SAFE_RELEASE(g_MeshInputLayout);
