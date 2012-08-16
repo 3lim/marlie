@@ -887,6 +887,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	g_TerrainVertexCount = g_TerrainNumTriangles*3;
 	pow2Border = g_TerrainWidth*0.5f*(g_MaxCircle+0.2f)*g_TerrainWidth*0.5f*(g_MaxCircle+0.2f);
 	g_BoundingBox = sqrt(sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)*sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)+g_TerrainHeight*g_TerrainHeight);
+	D3DXMatrixOrthoLH(&lightProjektionMatrix, g_BoundingBox, g_BoundingBox, 0.f, g_BoundingBox);
 	// read the terrain heights
 	terrainHeights.resize(g_TerrainNumVertices);
 	{
@@ -1666,8 +1667,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	proj = g_Camera.GetProjMatrix();
 	g_ViewProj = (*view) * (*proj);
 	//Lichtinformationen des Frames
-	//lightEye = ((D3DXVECTOR3)g_LightDir)*g_BoundingBox*-0.5f;
-	//lightEye = (D3DXVECTOR3)g_LightDir*g_BoundingBox*-0.5f;
+	//lightEye = ((D3DXVECTOR3)g_LightDir)*g_BoundingBox*-0.5f; //ersetzt durch pSun.Pos
+	//OrthoLH in on CreateDevice => statische Bounding Box
 	D3DXMatrixLookAtLH(&lightViewMatrix, &pSun.Position, &lightAt, &lightUp);
 	lightViewProjMatrix = lightViewMatrix*lightProjektionMatrix;
 	D3DXMatrixTranspose(&inverseTerrainWorldDir, &g_TerrainWorld);
