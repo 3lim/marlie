@@ -44,7 +44,7 @@ public:
 	void ReleaseResources();
 
 	// Render the given sprites. They must already be sorted into back-to-front order.
-	void RenderSprites(ID3D11Device* pDevice, std::vector<SpriteVertex>& sprites, const CFirstPersonCamera& camera);
+	void RenderSprites(ID3D11Device* pDevice, const CFirstPersonCamera& camera);
 	void RenderGUI(ID3D11Device* pDevice, const CFirstPersonCamera& camera);
 	unsigned int GetTextureOffset(int textureIndex);
 
@@ -52,6 +52,7 @@ public:
 
 	static const unsigned int MAXSIZE = 5;
 	static std::vector<SpriteVertex> g_GUISprites;
+	static std::vector<SpriteVertex> g_SpritesToRender;
 private:
 
 	std::vector<std::pair<std::string,int>> m_textureFilenames;

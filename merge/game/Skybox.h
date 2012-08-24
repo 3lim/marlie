@@ -5,10 +5,12 @@
 #include "Effects11/Inc/d3dx11effect.h"
 #include <string>
 
+#include "SpriteRenderer.h"
+
 class Skybox
 {
 public:
-	Skybox(std::string texturePath);
+	Skybox(std::string texturePath, float sunDistance);
 	~Skybox(void);
 
 	HRESULT ReloadShader(ID3D11Device*);
@@ -16,8 +18,17 @@ public:
 	HRESULT CreateResources(ID3D11Device*);
 	void ReleaseResources();
 	HRESULT RenderSkybox(ID3D11Device*, const CFirstPersonCamera& camera);
+	void OnMove(double fTime, float fElapsedTime);
+	static D3DXCOLOR g_LightColor;
+	static D3DXVECTOR4 g_LightDir;
+	SpriteVertex* getSun() { return &m_Sun; }
+	void setSunDistance(float p) { m_SunDistance = p; }
 private:
 	std::string m_SkyboxPath;
+	SpriteVertex m_Sun;
+	float m_SunSpeed;
+	float m_SunDistance;
+
 	ID3D11Texture2D* m_SkyboxTex;
 	ID3D11ShaderResourceView* m_SkyboxSRV;
 

@@ -7,6 +7,7 @@
 using namespace std;
 
 vector<SpriteVertex> SpriteRenderer::g_GUISprites;
+vector<SpriteVertex> SpriteRenderer::g_SpritesToRender;
 
 SpriteRenderer::SpriteRenderer(const std::vector<std::pair<std::string,int>>& textureFilenames) : m_textureFilenames(textureFilenames), 
 																				m_pEffect(NULL),
@@ -163,13 +164,13 @@ void SpriteRenderer::ReleaseResources()
 	}
 }
 
-void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, std::vector<SpriteVertex>& sprites, const CFirstPersonCamera& camera)
+void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const CFirstPersonCamera& camera)
 {
 	ID3D11DeviceContext* dc;
 	pDevice->GetImmediateContext(&dc);
 
-	D3D11_BOX box = {0,0,0,sprites.size()*sizeof(struct SpriteVertex),1,1};
-	dc->UpdateSubresource(m_pVertexBuffer,0,&box,&sprites[0],sizeof(struct SpriteVertex),0);
+	D3D11_BOX box = {0,0,0,g_SpritesToRender.size()*sizeof(struct SpriteVertex),1,1};
+	dc->UpdateSubresource(m_pVertexBuffer,0,&box,&g_SpritesToRender[0],sizeof(struct SpriteVertex),0);
 
 	ID3D11Buffer* vb[] = {m_pVertexBuffer,};
 	UINT strides[] = {sizeof(struct SpriteVertex),};
@@ -188,7 +189,7 @@ void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, std::vector<SpriteVert
 
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0,dc);
 
-	dc->Draw(sprites.size(),0);
+	dc->Draw(g_SpritesToRender.size(),0);
 
 	SAFE_RELEASE(dc);
 }

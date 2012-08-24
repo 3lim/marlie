@@ -424,10 +424,12 @@
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleEffect.cpp" />
     <ClCompile Include="ProjectileType.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
+    <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="WeaponType.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -457,11 +459,13 @@
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleEffect.h" />
     <ClInclude Include="ProjectileType.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="TerrainObject.h" />
+    <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="WeaponType.h" />
     <ResourceCompile Include="game.rc" />
   </ItemGroup>
@@ -470,8 +474,10 @@
   </ItemGroup>
   <ItemGroup>
     <FX_HLSL Include="game.fx" />
+    <FX_HLSL Include="MeshRenderer.fx" />
     <FX_HLSL Include="Skybox.fx" />
     <FX_HLSL Include="SpriteRenderer.fx" />
+    <FX_HLSL Include="TerrainRenderer.fx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DXUT\Optional\DXUTOpt_2010.sln" />
