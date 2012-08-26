@@ -46,19 +46,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\external\ntx\NTX.cpp" />
     <ClCompile Include="T3d.cpp" />
-    <ClCompile Include="ObjectTransformation.cpp" />
-    <ClCompile Include="TerrainObject.cpp" />
-    <ClCompile Include="EnemyTransformation.cpp" />
-    <ClCompile Include="EnemyInstance.cpp" />
-    <ClCompile Include="SpriteRenderer.cpp" />
-    <ClCompile Include="ProjectileType.cpp" />
-    <ClCompile Include="WeaponType.cpp" />
-    <ClCompile Include="Particle.cpp" />
-    <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="ParticleEffect.cpp" />
-    <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Skybox.cpp" />
+    <ClCompile Include="EnemyInstance.cpp" />
+    <ClCompile Include="EnemyTransformation.cpp" />
+    <ClCompile Include="ObjectTransformation.cpp" />
+    <ClCompile Include="Particle.cpp" />
+    <ClCompile Include="ParticleEffect.cpp" />
+    <ClCompile Include="ProjectileType.cpp" />
+    <ClCompile Include="TerrainObject.cpp" />
+    <ClCompile Include="WeaponType.cpp" />
+    <ClCompile Include="MeshRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Skybox.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -111,19 +119,27 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="T3d.h" />
-    <ClInclude Include="ObjectTransformation.h" />
-    <ClInclude Include="TerrainObject.h" />
-    <ClInclude Include="EnemyTransformation.h" />
-    <ClInclude Include="EnemyInstance.h" />
-    <ClInclude Include="SpriteRenderer.h" />
-    <ClInclude Include="ProjectileType.h" />
-    <ClInclude Include="WeaponType.h" />
-    <ClInclude Include="Particle.h" />
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="ParticleEffect.h" />
-    <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="Macros.h" />
-    <ClInclude Include="Skybox.h" />
+    <ClInclude Include="EnemyInstance.h" />
+    <ClInclude Include="EnemyTransformation.h" />
+    <ClInclude Include="ObjectTransformation.h" />
+    <ClInclude Include="Particle.h" />
+    <ClInclude Include="ParticleEffect.h" />
+    <ClInclude Include="ProjectileType.h" />
+    <ClInclude Include="TerrainObject.h" />
+    <ClInclude Include="WeaponType.h" />
+    <ClInclude Include="MeshRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Skybox.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
@@ -132,10 +148,16 @@
     <FX_HLSL Include="game.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
-    <FX_HLSL Include="SpriteRender.fx">
+    <FX_HLSL Include="Skybox.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
-    <FX_HLSL Include="Skybox.fx">
+    <FX_HLSL Include="SpriteRenderer.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="MeshRenderer.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="TerrainRenderer.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
   </ItemGroup>
@@ -152,6 +174,9 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{7d920030-3466-426e-b8f4-7c8e1509fd01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{69597981-2dd8-4786-9bd6-5e777aaeebc1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="DXUT\Optional\DXUTOpt_2010.sln">
@@ -160,7 +185,6 @@
     <None Include="DXUT\Optional\DXUTOpt_2010.vcxproj">
       <Filter>DXUT\Optional</Filter>
     </None>
-    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="DXUT\Core\dpiaware.manifest">

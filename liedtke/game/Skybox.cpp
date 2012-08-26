@@ -14,7 +14,11 @@
 
 using namespace std;
 
-Skybox::Skybox(string path) :
+
+D3DXCOLOR Skybox::g_LightColor(1.0f, 1.0f, 1.0f,1.0f);
+D3DXVECTOR4 Skybox::g_LightDir(1.f,1.f,-1.f,0.f);
+
+Skybox::Skybox(string path, float sunDistance) :
 m_SkyboxPath(path),
 	m_Context(NULL),
 	m_pEffect(NULL),
@@ -22,8 +26,9 @@ m_SkyboxPath(path),
 	m_Right(NULL),
 	m_TopLeft(NULL),
 	m_Eye(NULL),
-	m_SkyboxTechnique(NULL)
-
+	m_SkyboxTechnique(NULL),
+	m_SunDistance(sunDistance),
+	m_SunSpeed(0.4f)
 {
 }
 
@@ -84,6 +89,15 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice)
 	V_RETURN(LoadNtxFromFile(m_SkyboxPath, &tex2DDesc, data, textureData, rgb));
 	pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&m_SkyboxTex);
 	pDevice->CreateShaderResourceView(m_SkyboxTex,NULL,&m_SkyboxSRV);
+	//Sonne
+	m_Sun.Opacity = 1;
+	//nun im onMove
+	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
+	m_Sun.Radius = 100.0f;
+	m_Sun.TextureIndex = 0;
+	m_Sun.AnimationProgress = 0;
+	m_Sun.Color = g_LightColor;
+
 	return S_OK;
 }
 
@@ -119,4 +133,17 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->Draw(1, 0);
 
 	return S_OK;
+}
+void Skybox::OnMove(double time, float elapsedTime)
+{
+	//Sun Simulaions
+	D3DXMATRIX mTmp;
+	D3DXMatrixRotationY(&mTmp,static_cast<float>(DEG2RAD(time)*elapsedTime*0.03*m_SunSpeed));
+	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
+	D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
+	D3DXMatrixRotationZ(&mTmp,static_cast<float>(std::abs(DEG2RAD(time)*elapsedTime*0.1f*m_SunSpeed)));
+	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
+	D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
+	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
+
 }

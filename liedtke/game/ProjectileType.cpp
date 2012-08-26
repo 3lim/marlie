@@ -36,3 +36,8 @@ bool ProjectileType::fire(Particle* p, D3DXVECTOR3 direction, double& gameTime)
 ProjectileType::~ProjectileType(void)
 {
 }
+
+void ProjectileType::setIndexOffset(int i)
+{
+	m_Sprite.TextureIndex = i;
+}

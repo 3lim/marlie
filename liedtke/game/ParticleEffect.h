@@ -17,7 +17,7 @@ public:
 
 	void move(float tElapsedTime);
 
-	bool isTimeOver() { return t > 1;}
+	bool isTimeOver() { return AnimationProgress > 1;}
 
 	void setVertexPosition(D3DXVECTOR3 p) { Position = p; }
 	void SetChildEffect(ParticleEffect* p) { m_Child.push_back(p); }

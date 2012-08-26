@@ -26,6 +26,7 @@
 #include <boost/lexical_cast.hpp>
 #include "ntx/NTX.h"
 
+#include "TerrainRenderer.h"
 #include "MeshRenderer.h"
 #include "Mesh.h"
 #include "T3d.h"
@@ -42,28 +43,17 @@
 #include "Skybox.h"
 #include "Macros.h"
 
-// Convenience macros for safe effect variable retrieval
-#define random(a, b, outP){ outP = ((float)rand()/RAND_MAX)*(max(a,b)-min(a,b))+min(a,b); }
-#if defined(DEBUG)
-const std::string TARGETNAME = "Debug";
-#else
-const std::string TARGETNAME = "Release";
-#endif
-
-#define null NULL
-// Help macros
-#define DEG2RAD( a ) ( (a) * D3DX_PI / 180.f )
 
 using namespace std;
 
 //--------------------------------------------------------------------------------------
 // Global variables
 //--------------------------------------------------------------------------------------
-//Skybox
-struct SKYBOX_VERTEX
-{
-	D3DXVECTOR4 pos;
-};
+////Skybox
+//struct SKYBOX_VERTEX
+//{
+//	D3DXVECTOR4 pos;
+//};
 
 enum TEXTPOSITION
 {
@@ -93,9 +83,7 @@ float                                   g_CameraRotateScaler = 0.01f;
 CFirstPersonCamera                      g_Camera;               // A first person camera
 bool									g_CameraMoving;
 bool									g_GamePause;
-float									g_SunSpeed = 0.4f;
 static int								g_PlayerPoints = 0;
-bool									g_drawShadows = true;
 
 // User Interface
 CDXUTDialogResourceManager              g_DialogResourceManager; // manager for shared resources of dialogs
@@ -108,71 +96,38 @@ CDXUTDialog                             g_SampleUI;             // dialog for sa
 
 // A D3DX rendering effect
 ID3DX11Effect*                          g_Effect = NULL; // The whole rendering effect
-ID3DX11EffectTechnique*                 g_Technique = NULL; // One technique to render the effect
-ID3DX11EffectPass*                      g_Pass0 = NULL; // One rendering pass of the technique
-ID3DX11EffectMatrixVariable*            g_WorldEV = NULL; // World matrix effect variable
-ID3DX11EffectMatrixVariable*            g_WorldViewProjectionEV = NULL; // WorldViewProjection matrix effect variable
-ID3DX11EffectMatrixVariable*            g_invWorldViewProjectionEV = NULL; // WorldViewProjection matrix effect variable
-ID3DX11EffectShaderResourceVariable*    g_DiffuseEV = NULL; // Effect variable for the diffuse color texture
-ID3DX11EffectVectorVariable*            g_LightDirEV = NULL; // Light direction in object space
-ID3DX11EffectMatrixVariable*			g_LightWorldViewProjMatrixEV = NULL;
-ID3DX11EffectMatrixVariable*			g_ProjEV = NULL;
-// BEGIN: Assignment 4.2.1 
-ID3DX11EffectShaderResourceVariable*	g_HeightEV = NULL; 
-ID3DX11EffectShaderResourceVariable*	g_NormalEV = NULL; 
-ID3DX11EffectScalarVariable*			g_TerrainResEV = NULL;
-ID3DX11EffectScalarVariable*			g_TerrainQuadResEV = NULL; 
-
-CHAR									g_SkyboxPath[MAX_PATH] = {'\0'};
-bool									g_UseSkybox = false;
-
-//5.3.1
-ID3DX11EffectScalarVariable*			g_isCameraObecjtEV = NULL;
-ID3DX11EffectShaderResourceVariable*	g_SpecularEV = NULL;
-ID3DX11EffectShaderResourceVariable*	g_GlowEV = NULL;
-ID3DX11EffectMatrixVariable*			g_WorldViewEV = NULL;
-ID3DX11EffectMatrixVariable*			g_WorldViewNormalsEV = NULL;
-ID3DX11EffectVectorVariable*			g_LightDirViewEV = NULL;
-ID3DX11EffectMatrixVariable*			g_LightPorjektionMatrixEV = NULL;
-ID3DX11EffectMatrixVariable*			g_LightViewMatrixEV = NULL;
-ID3DX11EffectPass*						g_Pass1_Mesh = NULL;
-
-ID3DX11EffectTechnique*					g_Shadow = NULL;
 ID3DX11EffectTechnique*					g_BillboardTechnique = NULL;
-ID3DX11EffectPass*						g_Pass_ShadowTerrain = NULL;
-ID3DX11EffectPass*						g_Pass_ShadowMesh = NULL;
-ID3D11DepthStencilView*					g_shadowDSV = NULL;
-ID3D11Texture2D*						g_ShadowMap = NULL;
-ID3D11ShaderResourceView*				g_ShadowMapSRV = NULL;
-ID3DX11EffectShaderResourceVariable*	g_ShadowMapEV = NULL;
+
+ID3D11Texture2D*						g_ShadowMap;
+ID3D11ShaderResourceView*				g_ShadowMapSRV;
+ID3D11DepthStencilView*					g_ShadowMapDSV;
+ID3DX11EffectShaderResourceVariable*	g_ShadowMapEV;
 
 
 
 // Background color
 D3DXVECTOR4                             g_ClearColor;
 //5.2.5
-MeshRenderer* g_MeshRenderer = NULL;
-ID3D11InputLayout* g_MeshInputLayout = NULL;
-//Mesh* g_CockpitMesh = NULL;
-//map<string, Mesh*> g_Meshes;
+TerrainRenderer*		g_TerrainRenderer = NULL;
+MeshRenderer*			g_MeshRenderer = NULL;
+SpriteRenderer*			g_SpriteRenderer = NULL;
+Skybox*					g_SkyboxRenderer = NULL;
+
 map<string, EnemyTransformation*> g_EnemyTyp;	
 vector<ObjectTransformation> g_ObjectTransformations;
 map<string, int> g_ObjectReferences;
 vector<TerrainObject> g_TerrainObjects;
 list<EnemyInstance> g_EnemyInstances;
 vector<string> g_EnemyTypeNames;
-//SpriteRenderer
-SpriteRenderer*			g_SpriteRenderer = NULL;
-vector<SpriteFile>			g_SpriteFiles;
-vector<SpriteVertex>		g_SpritesToRender;
 map<string, ProjectileType>  g_ProjectileTypes;
-list<Particle> g_Particles;
 vector<WeaponType>		g_WeaponTypes;
+//SpriteRenderer
+vector<pair<string, int>>			spriteFileNames;
+//vector<SpriteVertex>		g_SpritesToRender;
+list<Particle> g_Particles;
 list<DISPLAYTEXT> g_DisplayTEXTBOX;
 list<DISPLAYTEXT> g_DisplayTextLeft;
 list<DISPLAYTEXT> g_DisplayTextRight;
-int g_TerrainVertexCount;
-Skybox* g_SkyboxRenderer;
 
 //map<string, ParticleEffect> g_ParticleEffects;
 //list<ParticleEffect> g_ActiveEffects;
@@ -184,7 +139,9 @@ float g_MaxHeight;
 float g_MinCircle = 0.7f;
 float g_MaxCircle = 1.4f;
 float g_SpawnIntervall;
-
+float g_SpawnCircle;
+float g_TargetCircle;
+float g_DestroyCircle;
 //Player
 bool p_Fire1;
 bool p_Fire2;
@@ -197,74 +154,50 @@ int Oindex = 2;
 bool useDeveloperFeatures = false;
 
 
-// Terrain meta information
-struct PtfHeader{
-	int16_t magicNumber; 	// Must be 0x00DA
-	int16_t version;		// Must be 1
-	int32_t heightSize;	    // Height data size
-	int32_t colorSize;	    // Color data size
-	int32_t normalSize;	    // Normal data size
-}                                       g_TerrainHeader; 
-char                                    g_TerrainPath[MAX_PATH] = { '\0' };
-int                                     g_TerrainResolution;
-int                                     g_TerrainNumVertices = 3;
-int                                     g_TerrainNumTriangles = 1;
-float                                   g_TerrainWidth = 1000.0f;
-float                                   g_TerrainDepth = 1000.0f;
-float                                   g_TerrainHeight = 400.0f;
-bool                                    g_TerrainSpinning = true;
-float                                   g_TerrainSpinSpeed = 0.0f;
-float									g_BoundingBox = 0.f;
+CHAR									g_SkyboxPath[MAX_PATH] = {'\0'};
+bool									g_UseSkybox = false;
+char									g_TerrainPath[MAX_PATH] = { '\0' };
+float                                   g_TerrainWidth;
+float                                   g_TerrainDepth;
+float                                   g_TerrainHeight;
+bool                                    g_TerrainSpinning;
+float                                   g_TerrainSpinSpeed;
+float									g_BoundingBoxDiagonal = 0.f;
+string									g_ResourcesPath;
 D3DXMATRIX								g_ViewProj;
-D3DXMATRIX                              g_TerrainWorld; // object- to world-space transformation
-D3DXMATRIX								g_MeshWorld;
+//D3DXMATRIX                              g_TerrainWorld; // object- to world-space transformation
+//D3DXMATRIX								g_MeshWorld;
 D3DXVECTOR3								g_CameraPos;
 D3DXVECTOR3								g_CameraLookAt;
 string									g_SolutionDir;
-SpriteVertex							pSun;
+//SpriteVertex							pSun;
 SpriteVertex							g_Radar;
 float									pow2Border;
 
 
-	D3DXMATRIX worldViewNormals;
-	D3DXMATRIX mTrans, mScale, mRot;
-	D3DXMATRIX inverseTerrainWorldDir;
-	D3DXVECTOR4 lightDirObj;
+	//D3DXMATRIX worldViewNormals;
+	//D3DXMATRIX mTrans, mScale, mRot;
+	//D3DXMATRIX inverseTerrainWorldDir;
+	//D3DXVECTOR4 lightDirObj;
 	D3DXMATRIX lightProjektionMatrix;
 	D3DXMATRIX lightViewMatrix;
 	D3DXVECTOR3 lightAt(0,0,0);
-	D3DXVECTOR3 lightEye;
+	//D3DXVECTOR3 lightEye;
 	D3DXVECTOR3 lightUp(0,1,0);
 	D3DXMATRIX lightViewProjMatrix;
-	D3DXMATRIX inversView;
-	D3DXVECTOR4 lightDirView;
+	//D3DXMATRIX inversView;
+	//D3DXVECTOR4 lightDirView;
 	D3D11_TEXTURE2D_DESC shadowMap_desc;
 	D3D11_VIEWPORT cameraVP;
 	D3D11_VIEWPORT shadowVP;
-	ID3D11Buffer* vbs[] = { NULL, };
+	//ID3D11Buffer* vbs[] = { NULL, };
 	ID3D11DepthStencilView* pDSV;
 	ID3D11RenderTargetView* pRTV;
 
 // Terrain rendering resources
 // BEGIN: Assignment 4.2.2 
-ID3D11Buffer*							g_TerrainHeightBuf = NULL; 
-ID3D11ShaderResourceView*				g_TerrainHeightSRV = NULL; 
-ID3D11Texture2D*						g_TerrainNormalTex = NULL; 
-ID3D11ShaderResourceView*				g_TerrainNormalSRV = NULL; 
-// END: Assignment 4.2.2
-ID3D11Texture2D*                        g_TerrainDiffuseTex = NULL; // The terrain's material color for diffuse lighting
-ID3D11ShaderResourceView*               g_TerrainDiffuseSRV = NULL; // Describes the structure of the diffuse texture to the shader stages
 
 // Scene information
-D3DXVECTOR4                             g_LightDir;
-D3DXVECTOR3								g_LightColor;
-ID3DX11EffectVectorVariable*			g_LightColorEV;
-
-// General meta data
-char                                    g_DebugTexPath[MAX_PATH] = { '\0' };
-
-// General resources
-ID3D11ShaderResourceView*               g_DebugSRV = NULL;
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -308,9 +241,6 @@ void RenderText();
 void ReleaseShader();
 HRESULT ReloadShader(ID3D11Device* pd3dDevice);
 HRESULT ReloadConfig(ID3D11Device* pd3dDevice);
-float getHeightAtPoint(float x, float y);
-inline float getHeightAtPoint(int TerrainX, int TerrainY);
-D3DXVECTOR3 getNormalAtPoint(float x, float y);
 void placeTerrainObject(TerrainObject*);
 void AutomaticPositioning();
 void loadConfig(bool reload);
@@ -318,52 +248,6 @@ void loadConfig(bool reload);
 bool VertexSort(SpriteVertex& a, SpriteVertex& b)
 {
 	return (double)D3DXVec3Dot(&a.Position, g_Camera.GetWorldAhead()) > (double)D3DXVec3Dot(&b.Position, g_Camera.GetWorldAhead());
-}
-
-//=====================================================================================
-/*
-|| ::DESCRIPTION::
-|| This function will convert a WCHAR string to a CHAR string.
-||
-|| Param 1 :: Pointer to a buffer that will contain the converted string. Ensure this
-|| buffer is large enough; if not, buffer overrun errors will occur.
-|| Param 2 :: Constant pointer to a source WCHAR string to be converted to CHAR
-*/
-void wtoc(CHAR* Dest, const WCHAR* Source)
-{
-	int i = 0;
-
-	while(Source[i] != '\0')
-	{
-		Dest[i] = (CHAR)Source[i];
-		++i;
-	}
-}
-
-//=====================================================================================
-/*
-|| ::DESCRIPTION::
-|| This function will convert a CHAR string to a WCHAR string.
-||
-|| Param 1 :: Pointer to a buffer that will contain the converted string. Ensure this
-|| buffer is large enough; if not, buffer overrun errors will occur.
-|| Param 2 :: Constant pointer to a source CHAR string to be converted to WCHAR
-*/
-void ctow(WCHAR* Dest, const CHAR* Source)
-{
-	int i = 0;
-
-	while(Source[i] != '\0')
-	{
-		Dest[i] = (WCHAR)Source[i];
-		++i;
-	}
-}
-CHAR wide_to_narrow(WCHAR w)
-{
-	// simple typecast
-	// works because UNICODE incorporates ASCII into itself
-	return CHAR(w);
 }
 
 
@@ -377,13 +261,6 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
-	wstring ws = wstring(lpCmdLine);
-	string t = "";
-	t.resize(ws.length());
-	transform(ws.begin(), ws.end(), t.begin(), wide_to_narrow);
-	g_SolutionDir = string(t);
-	g_SolutionDir = g_SolutionDir.substr(g_SolutionDir.find("-dir=\"")+6);
-	g_SolutionDir = g_SolutionDir.substr(0, g_SolutionDir.find_first_of("\""));
 
 	// Old Direct3D Documentation:
 	// Start > All Programs > Microsoft DirectX SDK (June 2010) > Windows DirectX Graphics Documentation
@@ -411,12 +288,12 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	DXUTSetCallbackD3D11DeviceDestroyed( OnD3D11DestroyDevice );
 	DXUTSetCallbackD3D11FrameRender( OnD3D11FrameRender );
 	InitApp();
-	DXUTInit( true, true, NULL ); // Parse the command line, show msgboxes on error, no extra command line params
+	DXUTInit( true, true, NULL); // Parse the command line, show msgboxes on error, no extra command line params
 	DXUTSetCursorSettings( true, true );
-	DXUTCreateWindow( L"Shooting the evil aliens by Sven Liedtke@owned by c++" ); // You may change the title
 
+	DXUTCreateWindow( L"The M.A.R.L.I.E. Project"); // You may change the title
 	DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 1280, 720 );
-
+	
 	AutomaticPositioning();
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
@@ -438,7 +315,6 @@ void loadConfig(bool reload = false)
 	int hitpoints, units;
 	float sphere;
 	string effect;
-	SpriteFile tmpSprite;
 	string file_str, input_str, output_str, it, args, TargetName;
 	//		TargetName = MY_TARGETNAME;
 	// Parse the config file
@@ -462,7 +338,7 @@ void loadConfig(bool reload = false)
 			std::getline(stream, comment);
 			continue;
 		}
-		else if ( var.compare("DebugTexPath")   ==0 ) stream >> g_DebugTexPath;
+		if(var.compare("Resources_Dir") == 0) stream >> g_ResourcesPath; 
 		else if ( var.compare("Spinning")       ==0 ) stream >> g_TerrainSpinning;
 		else if ( var.compare("SpinSpeed")      ==0 ) stream >> g_TerrainSpinSpeed;
 		else if ( var.compare("BackgroundColor")==0 ) stream >> g_ClearColor.x >> g_ClearColor.y >> g_ClearColor.z >> g_ClearColor.w;
@@ -478,9 +354,9 @@ void loadConfig(bool reload = false)
 		else if ( var.compare("Sun") == 0){
 			float x2, y2, z2, r, g, b;
 			stream >> r >> g >> b >>x >> y >> z >> x2 >> y2 >> z2;
-			g_LightColor = D3DXVECTOR3(r, g, b);
-			g_LightDir = D3DXVECTOR4(x2-x, y2-y, z2-z, 0);
-			D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir);
+			Skybox::g_LightColor = D3DXCOLOR(r, g, b, 1);
+			Skybox::g_LightDir = D3DXVECTOR4(x-x2, y-y2, z-z2, 0);
+			D3DXVec3Normalize((D3DXVECTOR3*)&Skybox::g_LightDir, (D3DXVECTOR3*)&Skybox::g_LightDir);
 		}
 		else if ( var.compare("CameraPos") == 0){ stream >>x >> offset >> z;
 		g_CameraPos = D3DXVECTOR3(x, offset, z);
@@ -493,7 +369,7 @@ void loadConfig(bool reload = false)
 		else if(var.compare("Mesh") == 0 && !reload){
 			char normal[MAX_PATH] = { '\0'};
 			stream >> name >> T3dPath >> DiffusePath >> SpecularPath >> GlowPath >> normal;
-			MeshRenderer::g_Meshes[name] = new Mesh(T3dPath, DiffusePath, SpecularPath, GlowPath, normal);
+			MeshRenderer::g_Meshes[name] = new Mesh((g_ResourcesPath + T3dPath).c_str(), (g_ResourcesPath+DiffusePath).c_str(), (g_ResourcesPath+SpecularPath).c_str(), (g_ResourcesPath+GlowPath).c_str(), (g_ResourcesPath+normal).c_str());
 		}
 		else if(var.compare("CameraObject") == 0) {
 			stream >> name >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
@@ -525,16 +401,16 @@ void loadConfig(bool reload = false)
 		{
 			stream>>g_SpawnIntervall >> g_MinHeight >> g_MaxHeight >> g_MinCircle >> g_MaxCircle;
 		}
-		else if(var.compare("Sprite") == 0)
+		else if ( var.compare("SpriteTexture")	==0 )
 		{
-			stream >> tmpSprite.file;
-			tmpSprite.begin = 0;
-			tmpSprite.end = 0;
-			g_SpriteFiles.push_back(tmpSprite);
+			pair<string,int> p;
+			stream>>p.first>>p.second;
+			p.first = g_ResourcesPath+p.first;
+			spriteFileNames.push_back(p);
 		} else if(var.compare("Projectile") == 0)
 		{
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass;
-			g_ProjectileTypes[name] = ProjectileType(name, radius, textureIndex, speed, mass, cooldown, damage);
+			g_ProjectileTypes[name] = ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
 		} else if(var.compare("Weapon") == 0)
 		{
 			stream >> name >> x >> y >> z;
@@ -550,34 +426,12 @@ void loadConfig(bool reload = false)
 			}
 			D3DXVECTOR3* p = &g_ObjectTransformations[g_ObjectReferences[name]].getPosition();
 			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp, &g_Particles));
-		} else if(var.compare("SpriteArray") == 0)
-		{
-			stream >> tmpSprite.file >> input_str >> output_str >> tmpSprite.begin >> tmpSprite.end;
-			char tmpFile[100];
-			for(int i = tmpSprite.begin; i <=tmpSprite.end; i++)
-			{
-
-				sprintf(tmpFile, tmpSprite.file.c_str(), i);
-				filebuf ntxFile;
-
-				ntxFile.open(g_SolutionDir+"\\"+TARGETNAME+"\\"+output_str+tmpFile+".ntx", ios::in | ios::binary);
-				if(!ntxFile.is_open())
-				{
-					args = "-verbose -2 -p \"Input="+ g_SolutionDir+"\\" +input_str.c_str()+ tmpFile+".png\" -p \"Output="+g_SolutionDir+"\\"+TARGETNAME+"\\"+output_str.c_str()+tmpFile+".ntx\" -p \"Input-Type=Color\" -p \"Compress=false\" BuildTools.TextureImporter";
-					args = "\"\""+g_SolutionDir+"..\\..\\external\\terrain_tools\\ged-texture-converter\\nBuildDrv.exe\" " + args+"\"";
-					system(args.c_str());
-				}
-				else
-					ntxFile.close();
-			}
-			tmpSprite.file = output_str + tmpSprite.file+".ntx";
-			g_SpriteFiles.push_back(tmpSprite);
 		} else if(var.compare("Explosion") == 0)
 		{
-			int index, count;
+			int count;
 			float duration;
-			stream >> name >> index >> duration >> scale >> speed >> mass >> x >> y >> z >> count;
-			ParticleEffect::g_ParticleEffects[name] = ParticleEffect(name, duration, scale, index, count, D3DXVECTOR3(x,y,z), speed, mass);
+			stream >> name >> textureIndex >> duration >> scale >> speed >> mass >> x >> y >> z >> count;
+			ParticleEffect::g_ParticleEffects[name] = ParticleEffect(name, duration, scale, textureIndex, count, D3DXVECTOR3(x,y,z), speed, mass);
 			stream >> var;
 			if(var.compare("{") == 0)
 			{
@@ -608,9 +462,10 @@ void InitApp()
 {
 	ShowCursor(false);
 	loadConfig();
-	g_SpriteRenderer = new SpriteRenderer(g_SpriteFiles);
+	g_SpriteRenderer = new SpriteRenderer(spriteFileNames);
 	g_MeshRenderer = new MeshRenderer();
-	g_SkyboxRenderer = new Skybox(g_SkyboxPath);
+	g_SkyboxRenderer = new Skybox(g_SkyboxPath, g_BoundingBoxDiagonal*0.7f);
+	g_TerrainRenderer = new TerrainRenderer(g_TerrainPath, g_TerrainWidth, g_TerrainDepth, g_TerrainHeight, g_TerrainSpinning, g_TerrainSpinSpeed);
 	// Intialize the user interface
 	g_SettingsDlg.Init( &g_DialogResourceManager );
 	g_HUD.Init( &g_DialogResourceManager );
@@ -630,16 +485,17 @@ void InitApp()
 	iY += 24;
 	//g_SampleUI.AddCheckBox( IDC_TOGGLESPIN, L"Toggle Spinning", 0, iY += 24, 125, 22, g_TerrainSpinning );		//7.2.2
 	//**********GUI*************//
-	g_Radar.a = 0.8f;
+	g_Radar.Opacity = 0.8f;
 	g_Radar.Position = D3DXVECTOR3(0.f,-0.68f,0);
 	g_Radar.Radius = .08f;
 	g_Radar.TextureIndex = 5;
-	g_Radar.t = 0;
+	g_Radar.AnimationProgress = 0;
 	SpriteRenderer::g_GUISprites.push_back(g_Radar);
 }
 
 //5.2.6
 void DeinitApp(){
+	g_TerrainRenderer->Deinit();
 	g_MeshRenderer->Deinit();
 	for(auto it=g_EnemyTyp.begin(); it!= g_EnemyTyp.end(); it++)
 		SAFE_DELETE(it->second);
@@ -647,6 +503,7 @@ void DeinitApp(){
 	SAFE_DELETE(g_SpriteRenderer);
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
+	SAFE_DELETE(g_TerrainRenderer);
 	ShowCursor(true);
 }
 
@@ -825,8 +682,6 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 	return true;
 }
 
-std::vector<unsigned short> terrainHeights;
-
 //--------------------------------------------------------------------------------------
 // Create any D3D11 resources that aren't dependant on the back buffer
 //--------------------------------------------------------------------------------------
@@ -845,8 +700,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	V_RETURN( ReloadShader(pd3dDevice) );
 
-	errno_t error;
-	WCHAR path[MAX_PATH];
 	stringstream ss;
 	wstringstream wss;      
 
@@ -856,169 +709,34 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	//g_Camera.SetViewParams( &Eye, &g_CameraLookAt ); // http://msdn.microsoft.com/en-us/library/windows/desktop/bb206342%28v=vs.85%29.aspx
 	//g_Camera.SetScalers( g_CameraRotateScaler, g_CameraMoveScaler );
 
-	// Load the debug texture and create a shader resource view
-	wss.str(L""); wss << g_DebugTexPath;
-	V(DXUTFindDXSDKMediaFileCch( path, MAX_PATH, wss.str().c_str()));
-	if (hr != S_OK) {
-		ss.str();
-		ss << "Could not find '" << g_DebugTexPath << "'";
-		MessageBoxA (NULL, ss.str().c_str(), "Missing file", MB_ICONERROR | MB_OK);
-		return hr;
-	}
-	V(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, path, NULL, NULL, &g_DebugSRV, &hr));
-	if (hr != S_OK) {
-		ss.str();
-		ss << "Could not load texture '" << g_DebugTexPath << "'";
-		MessageBoxA (NULL, ss.str().c_str(), "Invalid texture", MB_ICONERROR | MB_OK);
-		return hr;
-	}
 	//// Define the input layout
 	//5.3.7
 	//T3d::CreateT3dInputLayout(pd3dDevice, g_Pass1_Mesh, &g_MeshInputLayout);
 
 
 	// BEGIN: Assignment 3.2.2
-	//   // Find the terrain file
-	wss.str(L""); wss << g_TerrainPath;
-	V(DXUTFindDXSDKMediaFileCch( path, MAX_PATH, wss.str().c_str()));
-	if (hr != S_OK) {
-		ss.str();
-		ss << "Could not find '" << g_TerrainPath << "'";
-		MessageBoxA (NULL, ss.str().c_str(), "Missing file", MB_ICONERROR | MB_OK);
-		return hr;
-	}
-
-	// open the terrain file
-	FILE* file;
-	error = _wfopen_s(&file, path, TEXT("rb"));
-	if (file == nullptr) {
-		ss.str();
-		ss << "could not open '" << g_TerrainPath << "'";
-		MessageBoxA(NULL, ss.str().c_str(), "file error", MB_ICONERROR | MB_OK);
-		return E_FAIL;
-	}
-
-	// read the terrain header
-	{
-		auto r = fread (&g_TerrainHeader, sizeof (g_TerrainHeader), 1, file);//TODO g_t.. -> PtfH...
-		if (r != 1) {
-			MessageBoxA(null, "could not read the header.",
-				"invalid terrain file", MB_ICONERROR | MB_OK);
-			return E_FAIL;
-		}
-	}
-
-	// check the magic number
-	if (g_TerrainHeader.magicNumber != 0x00da) {
-		MessageBoxA (null, "the magic number is incorrect.",
-			"invalid terrain file header", MB_ICONERROR | MB_OK);
-		return E_FAIL;
-	}
-
-	// check the version
-	if (g_TerrainHeader.version != 1) {
-		MessageBoxA (null, "the header version is incorrect.",
-			"invalid terrain file header", MB_ICONERROR | MB_OK);
-		return E_FAIL;
-	}
-
-	// calculate the terrain resoultion from the height size
-	g_TerrainResolution = (int)sqrt(g_TerrainHeader.heightSize / 2.0); // assume a square terrain
-	g_TerrainNumVertices = g_TerrainResolution * g_TerrainResolution;
-	g_TerrainNumTriangles = 2 * (g_TerrainResolution - 1) * (g_TerrainResolution - 1) ;
-	assert((g_TerrainHeader.heightSize / 2) == g_TerrainNumVertices);
-	g_TerrainVertexCount = g_TerrainNumTriangles*3;
-	pow2Border = g_TerrainWidth*0.5f*(g_MaxCircle+0.2f)*g_TerrainWidth*0.5f*(g_MaxCircle+0.2f);
-	g_BoundingBox = sqrt(sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)*sqrt(g_TerrainDepth*g_TerrainDepth+g_TerrainWidth*g_TerrainWidth)+g_TerrainHeight*g_TerrainHeight);
-	// read the terrain heights
-	terrainHeights.resize(g_TerrainNumVertices);
-	{
-		//Kontrolliert, ob die Werte in das array passen
-		if (g_TerrainHeader.heightSize != (int)::fread (&terrainHeights[0], sizeof(byte), g_TerrainHeader.heightSize, file)) {
-			MessageBoxA(null, "error while reading height data.",
-				"invalid terrain file", MB_ICONERROR | MB_OK);
-			return E_FAIL;
-		}    
-	}
+	g_TerrainRenderer->CreateResources(pd3dDevice);
+	float terrainWidth = (*g_TerrainRenderer->getWidth());
+	float terrainDepth = (*g_TerrainRenderer->getDepth());
+	float terrainHeight = (*g_TerrainRenderer->getHeight());
+	//pow2Border = terrainWidth*0.5f*(g_MaxCircle+0.2f)*terrainWidth*0.5f*(g_MaxCircle+0.2f);
+	D3DXVECTOR3 boundingDiff = D3DXVECTOR3(terrainWidth,terrainDepth,terrainHeight)-D3DXVECTOR3(-terrainWidth,0.f,-terrainDepth);
+	D3DXVECTOR3 terrainSize(terrainWidth, terrainDepth, 0.0f);
+	g_BoundingBoxDiagonal = D3DXVec3Length(&boundingDiff);
+	g_SkyboxRenderer->setSunDistance(g_BoundingBoxDiagonal*0.6f);
+	//pow2Border = g_BoundingBoxDiagonal*0.5f*(g_MaxCircle+0.2f);
+	float terrainLenght = D3DXVec3Length(&terrainSize);
+	g_SpawnCircle = terrainLenght * g_MaxCircle;
+	g_TargetCircle = terrainLenght * g_MinCircle;
+	g_DestroyCircle = terrainLenght * (g_MaxCircle +0.2f);
 	// Initialize the camera
-	D3DXVECTOR3 Eye(g_CameraPos.x,getHeightAtPoint(g_CameraPos.x, g_CameraPos.z)+g_CameraPos.y, g_CameraPos.z);
+	D3DXVECTOR3 Eye(g_CameraPos.x,g_TerrainRenderer->getHeightAtPoint(g_CameraPos.x, g_CameraPos.z)+g_CameraPos.y, g_CameraPos.z);
 	//D3DXVECTOR3 At(g_CameraLookAt);
 	g_Camera.SetViewParams( &Eye, &g_CameraLookAt ); // http://msdn.microsoft.com/en-us/library/windows/desktop/bb206342%28v=vs.85%29.aspx
 	g_Camera.SetScalers( g_CameraRotateScaler, g_CameraMoveScaler );
 
-	// read the terrain color texture for diffuse lighting
-	std::vector<unsigned char> terraindiffusentx;
-	terraindiffusentx.resize(g_TerrainHeader.colorSize);
-	{
-		const auto requestedsize = terraindiffusentx.size();
-		if (requestedsize != fread (&terraindiffusentx[0], sizeof(unsigned char), requestedsize, file)) {
-			MessageBoxA (null, "error while reading color data.",
-				"invalid terrain file", MB_ICONERROR | MB_OK);
-			return E_FAIL;
-		}    
-	}
-	// read the terrain normals texture
-	std::vector<unsigned char> terrainNormalNtx;
-	terrainNormalNtx.resize(g_TerrainHeader.normalSize);
-	{
-		const auto requestedsize = terrainNormalNtx.size();
-		if (requestedsize != fread (&terrainNormalNtx[0], sizeof(unsigned char), requestedsize, file)) {
-			MessageBoxA (null, "error while reading normal data.",
-				"invalid terrain file", MB_ICONERROR | MB_OK);
-			return E_FAIL;
-		}    
-	}
-
-	fclose(file);
 
 	//end: assignment 3.2.2
-	// Create the vertex buffer for the terrain
-	std::vector<float> terrainVB;
-	terrainVB.resize(g_TerrainNumVertices * (4 + 4 + 2)); // Position / Normal / TexCoord
-
-	D3D11_SUBRESOURCE_DATA id;
-	id.pSysMem = &terrainHeights[0];
-	id.SysMemPitch = sizeof(unsigned short);
-	id.SysMemSlicePitch = 0;
-	D3D11_BUFFER_DESC bd;
-	bd.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	bd.ByteWidth = g_TerrainNumVertices * id.SysMemPitch;
-	bd.CPUAccessFlags = 0;
-	bd.MiscFlags = 0;
-	bd.Usage = D3D11_USAGE_DEFAULT;	
-	pd3dDevice->CreateBuffer(&bd, &id, &g_TerrainHeightBuf);
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	srvDesc.Format = DXGI_FORMAT_R16_UNORM;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = g_TerrainResolution * g_TerrainResolution;
-	V_RETURN(pd3dDevice->CreateShaderResourceView(g_TerrainHeightBuf, &srvDesc, &g_TerrainHeightSRV));
-	// END: Assignment 4.2.6
-
-	D3D11_TEXTURE2D_DESC tex2DDesc;
-	std::vector<std::vector<unsigned char>> textureData;
-	std::vector<D3D11_SUBRESOURCE_DATA> subresourceData;
-	bool sRgb;
-	V(LoadNtx(terraindiffusentx, &tex2DDesc, textureData, subresourceData, sRgb));
-	if(FAILED(hr))
-		return hr;
-	V(pd3dDevice->CreateTexture2D(&tex2DDesc, &subresourceData[0], &g_TerrainDiffuseTex));
-	if(FAILED(hr))
-		return hr;
-	pd3dDevice->CreateShaderResourceView(g_TerrainDiffuseTex, NULL, &g_TerrainDiffuseSRV);  
-
-	// END: Assignment 3.2.5
-	// BEGIN: Assigment 4.2.7
-	D3D11_TEXTURE2D_DESC normal2DDesc;
-	std::vector<std::vector<unsigned char>> normalData;
-	subresourceData.empty();
-	V(LoadNtx(terrainNormalNtx, &normal2DDesc, normalData, subresourceData, sRgb));
-	if(FAILED(hr))
-		return hr;
-	pd3dDevice->CreateTexture2D(&normal2DDesc, &subresourceData[0], &g_TerrainNormalTex);
-	if(FAILED(hr))
-		return hr;
-	pd3dDevice->CreateShaderResourceView(g_TerrainNormalTex, NULL, &g_TerrainNormalSRV);  
 	//END: Assigment 4.2.7
 
 	//5.2.8
@@ -1038,23 +756,23 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 		V(g_SkyboxRenderer->CreateResources(pd3dDevice));
 	}
 
-	pSun.a = 1;
-	//nun im onMove
-	//pSun.Position = (D3DXVECTOR3)(g_LightDir)*g_BoundingBox*-1.f;
-	pSun.Radius = 100.0f;
-	pSun.TextureIndex = 0;
-	pSun.t = 0;
-	pSun.color = D3DXCOLOR(g_LightColor.x,g_LightColor.y, g_LightColor.z, 0.4f);
 
 	//7.2.2
 	g_SpriteRenderer->CreateResources(pd3dDevice);
-
+	for_each(g_ProjectileTypes.begin(), g_ProjectileTypes.end(), [&](pair<string, ProjectileType> i){
+		i.second.m_Sprite.AnimationSize = g_SpriteRenderer->GetAnimationSize(i.second.m_Sprite.TextureIndex);
+		i.second.m_Sprite.TextureIndex = g_SpriteRenderer->GetTextureOffset(i.second.m_Sprite.TextureIndex);
+	});
+	for_each(ParticleEffect::g_ParticleEffects.begin(), ParticleEffect::g_ParticleEffects.end(), [&](pair<string,ParticleEffect> it){
+		it.second.AnimationSize = g_SpriteRenderer->GetAnimationSize(it.second.TextureIndex);
+		it.second.TextureIndex = g_SpriteRenderer->GetTextureOffset(it.second.TextureIndex);
+	});
 	//Shadow Map
 
 	//Create shadow map texture desc
 	D3D11_TEXTURE2D_DESC shadowTex_Desc;
-	shadowTex_Desc.Width = 4096;
-	shadowTex_Desc.Height = 4096;
+	shadowTex_Desc.Width = 2048;
+	shadowTex_Desc.Height = 2048;
 	shadowTex_Desc.MipLevels = 1;
 	shadowTex_Desc.ArraySize = 1;
 	shadowTex_Desc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -1082,7 +800,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 
 	V(pd3dDevice->CreateTexture2D(&shadowTex_Desc, NULL, &g_ShadowMap));
-	V(pd3dDevice->CreateDepthStencilView(g_ShadowMap, &shadowDSV_Desc, &g_shadowDSV));
+	V(pd3dDevice->CreateDepthStencilView(g_ShadowMap, &shadowDSV_Desc, &g_ShadowMapDSV));
 	V(pd3dDevice->CreateShaderResourceView(g_ShadowMap, &shadowSRV_Desc, &g_ShadowMapSRV));
 
 	return S_OK;
@@ -1096,22 +814,12 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	g_DialogResourceManager.OnD3D11DestroyDevice();
 	g_SettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
-	SAFE_RELEASE( g_DebugSRV );
-
-	//5.3.7
-	SAFE_RELEASE(g_MeshInputLayout);
 
 	// Assignment 3.2.5
-	SAFE_RELEASE(g_TerrainDiffuseTex);
-	SAFE_RELEASE(g_TerrainDiffuseSRV);
-	SAFE_RELEASE(g_TerrainNormalTex);
-	SAFE_RELEASE(g_TerrainNormalSRV);
-	SAFE_RELEASE(g_TerrainHeightBuf);
-	SAFE_RELEASE(g_TerrainHeightSRV);
 
 	SAFE_RELEASE(g_ShadowMap);
 	SAFE_RELEASE(g_ShadowMapSRV);
-	SAFE_RELEASE(g_shadowDSV);
+	SAFE_RELEASE(g_ShadowMapDSV);
 
 
 	SAFE_DELETE( g_TxtHelper );
@@ -1119,6 +827,7 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_DELETE( g_rightText);
 	ReleaseShader();
 
+	g_TerrainRenderer->ReleaseResources();
 	//5.2.8
 	//g_CockpitMesh->ReleaseResources();
 	/*for(auto it=g_Meshes.begin(); it!=g_Meshes.end(); it++)
@@ -1207,41 +916,12 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	assert(g_Effect->IsValid());
 
 	// Obtain the effect technique
-	SAFE_GET_TECHNIQUE(g_Effect, "Render", g_Technique);
-	SAFE_GET_TECHNIQUE(g_Effect, "Shadow", g_Shadow);
 	SAFE_GET_TECHNIQUE(g_Effect, "RenderBillboard", g_BillboardTechnique);
-
-	// Obtain the effect pass
-	SAFE_GET_PASS(g_Technique, "P0", g_Pass0);
-	SAFE_GET_PASS(g_Technique, "P1_Mesh", g_Pass1_Mesh);
-	SAFE_GET_PASS(g_Shadow, "P0_ShadowTerrain", g_Pass_ShadowTerrain);
-	SAFE_GET_PASS(g_Shadow, "P1_ShadowMesh", g_Pass_ShadowMesh);
-
-	// Obtain the effect variables
-	SAFE_GET_RESOURCE(g_Effect, "g_Diffuse", g_DiffuseEV);
-	SAFE_GET_MATRIX(g_Effect, "g_World", g_WorldEV);
-	SAFE_GET_MATRIX(g_Effect, "g_WorldViewProjection", g_WorldViewProjectionEV);   
-	SAFE_GET_VECTOR(g_Effect, "g_LightDir", g_LightDirEV);
-	SAFE_GET_MATRIX(g_Effect, "g_LightWorldViewProjMatrix", g_LightWorldViewProjMatrixEV);
-	SAFE_GET_RESOURCE(g_Effect, "g_Height", g_HeightEV);
-	SAFE_GET_RESOURCE(g_Effect, "g_Normal", g_NormalEV);
-	SAFE_GET_SCALAR(g_Effect, "g_TerrainRes", g_TerrainResEV);
-	SAFE_GET_SCALAR(g_Effect, "g_TerrainQuadRes", g_TerrainQuadResEV);
-	SAFE_GET_MATRIX(g_Effect, "g_Proj", g_ProjEV);
-	//5.3.6
-	SAFE_GET_RESOURCE(g_Effect, "g_Specular", g_SpecularEV);
-	SAFE_GET_RESOURCE(g_Effect, "g_Glow", g_GlowEV);
-	SAFE_GET_MATRIX(g_Effect, "g_WorldView", g_WorldViewEV);
-	SAFE_GET_MATRIX(g_Effect, "g_WorldViewNormals", g_WorldViewNormalsEV);
-	SAFE_GET_VECTOR(g_Effect, "g_LightDirView", g_LightDirViewEV);
-	SAFE_GET_MATRIX(g_Effect, "g_LightProjectionMatrix", g_LightPorjektionMatrixEV);
-	SAFE_GET_MATRIX(g_Effect, "g_LightViewMatrix", g_LightViewMatrixEV);
-	SAFE_GET_VECTOR(g_Effect, "g_LightColor", g_LightColorEV);
 	SAFE_GET_RESOURCE(g_Effect, "g_ShadowMap", g_ShadowMapEV);
-	SAFE_GET_SCALAR(g_Effect, "objectOfCamera", g_isCameraObecjtEV);
 
 	//7.2.2
-	g_MeshRenderer->ReloadShader(pd3dDevice, g_Effect);
+	g_TerrainRenderer->ReloadShader(pd3dDevice);
+	g_MeshRenderer->ReloadShader(pd3dDevice);
 	g_SpriteRenderer->ReloadShader(pd3dDevice);
 	g_SkyboxRenderer->ReloadShader(pd3dDevice);
 	return S_OK;
@@ -1257,7 +937,7 @@ HRESULT ReloadConfig(ID3D11Device* pd3dDevice)
 	g_TerrainObjects.clear();
 	g_ObjectTransformations.clear();
 	g_ObjectReferences.clear();
-	g_SpritesToRender.clear();
+	SpriteRenderer::g_SpritesToRender.clear();
 	g_Particles.clear();
 	g_WeaponTypes.clear();
 	g_ProjectileTypes.clear();
@@ -1279,6 +959,7 @@ HRESULT ReloadConfig(ID3D11Device* pd3dDevice)
 void ReleaseShader()
 {
 	SAFE_RELEASE( g_Effect );
+	g_TerrainRenderer->ReleaseShader();
 	g_MeshRenderer->ReleaseShader();
 	g_SpriteRenderer->ReleaseShader();
 	g_SkyboxRenderer->ReleaseShader();
@@ -1356,12 +1037,6 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			Omove = ORotate = false;
 			OScale = true;
 			break;
-		case 'O':
-			g_SunSpeed += 0.1f;
-			break;
-		case 'I':
-			g_SunSpeed-= 0.1f;
-			break;
 		case  13: //Enter
 			Omove = ORotate = OScale = false;
 			break;
@@ -1413,9 +1088,6 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 	if(bKeyDown)
 	{
 		switch(nChar){
-		case VK_F10:
-			g_drawShadows = !g_drawShadows;
-			break;
 		case VK_SPACE://fire of the first gun
 			p_Fire1 = true;
 			break;
@@ -1483,6 +1155,7 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
+	
 	// Update the camera's position based on user input 
 	g_Camera.FrameMove( fElapsedTime );
 
@@ -1490,58 +1163,31 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for(auto s = g_DisplayTEXTBOX.begin(); s != g_DisplayTEXTBOX.end(); s++)
 		s->lifeTime -= fElapsedTime;
 
+	g_SkyboxRenderer->OnMove(fTime, fElapsedTime);
+
 	D3DXMATRIX mTmp;
 
-	// Initialize the terrain world matrix
 	// http://msdn.microsoft.com/en-us/library/windows/desktop/bb206365%28v=vs.85%29.aspx
+	g_TerrainRenderer->OnMove(fTime, fElapsedTime);
 
-	// Set origin to (0.5, 0.5, 0)
-	D3DXMatrixTranslation(&g_TerrainWorld, -0.5f, -0.5f, 0.f); // Assume: x, y and z are in [0,1]
-
-	// Scale to terrain extents
-	D3DXMatrixScaling(&mTmp, g_TerrainWidth, g_TerrainDepth, g_TerrainHeight);
-	g_TerrainWorld = g_TerrainWorld * mTmp;
-
-	// Since "up" is z-axis in object space, but y-axis in world space, we rotate around the x-axis
-	D3DXMatrixRotationX( &mTmp, DEG2RAD( -90.0f ) );
-	g_TerrainWorld *= mTmp;
-
-	//if( g_TerrainSpinning ) {
-	//	D3DXMatrixRotationY( &mTmp, g_TerrainSpinSpeed * DEG2RAD((float)fTime) );
-	//	g_TerrainWorld *= mTmp; // Rotate around world-space "up" axis
-	//}
-	//4.2.10
-	//g_LightDir = D3DXVECTOR4(1, 1, -1, 0); // Direction to the directional light in world space    
-	//is already normalized
-	//D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction
-	//Sun Simulaions
-	D3DXMatrixRotationY(&mTmp,static_cast<float>(fElapsedTime*0.03*DEG2RAD(fTime)*g_SunSpeed));
-	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
-	D3DXMatrixRotationZ(&mTmp,static_cast<float>( std::abs(DEG2RAD(fTime)*fElapsedTime*0.1f*g_SunSpeed)));
-	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
-	//D3DXMatrixRotationX(&mTmp, -DEG2RAD((float)fTime)*fElapsedTime*0.04f*g_SunSpeed);
-	//D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
-	pSun.Position = (D3DXVECTOR3)(g_LightDir)*g_BoundingBox*-1.f;
-	//SpawnObjects	
+	//*********************************SpawnObjects	
 	if(fTime-g_LastSpawn> g_SpawnIntervall)
 	{
 		g_LastSpawn = fTime;
 		EnemyTransformation* myEnemy = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/RAND_MAX*g_EnemyTypeNames.size())]];
 		if(myEnemy->SpawnedEnemies < myEnemy->getCountUnits()){
 			myEnemy->SpawnedEnemies++;
-			float radOuter = g_TerrainWidth*0.5f*g_MaxCircle;
-			float radInner = g_TerrainWidth*0.5f*g_MinCircle;
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
-			D3DXVECTOR3 outerPos(radOuter*cos(a), height, radOuter*sin(a));
+			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
 			a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
-			D3DXVECTOR3 InnerPos(radInner*cos(a), height, radInner*sin(a));
+			D3DXVECTOR3 InnerPos(g_TargetCircle*cos(a), height, g_TargetCircle*sin(a));
 			D3DXVECTOR3 MovingDirection = InnerPos-outerPos;
 			D3DXVec3Normalize(&MovingDirection, &MovingDirection);
 
 			g_EnemyInstances.push_back(EnemyInstance(myEnemy, outerPos, MovingDirection));
 			//g_EnemyInstances[1].SetDestroyEffect(&g_ParticleEffects["Death1"]);
-			auto g = --g_EnemyInstances.end();
+			//auto g = --g_EnemyInstances.end();
 			//g->SetDestroyEffect(&ParticleEffect::g_ParticleEffects["bomb"]);
 			pushText("Achtung: Ein neuer Feind ist nun in Reichweite!", D3DXCOLOR(1.0f, 0.15f, 0.f, 1.f));
 		}
@@ -1560,7 +1206,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 
 
-	//MovingObjects
+	//*********************************MovingObjects
 	g_ObjectTransformations[10].rotate(0,50.f*fElapsedTime,0);
 	g_ObjectTransformations[10].calculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
@@ -1573,10 +1219,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 
 	bool del = false;
-	//Check Collisions
+	//*********************************Check Collisions
 	for(auto shoot = g_Particles.begin(); shoot != g_Particles.end();){
 		//Collision mit dem Boden
-		if(getHeightAtPoint(shoot->getPosition().x, shoot->getPosition().z) > shoot->getPosition().y)
+		if(g_TerrainRenderer->getHeightAtPoint(shoot->getPosition().x, shoot->getPosition().z) > shoot->getPosition().y)
 		{
 
 			ParticleEffect p = ParticleEffect(ParticleEffect::g_ParticleEffects["bomb"]);
@@ -1584,7 +1230,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			p.setScale(1);
 			ParticleEffect::g_ActiveEffects.push_back(p);
 
-			auto shoot_rem = shoot;
+			auto shoot_rem = shoot; 
 			shoot++;
 			g_Particles.erase(shoot_rem);
 		}
@@ -1623,10 +1269,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 
 
-	//DestroyObjects
+	//*********************************DestroyObjects
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end();)
 	{
-		if(ei->getCurrentPosition().x*ei->getCurrentPosition().x + ei->getCurrentPosition().y*ei->getCurrentPosition().y-pow2Border > 0){
+		if(D3DXVec3Length(&ei->getCurrentPosition())-g_DestroyCircle > 0){
 			auto ei_rem = ei;
 			ei++;
 			ei_rem->getObject()->SpawnedEnemies--;
@@ -1638,7 +1284,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 	for(auto ei = g_Particles.begin(); ei != g_Particles.end();)
 	{
-		if(ei->getPosition().x*ei->getPosition().x + ei->getPosition().y*ei->getPosition().y-pow2Border > 0){
+		if(D3DXVec3Length(&ei->getPosition())-g_DestroyCircle > 0){
 			auto ei_rem = ei;
 			ei++;
 			//ei_rem->getObject()->SpawnedEnemies--;
@@ -1647,15 +1293,15 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			ei++;
 	}
 	//Nach Destroy alle Particle zum Rendern übergeben
-	g_SpritesToRender.resize(g_Particles.size());
+	SpriteRenderer::g_SpritesToRender.resize(g_Particles.size());
 	int i = 0;
-	g_SpritesToRender.push_back(pSun);
+	SpriteRenderer::g_SpritesToRender.push_back(*g_SkyboxRenderer->getSun());
 
-	//DeathEffects
+	//*********************************DeathEffects
 	for(auto it = ParticleEffect::g_ActiveEffects.begin(); it != ParticleEffect::g_ActiveEffects.end(); )
 	{
 		it->move(fElapsedTime);
-		g_SpritesToRender.push_back(it->getSpriteToRender());//jedes bewegte Sprite soll an den Renderer Übergeben werden, der nur mit nem Vector arbeitet
+		SpriteRenderer::g_SpritesToRender.push_back(it->getSpriteToRender());//jedes bewegte Sprite soll an den Renderer Übergeben werden, der nur mit nem Vector arbeitet
 		if(it->isTimeOver())
 		{
 			auto itrem = it;
@@ -1669,9 +1315,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for each(auto it in g_Particles)
 	{
 		//g_SpritesToRender.push_back(it);
-		g_SpritesToRender[i++] = (SpriteVertex)it;
+		SpriteRenderer::g_SpritesToRender[i++] = (SpriteVertex)it;
 	}
-	sort(g_SpritesToRender.begin(), g_SpritesToRender.end(), VertexSort);
+	sort(SpriteRenderer::g_SpritesToRender.begin(), SpriteRenderer::g_SpritesToRender.end(), VertexSort);
 	/*if(g_SpritesToRender.size() > 2048)
 	{
 		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
@@ -1686,55 +1332,31 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 	float fElapsedTime, void* pUserContext )
 {
-	cout << "render begin";
-	HRESULT hr;
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
 	{
 		g_SettingsDlg.OnRender( fElapsedTime );
 		return;
 	}
+		if(g_Effect == NULL) {
+		g_TxtHelper->Begin();
+		g_TxtHelper->SetInsertionPos( 5, 5 );
+		g_TxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
+		g_TxtHelper->DrawTextLine( L"SHADER ERROR" );
+		g_TxtHelper->End();
+		return;
+	}
+		
 
 	pDSV = DXUTGetD3D11DepthStencilView();
 	pRTV = DXUTGetD3D11RenderTargetView();
-	const D3DXMATRIX* view, *proj;
-	// Update variables that change once per frame
-	view = g_Camera.GetViewMatrix();
-	proj = g_Camera.GetProjMatrix();
-	g_ViewProj = (*view) * (*proj);
-	//Lichtinformationen des Frames
-	//lightEye = ((D3DXVECTOR3)g_LightDir)*g_BoundingBox*-0.5f;
-	//lightEye = (D3DXVECTOR3)g_LightDir*g_BoundingBox*-0.5f;
-	D3DXMatrixLookAtLH(&lightViewMatrix, &pSun.Position, &lightAt, &lightUp);
-	lightViewProjMatrix = lightViewMatrix*lightProjektionMatrix;
-	D3DXMatrixTranspose(&inverseTerrainWorldDir, &g_TerrainWorld);
-	D3DXVec4Transform(&lightDirObj, &g_LightDir, &inverseTerrainWorldDir);
-	D3DXVec3Normalize((D3DXVECTOR3*)&lightDirObj, (D3DXVECTOR3*)&lightDirObj); 
-	D3DXVec4Transform(&lightDirView, &g_LightDir, &inversView);
-	D3DXVec3Normalize((D3DXVECTOR3*)&lightDirView, (D3DXVECTOR3*)&lightDirView);
-	g_LightWorldViewProjMatrixEV->SetMatrix(lightViewProjMatrix);//benötigt: ShadowTerrainVS/ShadowMeshVS/TerrainVS
-	g_LightDirEV->SetFloatVector( ( float* )&lightDirObj ); //benötigt: TerrainPS
-	g_LightWorldViewProjMatrixEV->SetMatrix(lightViewProjMatrix);//benötigt: MeshVS
-	g_LightDirViewEV->SetFloatVector((float*)lightDirView); //benötigt: MeshPS
-
-	g_LightColorEV->SetFloatVector(g_LightColor);//benötigt: TerrainPS
-	//Objectvariables that changes
-	D3DXMatrixInverse(&inversView,NULL, g_Camera.GetViewMatrix());
-	D3DXMatrixTranspose(&inversView, &inversView);
-	g_WorldViewProjectionEV->SetMatrix( ( float* )&g_ViewProj ); //benötigt: TerrainVS
-	//D3DXMatrixInverse(&invViewProj, NULL, &g_ViewProj);
-	//g_invWorldViewProjectionEV->SetMatrix((float*)&invViewProj); //benötigt: SkyboxVS
-	
-	//D3DXMatrixInverse(&worldViewNormals, NULL, view);
-	D3DXMatrixTranspose(&worldViewNormals, &inversView);
-	g_WorldViewNormalsEV->SetMatrix((float*)&worldViewNormals);//benötigt: MeshVS
-	g_WorldViewEV->SetMatrix((float*)&view);//benötigt: MeshVS
-	g_ProjEV->SetMatrix(*proj);
-
 
 	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
+
+
+
 	g_ShadowMap->GetDesc(&shadowMap_desc);
 	UINT one = 1;
 	pd3dImmediateContext->RSGetViewports(&one, &cameraVP);
@@ -1743,95 +1365,92 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	shadowVP.Height = static_cast<float>(shadowMap_desc.Height);
 	shadowVP.MinDepth = 0.f;
 	shadowVP.MaxDepth = 1.f;
-	pd3dImmediateContext->OMSetRenderTargets(0, 0, g_shadowDSV);
+	pd3dImmediateContext->OMSetRenderTargets(0, 0, g_ShadowMapDSV);
 	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
-	pd3dImmediateContext->ClearDepthStencilView(g_shadowDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
-	// Set input layout
-	pd3dImmediateContext->IASetInputLayout( NULL );
-	// Bind the terrain vertex buffer to the input assembler stage 
-	UINT stride = 0, offset = 0;
-	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-	// Tell the input assembler stage which primitive topology to use
-	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//terrain Rendering
-	g_WorldEV->SetMatrix( ( float* )&g_TerrainWorld );
-	g_DiffuseEV->SetResource(g_TerrainDiffuseSRV);
-	g_HeightEV->SetResource(g_TerrainHeightSRV);
-	g_NormalEV->SetResource(g_TerrainNormalSRV);
-	g_TerrainResEV->SetInt(g_TerrainResolution); //benötigt im: ShadowTerrainVS/TerrainVS
-	g_TerrainQuadResEV->SetInt(g_TerrainResolution-1);
-	g_LightColorEV->SetFloatVector(g_LightColor); //benötigt: MeshPS
+	pd3dImmediateContext->ClearDepthStencilView(g_ShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
 
-	// Apply the rendering pass in order to submit the necessary render state changes to the device
-	g_Pass_ShadowTerrain->Apply(0 , pd3dImmediateContext);
-	// Draw
-	pd3dImmediateContext->Draw(static_cast<UINT>(std::powf(static_cast<float>(g_TerrainResolution-1),2.f)*6), 0);
-	
+
+
+	const D3DXMATRIX* view, *proj;
+		D3DXVECTOR4 lightDirView;
+	D3DXMATRIX cameraView;
+		view = g_Camera.GetViewMatrix();
+	proj = g_Camera.GetProjMatrix();
+	g_ViewProj = (*view) * (*proj);
+	// Update variables that change once per frame
+	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)
+	D3DXMatrixOrthoLH(&lightProjektionMatrix, g_BoundingBoxDiagonal, g_BoundingBoxDiagonal, 0.0001f, g_BoundingBoxDiagonal); //ProjektionMatrix
+	D3DXMatrixLookAtLH(&lightViewMatrix, &vLightDir, &lightAt, &lightUp); //ViewMatrix
+	lightViewProjMatrix = lightViewMatrix*lightProjektionMatrix;
+
+	//D3DXMatrixInverse(&cameraView,0, g_Camera.GetViewMatrix());//==cam.WorldMatrix
+	D3DXMatrixTranspose(&cameraView, g_Camera.GetWorldMatrix());
+	D3DXVec4Transform(&lightDirView,&Skybox::g_LightDir,&cameraView);
+	D3DXVec3Normalize((D3DXVECTOR3*)&lightDirView,(D3DXVECTOR3*)&lightDirView);
+	//Shadow
+
+	//****Shadowmap of Terrain*****///
+	g_TerrainRenderer->g_LightDir = &Skybox::g_LightDir;
+	g_TerrainRenderer->g_ViewProj = &lightViewProjMatrix;
+	g_TerrainRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
+
+	g_TerrainRenderer->ShadowTerrain(pd3dDevice);
 	//****Shadowmap of Meshes*****///
+	g_MeshRenderer->g_LightDirView = &lightDirView;
+	g_MeshRenderer->g_LightColor = &Skybox::g_LightColor;
+	g_MeshRenderer->g_View = (D3DXMATRIX*)&lightViewMatrix;
+	g_MeshRenderer->g_Proj = (D3DXMATRIX*)&lightProjektionMatrix;
+	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
+
 	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_ObjectTransformations);
 	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances);
 
 
 	//*****normal Scene Rendering*****//
-	if(g_Effect == NULL) {
-		g_TxtHelper->Begin();
-		g_TxtHelper->SetInsertionPos( 5, 5 );
-		g_TxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
-		g_TxtHelper->DrawTextLine( L"SHADER ERROR" );
-		g_TxtHelper->End();
-		return;
-	}
 
 	// Clear the depth stencil
 	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
-
-	g_ShadowMapEV->SetResource(g_ShadowMapSRV);//benötigt: TerrainPS/MeshPS
-	//Skybox render
+				//Skybox render
 	if(g_UseSkybox){
 		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera);
 	}
 
+	// Update variables that change once per frame
 
-	stride = 0; offset = 0;
+	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
+	g_TerrainRenderer->RenderTerrain(pd3dDevice);
 
-	g_WorldEV->SetMatrix( ( float* )&g_TerrainWorld );
-	V(g_DiffuseEV->SetResource(g_TerrainDiffuseSRV));//benötigt: TerrainPS
-	V(g_HeightEV->SetResource(g_TerrainHeightSRV));//benötigt: TerrainPS
-	V(g_NormalEV->SetResource(g_TerrainNormalSRV));//benötigt: TerrainPS
-	// Apply the rendering pass in order to submit the necessary render state changes to the device
-	g_Pass0->Apply(0, pd3dImmediateContext);
-	// Set input layout
-	pd3dImmediateContext->IASetInputLayout( NULL );
-	// Bind the terrain vertex buffer to the input assembler stage 
-	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-	// Tell the input assembler stage which primitive topology to use
-	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pd3dImmediateContext->Draw(g_TerrainVertexCount, 0);
+	g_MeshRenderer->g_View = (D3DXMATRIX*)view;
+	g_MeshRenderer->g_Proj = (D3DXMATRIX*)proj;
+	g_MeshRenderer->g_invView = g_Camera.GetWorldMatrix();
+	g_MeshRenderer->g_ViewProj = &g_ViewProj;
+	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
 	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_ObjectTransformations);
 	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances);
 
-	if(g_SpritesToRender.size() >0)
-		g_SpriteRenderer->RenderSprites(pd3dDevice, g_SpritesToRender, g_Camera);
+	if(SpriteRenderer::g_SpritesToRender.size() >0)
+		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
 	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
-	stringstream ss;
-	ss << "Sprites: " << g_SpritesToRender.size();
-	pushText(ss.str(), LEFT);
+	//stringstream ss;
+	//ss << "Sprites: " << g_SpritesToRender.size();
+	//pushText(ss.str(), LEFT);
 
 	//render shadow map billboard
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
 		g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
 		pd3dImmediateContext->DrawIndexed(1, 0, 0);
 
 		//unbind shadow map as SRV
-		g_Effect->GetVariableByName("shadowMap")->AsShaderResource()->SetResource( 0 );
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
 		g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
 	}
 
@@ -1849,32 +1468,18 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		OutputDebugString( L"\n" );
 		dwTimefirst = GetTickCount();
 	}
-	cout << "render ende";
+	//cout << "render ende";
 }
 
-inline float getHeightAtPoint(float x, float y) {
-	return getHeightAtPoint(static_cast<int>(min(g_TerrainResolution - 1, (0.5f + x / g_TerrainWidth) * g_TerrainResolution)), static_cast<int>(min(g_TerrainResolution - 1, (0.5f - y / g_TerrainDepth) * g_TerrainResolution)));
-}
-
-inline float getHeightAtPoint(int TerrainX, int TerrainY) {
-	return g_TerrainHeight * terrainHeights[(int)(max(0,min(TerrainX, g_TerrainResolution-1)) + g_TerrainResolution * max(0,min(TerrainY, g_TerrainResolution-1)))] / (float)UINT16_MAX;
-}
-
-D3DXVECTOR3 getNormalAtPoint(float x, float y, size_t size = 1) {
-	int midX = static_cast<int>(min(g_TerrainResolution - 1, (0.5f + x / g_TerrainWidth) * g_TerrainResolution));
-	int midY = static_cast<int>(min(g_TerrainResolution - 1, (0.5f - y / g_TerrainDepth) * g_TerrainResolution));
-
-	return D3DXVECTOR3(getHeightAtPoint(midX-size, midY) - getHeightAtPoint(midX+size, midY), getHeightAtPoint(midX, midY-size) - getHeightAtPoint(midX, midY+size), 1.f);
-}
 void placeTerrainObject(TerrainObject* o){
 	for(int i = 0; i < o->getMaxCount(); i++)
 	{
 		float x = 0;random(-400.f,400.f,x);
 		float z = 0;random(-400.f,400.f,z);
-		o->translateTo(x, getHeightAtPoint(x,z), z);
+		o->translateTo(x, g_TerrainRenderer->getHeightAtPoint(x,z), z);
 		if(o->useNormal())
 		{
-			D3DXVECTOR3 n = getNormalAtPoint(x,z,1);
+			D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
 			o->rotate(n.x,n.y, n.z);
 		}
 		g_ObjectTransformations.push_back(*o);
@@ -1886,7 +1491,7 @@ void AutomaticPositioning()
 	for(auto it = g_ObjectTransformations.begin(); it != g_ObjectTransformations.end(); it++)
 	{
 		if(it->automaticHeight())
-			it->translateTo(it->getTranslationX(), getHeightAtPoint(it->getTranslationX(), it->getTranslationZ())+ it->getTranslationY(), it->getTranslationZ());
+			it->translateTo(it->getTranslationX(), g_TerrainRenderer->getHeightAtPoint(it->getTranslationX(), it->getTranslationZ())+ it->getTranslationY(), it->getTranslationZ());
 		it->calculateWorldMatrix();
 	}
 }
@@ -1894,10 +1499,10 @@ void AutomaticPositioning()
 void drawShipsOnRadar()
 {
 	SpriteVertex pShip;
-	pShip.a = 1;
-	pShip.color = D3DXCOLOR(1,0,0,1);
+	pShip.Opacity = 1;
+	pShip.Color = D3DXCOLOR(1,0,0,1);
 	pShip.Radius = 0.01f;
-	pShip.t = 0;
+	pShip.AnimationProgress = 0;
 	pShip.TextureIndex = 0;
 	vector<SpriteVertex> radarShips;
 

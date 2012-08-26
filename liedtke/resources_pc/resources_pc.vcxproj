@@ -45,188 +45,22 @@ rmdir /s /q "$(OutDir)$(TargetName)"</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>echo "Deleting old target resources..."
 del "$(OutDir)terrain.ptf"
 rmdir /s /q "$(OutDir)$(TargetName)"
+rmdir /s /q "$(OutDir)resources"
 echo "Building target resources..."
 mkdir "$(OutDir)$(TargetName)"
-mkdir "$(OutDir)\gameObjects"
-mkdir "$(OutDir)\textures"
+mkdir "$(OutDir)resources"
 cd "$(SolutionDir)"
 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox.json" -p "Output=$(OutDir)textures/SkyboxCube.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
-
-"$(OutDir)TerrainGenerator.exe" -r 4096-o "$(OutDir)$(TargetName)\terrain_height.raw"
-"$(SolutionDir)../../external/terrain_tools/texture_generator.exe" -r 4096 -i "$(OutDir)$(TargetName)\terrain_height.raw" -o_color "$(OutDir)$(TargetName)\terrain_diffuse.png" -o_normal "$(OutDir)$(TargetName)\terrain_normal.png"
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_normal.png" -p "Output=$(OutDir)$(TargetName)\terrain_normal.ntx" -p "Input-Type=XY-Normal" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_diffuse.png" -p "Output=$(OutDir)$(TargetName)\terrain_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(OutDir)ptfGenerator.exe" -i_height "$(OutDir)$(TargetName)\terrain_height.raw" -i_color "$(OutDir)$(TargetName)\terrain_diffuse.ntx" -i_normal "$(OutDir)$(TargetName)\terrain_normal.ntx" -o "$(OutDir)terrain.ptf" 
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\cockpit\final\cockpit_o_low.obj" -o "$(OutDir)gameObjects/cockpit_o_low.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_diffuse.png" -p "Output=$(OutDir)gameObjects/cockpit_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_specular.png" -p "Output=$(OutDir)gameObjects/cockpit_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_glow.png" -p "Output=$(OutDir)gameObjects/cockpit_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_normal.png" -p "Output=$(OutDir)gameObjects/cockpit_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_top.obj" -o "$(OutDir)gameObjects/getling_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_base.obj" -o "$(OutDir)gameObjects/getling_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_glow.png" -p "Output=$(OutDir)gameObjects/getling_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_diffuse.png" -p "Output=$(OutDir)gameObjects/getling_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_specular.png" -p "Output=$(OutDir)gameObjects/getling_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_normals.png" -p "Output=$(OutDir)gameObjects/getling_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_top.obj" -o "$(OutDir)gameObjects/plasma_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_base.obj" -o "$(OutDir)gameObjects/plasma_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_glow.png" -p "Output=$(OutDir)gameObjects/plasma_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_diffuse.png" -p "Output=$(OutDir)gameObjects/plasma_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_specular.png" -p "Output=$(OutDir)gameObjects/plasma_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_normal.png" -p "Output=$(OutDir)gameObjects/plasma_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\tower\tower.obj" -o "$(OutDir)gameObjects/tower.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_diffuse.png" -p "Output=$(OutDir)gameObjects/tower_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_specular.png" -p "Output=$(OutDir)gameObjects/tower_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_normal.png" -p "Output=$(OutDir)gameObjects/tower_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\barracks\barracks.obj" -o "$(OutDir)gameObjects/barracks.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_specular.png" -p "Output=$(OutDir)gameObjects/barracks_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_diffuse.png" -p "Output=$(OutDir)gameObjects/barracks_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_normal.png" -p "Output=$(OutDir)gameObjects/barracks_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\3d_grasses\grasses\grass_big.obj" -o "$(OutDir)gameObjects/grass_big.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_specular.png" -p "Output=$(OutDir)gameObjects/grass_big_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_diffuse.png" -p "Output=$(OutDir)gameObjects/grass_big_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_normal.png" -p "Output=$(OutDir)gameObjects/grass_big_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\stones\stone_01\stone_01.obj" -o "$(OutDir)gameObjects/stone01.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_specular.png" -p "Output=$(OutDir)gameObjects/stone01_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_diffuse.png" -p "Output=$(OutDir)gameObjects/stone01_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_normal.png" -p "Output=$(OutDir)gameObjects/stone01_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_base.obj" -o "$(OutDir)gameObjects/radar_base.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_antenna_low.obj" -o "$(OutDir)gameObjects/radar.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_specular.png" -p "Output=$(OutDir)gameObjects/radar_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_diffuse.png" -p "Output=$(OutDir)gameObjects/radar_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_normal.png" -p "Output=$(OutDir)gameObjects/radar_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\amy_spaceship\amy_spaceship_stage02.obj" -o "$(OutDir)gameObjects/amy_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_SPECULAR_001.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_DIFFUSE.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_normals.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_GLOWMAP.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\juf_spaceship\juf_spaceship.obj" -o "$(OutDir)gameObjects/juf_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_specular.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_diffuse.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_normal.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_glow.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\transporter\transporter.obj" -o "$(OutDir)gameObjects/Transporter.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Specular.png" -p "Output=$(OutDir)gameObjects/transporter_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Diffuse.png" -p "Output=$(OutDir)gameObjects/transporter_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Normal.png" -p "Output=$(OutDir)gameObjects/transporter_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Glow.png" -p "Output=$(OutDir)gameObjects/transporter_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\lup_final\lup_ship.obj" -o "$(OutDir)gameObjects/lup_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\spec_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_diffuse_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_normal_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_glow_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailGatlingDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailGatlingDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailPlasmaDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailPlasmaDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-</NMakeReBuildCommandLine>
+"$(OutDir)ResourceBuilder.exe" $(SolutionDir)build.cfg $(SolutionDir) $(OutDir) $(OutDir)resources\</NMakeReBuildCommandLine>
     <NMakeBuildCommandLine>echo "Deleting old target resources..."
 del "$(OutDir)terrain.ptf"
 rmdir /s /q "$(OutDir)$(TargetName)"
 echo "Building target resources..."
 mkdir "$(OutDir)$(TargetName)"
-mkdir "$(OutDir)gameObjects"
-mkdir "$(OutDir)textures"
+mkdir "$(OutDir)resources"
 cd "$(SolutionDir)"
 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox.json" -p "Output=$(OutDir)textures/SkyboxCube.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox_2.json" -p "Output=$(OutDir)textures/SkyboxCube_withoutSun.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
-
-"$(OutDir)TerrainGenerator.exe" -r 4096 -o "$(OutDir)$(TargetName)\terrain_height.raw"
-"$(SolutionDir)../../external/terrain_tools/texture_generator.exe" -r 4096 -i "$(OutDir)$(TargetName)\terrain_height.raw" -o_color "$(OutDir)$(TargetName)\terrain_diffuse.png" -o_normal "$(OutDir)$(TargetName)\terrain_normal.png"
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_normal.png" -p "Output=$(OutDir)$(TargetName)\terrain_normal.ntx" -p "Input-Type=XY-Normal" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_diffuse.png" -p "Output=$(OutDir)$(TargetName)\terrain_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(OutDir)ptfGenerator.exe" -i_height "$(OutDir)$(TargetName)\terrain_height.raw" -i_color "$(OutDir)$(TargetName)\terrain_diffuse.ntx" -i_normal "$(OutDir)$(TargetName)\terrain_normal.ntx" -o "$(OutDir)terrain.ptf" 
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\cockpit\final\cockpit_o_low.obj" -o "$(OutDir)gameObjects/cockpit_o_low.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_diffuse.png" -p "Output=$(OutDir)gameObjects/cockpit_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_specular.png" -p "Output=$(OutDir)gameObjects/cockpit_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_glow.png" -p "Output=$(OutDir)gameObjects/cockpit_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_normal.png" -p "Output=$(OutDir)gameObjects/cockpit_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_top.obj" -o "$(OutDir)gameObjects/getling_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_base.obj" -o "$(OutDir)gameObjects/getling_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_glow.png" -p "Output=$(OutDir)gameObjects/getling_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_diffuse.png" -p "Output=$(OutDir)gameObjects/getling_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_specular.png" -p "Output=$(OutDir)gameObjects/getling_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_normals.png" -p "Output=$(OutDir)gameObjects/getling_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_top.obj" -o "$(OutDir)gameObjects/plasma_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_base.obj" -o "$(OutDir)gameObjects/plasma_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_glow.png" -p "Output=$(OutDir)gameObjects/plasma_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_diffuse.png" -p "Output=$(OutDir)gameObjects/plasma_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_specular.png" -p "Output=$(OutDir)gameObjects/plasma_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_normal.png" -p "Output=$(OutDir)gameObjects/plasma_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\tower\tower.obj" -o "$(OutDir)gameObjects/tower.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_diffuse.png" -p "Output=$(OutDir)gameObjects/tower_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_specular.png" -p "Output=$(OutDir)gameObjects/tower_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_normal.png" -p "Output=$(OutDir)gameObjects/tower_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\barracks\barracks.obj" -o "$(OutDir)gameObjects/barracks.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_specular.png" -p "Output=$(OutDir)gameObjects/barracks_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_diffuse.png" -p "Output=$(OutDir)gameObjects/barracks_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_normal.png" -p "Output=$(OutDir)gameObjects/barracks_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\3d_grasses\grasses\grass_big.obj" -o "$(OutDir)gameObjects/grass_big.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_specular.png" -p "Output=$(OutDir)gameObjects/grass_big_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_diffuse.png" -p "Output=$(OutDir)gameObjects/grass_big_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_normal.png" -p "Output=$(OutDir)gameObjects/grass_big_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\stones\stone_01\stone_01.obj" -o "$(OutDir)gameObjects/stone01.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_specular.png" -p "Output=$(OutDir)gameObjects/stone01_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_diffuse.png" -p "Output=$(OutDir)gameObjects/stone01_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_normal.png" -p "Output=$(OutDir)gameObjects/stone01_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_base.obj" -o "$(OutDir)gameObjects/radar_base.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_antenna_low.obj" -o "$(OutDir)gameObjects/radar.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_specular.png" -p "Output=$(OutDir)gameObjects/radar_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_diffuse.png" -p "Output=$(OutDir)gameObjects/radar_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_normal.png" -p "Output=$(OutDir)gameObjects/radar_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\amy_spaceship\amy_spaceship_stage02.obj" -o "$(OutDir)gameObjects/amy_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_SPECULAR_001.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_DIFFUSE.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_normals.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_GLOWMAP.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\juf_spaceship\juf_spaceship.obj" -o "$(OutDir)gameObjects/juf_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_specular.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_diffuse.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_normal.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_glow.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\transporter\transporter.obj" -o "$(OutDir)gameObjects/Transporter.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Specular.png" -p "Output=$(OutDir)gameObjects/transporter_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Diffuse.png" -p "Output=$(OutDir)gameObjects/transporter_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Normal.png" -p "Output=$(OutDir)gameObjects/transporter_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Glow.png" -p "Output=$(OutDir)gameObjects/transporter_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\lup_final\lup_ship.obj" -o "$(OutDir)gameObjects/lup_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\spec_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_diffuse_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_normal_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_glow_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailGatlingDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailGatlingDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailPlasmaDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailPlasmaDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)art\gui\radar.png" -p "Output=$(OutDir)gameObjects/radar_gui.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-</NMakeBuildCommandLine>
+"$(OutDir)ResourceBuilder.exe" $(SolutionDir)build.cfg $(SolutionDir) $(OutDir)resources\</NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -235,185 +69,20 @@ del "$(OutDir)terrain.ptf"
 rmdir /s /q "$(OutDir)$(TargetName)"
 echo "Building target resources..."
 mkdir "$(OutDir)$(TargetName)"
-mkdir "$(OutDir)gameObjects"
-mkdir "$(OutDir)textures"
+mkdir "$(OutDir)resources"
 cd "$(SolutionDir)"
 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox.json" -p "Output=$(OutDir)textures/SkyboxCube.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
-
-"$(OutDir)TerrainGenerator.exe" -r 4096 -o "$(OutDir)$(TargetName)\terrain_height.raw"
-"$(SolutionDir)../../external/terrain_tools/texture_generator.exe" -r 4096 -i "$(OutDir)$(TargetName)\terrain_height.raw" -o_color "$(OutDir)$(TargetName)\terrain_diffuse.png" -o_normal "$(OutDir)$(TargetName)\terrain_normal.png"
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_normal.png" -p "Output=$(OutDir)$(TargetName)\terrain_normal.ntx" -p "Input-Type=XY-Normal" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_diffuse.png" -p "Output=$(OutDir)$(TargetName)\terrain_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(OutDir)ptfGenerator.exe" -i_height "$(OutDir)$(TargetName)\terrain_height.raw" -i_color "$(OutDir)$(TargetName)\terrain_diffuse.ntx" -i_normal "$(OutDir)$(TargetName)\terrain_normal.ntx" -o "$(OutDir)terrain.ptf" 
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\cockpit\final\cockpit_o_low.obj" -o "$(OutDir)gameObjects/cockpit_o_low.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_diffuse.png" -p "Output=$(OutDir)gameObjects/cockpit_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_specular.png" -p "Output=$(OutDir)gameObjects/cockpit_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_glow.png" -p "Output=$(OutDir)gameObjects/cockpit_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_normal.png" -p "Output=$(OutDir)gameObjects/cockpit_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_top.obj" -o "$(OutDir)gameObjects/getling_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_base.obj" -o "$(OutDir)gameObjects/getling_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_glow.png" -p "Output=$(OutDir)gameObjects/getling_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_diffuse.png" -p "Output=$(OutDir)gameObjects/getling_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_specular.png" -p "Output=$(OutDir)gameObjects/getling_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_normals.png" -p "Output=$(OutDir)gameObjects/getling_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_top.obj" -o "$(OutDir)gameObjects/plasma_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_base.obj" -o "$(OutDir)gameObjects/plasma_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_glow.png" -p "Output=$(OutDir)gameObjects/plasma_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_diffuse.png" -p "Output=$(OutDir)gameObjects/plasma_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_specular.png" -p "Output=$(OutDir)gameObjects/plasma_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_normal.png" -p "Output=$(OutDir)gameObjects/plasma_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\tower\tower.obj" -o "$(OutDir)gameObjects/tower.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_diffuse.png" -p "Output=$(OutDir)gameObjects/tower_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_specular.png" -p "Output=$(OutDir)gameObjects/tower_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_normal.png" -p "Output=$(OutDir)gameObjects/tower_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\barracks\barracks.obj" -o "$(OutDir)gameObjects/barracks.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_specular.png" -p "Output=$(OutDir)gameObjects/barracks_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_diffuse.png" -p "Output=$(OutDir)gameObjects/barracks_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_normal.png" -p "Output=$(OutDir)gameObjects/barracks_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\3d_grasses\grasses\grass_big.obj" -o "$(OutDir)gameObjects/grass_big.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_specular.png" -p "Output=$(OutDir)gameObjects/grass_big_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_diffuse.png" -p "Output=$(OutDir)gameObjects/grass_big_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_normal.png" -p "Output=$(OutDir)gameObjects/grass_big_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\stones\stone_01\stone_01.obj" -o "$(OutDir)gameObjects/stone01.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_specular.png" -p "Output=$(OutDir)gameObjects/stone01_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_diffuse.png" -p "Output=$(OutDir)gameObjects/stone01_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_normal.png" -p "Output=$(OutDir)gameObjects/stone01_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_base.obj" -o "$(OutDir)gameObjects/radar_base.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_antenna_low.obj" -o "$(OutDir)gameObjects/radar.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_specular.png" -p "Output=$(OutDir)gameObjects/radar_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_diffuse.png" -p "Output=$(OutDir)gameObjects/radar_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_normal.png" -p "Output=$(OutDir)gameObjects/radar_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\amy_spaceship\amy_spaceship_stage02.obj" -o "$(OutDir)gameObjects/amy_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_SPECULAR_001.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_DIFFUSE.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_normals.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_GLOWMAP.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\juf_spaceship\juf_spaceship.obj" -o "$(OutDir)gameObjects/juf_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_specular.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_diffuse.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_normal.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_glow.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\transporter\transporter.obj" -o "$(OutDir)gameObjects/Transporter.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Specular.png" -p "Output=$(OutDir)gameObjects/transporter_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Diffuse.png" -p "Output=$(OutDir)gameObjects/transporter_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Normal.png" -p "Output=$(OutDir)gameObjects/transporter_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Glow.png" -p "Output=$(OutDir)gameObjects/transporter_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\lup_final\lup_ship.obj" -o "$(OutDir)gameObjects/lup_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\spec_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_diffuse_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_normal_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_glow_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailGatlingDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailGatlingDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailPlasmaDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailPlasmaDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-</NMakeBuildCommandLine>
+"$(OutDir)ResourceBuilder.exe" $(SolutionDir)build.cfg $(SolutionDir) $(OutDir)resources\</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>echo "Deleting old target resources..."
 del "$(OutDir)terrain.ptf"
 rmdir /s /q "$(OutDir)$(TargetName)"
+rmdir /s /q "$(OutDir)resources"
 echo "Building target resources..."
 mkdir "$(OutDir)$(TargetName)"
-mkdir "$(OutDir)gameObjects"
-mkdir "$(OutDir)textures"
+mkdir "$(OutDir)resources"
 cd "$(SolutionDir)"
 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(TargetName)/skybox.json" -p "Output=$(OutDir)textures/SkyboxCube.ntx" -p "Input-Type=Cube" -p "Compress=false“ BuildTools.TextureImporter 
-
-"$(OutDir)TerrainGenerator.exe" -r 4096 -o "$(OutDir)$(TargetName)\terrain_height.raw"
-"$(SolutionDir)../../external/terrain_tools/texture_generator.exe" -r 4096 -i "$(OutDir)$(TargetName)\terrain_height.raw" -o_color "$(OutDir)$(TargetName)\terrain_diffuse.png" -o_normal "$(OutDir)$(TargetName)\terrain_normal.png"
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_normal.png" -p "Output=$(OutDir)$(TargetName)\terrain_normal.ntx" -p "Input-Type=XY-Normal" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(OutDir)$(TargetName)\terrain_diffuse.png" -p "Output=$(OutDir)$(TargetName)\terrain_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(OutDir)ptfGenerator.exe" -i_height "$(OutDir)$(TargetName)\terrain_height.raw" -i_color "$(OutDir)$(TargetName)\terrain_diffuse.ntx" -i_normal "$(OutDir)$(TargetName)\terrain_normal.ntx" -o "$(OutDir)terrain.ptf" 
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\cockpit\final\cockpit_o_low.obj" -o "$(OutDir)gameObjects/cockpit_o_low.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_diffuse.png" -p "Output=$(OutDir)gameObjects/cockpit_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_specular.png" -p "Output=$(OutDir)gameObjects/cockpit_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_glow.png" -p "Output=$(OutDir)gameObjects/cockpit_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false" BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/cockpit/final/cockpit_m_normal.png" -p "Output=$(OutDir)gameObjects/cockpit_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false" BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_top.obj" -o "$(OutDir)gameObjects/getling_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\getling_gun\final\gatling_o_base.obj" -o "$(OutDir)gameObjects/getling_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_glow.png" -p "Output=$(OutDir)gameObjects/getling_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_diffuse.png" -p "Output=$(OutDir)gameObjects/getling_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_specular.png" -p "Output=$(OutDir)gameObjects/getling_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/getling_gun/final/getling_m_normals.png" -p "Output=$(OutDir)gameObjects/getling_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_top.obj" -o "$(OutDir)gameObjects/plasma_o_top.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\01-Cockpit\plasma_gun\final\plasma_o_base.obj" -o "$(OutDir)gameObjects/plasma_o_base.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_glow.png" -p "Output=$(OutDir)gameObjects/plasma_m_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_diffuse.png" -p "Output=$(OutDir)gameObjects/plasma_m_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_specular.png" -p "Output=$(OutDir)gameObjects/plasma_m_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/01-Cockpit/plasma_gun/final/plasma_m_normal.png" -p "Output=$(OutDir)gameObjects/plasma_m_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\tower\tower.obj" -o "$(OutDir)gameObjects/tower.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_diffuse.png" -p "Output=$(OutDir)gameObjects/tower_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_specular.png" -p "Output=$(OutDir)gameObjects/tower_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/tower/tower_normal.png" -p "Output=$(OutDir)gameObjects/tower_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\barracks\barracks.obj" -o "$(OutDir)gameObjects/barracks.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_specular.png" -p "Output=$(OutDir)gameObjects/barracks_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_diffuse.png" -p "Output=$(OutDir)gameObjects/barracks_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment/barracks/barracks_normal.png" -p "Output=$(OutDir)gameObjects/barracks_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\3d_grasses\grasses\grass_big.obj" -o "$(OutDir)gameObjects/grass_big.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_specular.png" -p "Output=$(OutDir)gameObjects/grass_big_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_diffuse.png" -p "Output=$(OutDir)gameObjects/grass_big_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\3d_grasses\grasses\grass_m_normal.png" -p "Output=$(OutDir)gameObjects/grass_big_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\stones\stone_01\stone_01.obj" -o "$(OutDir)gameObjects/stone01.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_specular.png" -p "Output=$(OutDir)gameObjects/stone01_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_diffuse.png" -p "Output=$(OutDir)gameObjects/stone01_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\stones\stone_01\stone_01_m_normal.png" -p "Output=$(OutDir)gameObjects/stone01_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_base.obj" -o "$(OutDir)gameObjects/radar_base.t3d" -y 
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\03-Enviroment\radar\radar_antenna_low.obj" -o "$(OutDir)gameObjects/radar.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_specular.png" -p "Output=$(OutDir)gameObjects/radar_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_diffuse.png" -p "Output=$(OutDir)gameObjects/radar_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/03-Enviroment\radar\radar_normal.png" -p "Output=$(OutDir)gameObjects/radar_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\amy_spaceship\amy_spaceship_stage02.obj" -o "$(OutDir)gameObjects/amy_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_SPECULAR_001.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_DIFFUSE.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_normals.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\amy_spaceship\amy_spaceship_GLOWMAP.png" -p "Output=$(OutDir)gameObjects/amy_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\juf_spaceship\juf_spaceship.obj" -o "$(OutDir)gameObjects/juf_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_specular.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_diffuse.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_normal.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\juf_spaceship\juf_spaceship_glow.png" -p "Output=$(OutDir)gameObjects/juf_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\transporter\transporter.obj" -o "$(OutDir)gameObjects/Transporter.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Specular.png" -p "Output=$(OutDir)gameObjects/transporter_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Diffuse.png" -p "Output=$(OutDir)gameObjects/transporter_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Normal.png" -p "Output=$(OutDir)gameObjects/transporter_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\transporter\Trans_Glow.png" -p "Output=$(OutDir)gameObjects/transporter_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/mesh_tools/obj2t3d.exe" -i "$(SolutionDir)..\..\external\art\02-Enemies\lup_final\lup_ship.obj" -o "$(OutDir)gameObjects/lup_spaceship.t3d" -y 
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\spec_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_specular.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_diffuse_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_diffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_normal_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_normal.ntx“ -p "Input-Type=XY-Normal“ -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art/02-Enemies\lup_final\lup_glow_ship.png" -p "Output=$(OutDir)gameObjects/lup_spaceship_glow.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailGatlingDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailGatlingDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-"$(SolutionDir)../../external/terrain_tools/ged-texture-converter/nBuildDrv.exe" -verbose -2 -p "Input=$(SolutionDir)../../external/art\05-Sprites\simple\parTrailPlasmaDiffuse.png" -p "Output=$(OutDir)gameObjects/parTrailPlasmaDiffuse.ntx" -p "Input-Type=Color" -p "Compress=false“ BuildTools.TextureImporter
-
-</NMakeReBuildCommandLine>
+"$(OutDir)ResourceBuilder.exe" $(SolutionDir)build.cfg $(SolutionDir) $(OutDir) $(OutDir)resources\</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>echo "Deleting old target resources..."
 del "$(OutDir)terrain.ptf"
 rmdir /s /q "$(OutDir)$(TargetName)"</NMakeCleanCommandLine>

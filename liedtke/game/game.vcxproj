@@ -172,7 +172,7 @@
       <EnableDebugInfo>true</EnableDebugInfo>
     </FX_HLSL>
     <ResourceCompile>
-      <PreprocessorDefinitions>MY_SOLUTIONDIR=$(SolutionDir);MY_TARGETNAME =$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'">
@@ -418,7 +418,6 @@
     <ClCompile Include="EnemyInstance.cpp" />
     <ClCompile Include="EnemyTransformation.cpp" />
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="ObjectTransformation.cpp" />
@@ -429,6 +428,7 @@
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
+    <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="WeaponType.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -451,7 +451,6 @@
     <ClInclude Include="DXUT\Optional\SDKwavefile.h" />
     <ClInclude Include="EnemyInstance.h" />
     <ClInclude Include="EnemyTransformation.h" />
-    <ClInclude Include="GameObject.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />
@@ -464,6 +463,7 @@
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="TerrainObject.h" />
+    <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="WeaponType.h" />
     <ResourceCompile Include="game.rc" />
   </ItemGroup>
@@ -472,25 +472,12 @@
   </ItemGroup>
   <ItemGroup>
     <FX_HLSL Include="game.fx" />
+    <FX_HLSL Include="MeshRenderer.fx" />
     <FX_HLSL Include="Skybox.fx" />
-    <FX_HLSL Include="SpriteRender.fx">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
-      </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
-      </Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </Outputs>
-    </FX_HLSL>
+    <FX_HLSL Include="SpriteRenderer.fx" />
+    <FX_HLSL Include="TerrainRenderer.fx" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
     <None Include="DXUT\Optional\DXUTOpt_2010.sln" />
     <None Include="DXUT\Optional\DXUTOpt_2010.vcxproj" />
   </ItemGroup>

@@ -9,15 +9,15 @@ Particle::Particle(float speed, float mass, D3DXVECTOR3 initDirection)
 	D3DXVec3Normalize(&initDirection, &initDirection);
 	m_Velocity = initDirection*speed;
 	m_initSpeed = speed;
-	a = 1.f;
-	t = 0.f;
+	Opacity = 1.f;
+	AnimationProgress = 0.f;
 }
 Particle::Particle(void)
 {
 	Radius = 0.f;
 	TextureIndex = 0;
-	a = 1.f;
-	t = 0.f;
+	Opacity = 1.f;
+	AnimationProgress = 0.f;
 }
 
 

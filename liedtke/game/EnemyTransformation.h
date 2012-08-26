@@ -18,14 +18,14 @@ public:
 	ParticleEffect* getDeathEffect() { return e_DeathEffect; }
 	int SpawnedEnemies;
 	void setDeathEffect(ParticleEffect* p);
-	int getPoints() { return e_Points; }
+	float getPoints() { return e_Points; }
 private:
 	int e_Hitpoint;
 	int e_CountUnits;
 	float e_Speed;
 	Mesh* e_Object;
 	float e_SphereSize;
-	int e_Points;
+	float e_Points;
 protected:
 	ParticleEffect* e_DeathEffect;
 };

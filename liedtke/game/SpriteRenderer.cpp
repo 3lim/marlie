@@ -1,74 +1,33 @@
 #include "SpriteRenderer.h"
-#include <Windows.h>
-#include <d3d11.h>
-#include <d3dx11.h>
-#include <d3dcompiler.h>
-#include <xnamath.h>
-#include "DXUT\Core\DXUT.h"
-#include "DXUTmisc.h"
-#include "SDKmisc.h"
-#include "debug.h"
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-
 #include <vector>
-#include <cstdint>
-#include "ntx\NTX.h"
-
-// Convenience macros for safe effect variable retrieval
-#define SAFE_GET_PASS(Technique, name, var)   {assert(Technique!=NULL); var = Technique->GetPassByName( name );						assert(var->IsValid());}
-#define SAFE_GET_TECHNIQUE(effect, name, var) {assert(effect!=NULL); var = effect->GetTechniqueByName( name );						assert(var->IsValid());}
-#define SAFE_GET_SCALAR(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsScalar();			assert(var->IsValid());}
-#define SAFE_GET_VECTOR(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsVector();			assert(var->IsValid());}
-#define SAFE_GET_MATRIX(effect, name, var)    {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsMatrix();			assert(var->IsValid());}
-#define SAFE_GET_SAMPLER(effect, name, var)   {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsSampler();			assert(var->IsValid());}
-#define SAFE_GET_RESOURCE(effect, name, var)  {assert(effect!=NULL); var = effect->GetVariableByName( name )->AsShaderResource();	assert(var->IsValid());}
-#define null NULL
-
-ID3DX11EffectMatrixVariable* g_ViewProjectionEV(NULL);
-ID3DX11EffectVectorVariable* g_CameraRightEV(NULL);
-ID3DX11EffectVectorVariable* g_CameraUpEV(NULL);
-std::vector<ID3D11ShaderResourceView*> g_TextureSRVA;
-std::vector<ID3D11Texture2D*> g_DiffuseTexA;
-ID3DX11EffectShaderResourceVariable* g_TextureEVA(NULL);
-
-std::vector<SpriteVertex> SpriteRenderer::g_GUISprites;
+#include <set>
+#include <fstream>
+#include "SDKmisc.h"
 
 using namespace std;
 
+vector<SpriteVertex> SpriteRenderer::g_GUISprites;
+vector<SpriteVertex> SpriteRenderer::g_SpritesToRender;
 
-SpriteRenderer::SpriteRenderer(const std::vector<SpriteFile>& textureFilenames) :
-m_textureFilenames(textureFilenames),
-	m_pEffect(NULL),
-	m_spriteSRV(NULL),
-	m_spriteTex(NULL),
-	m_spriteCountMax(NULL),
-	m_pVertexBuffer(NULL),
-	m_pInputLayout(NULL)
+SpriteRenderer::SpriteRenderer(const std::vector<std::pair<std::string,int>>& textureFilenames) : m_textureFilenames(textureFilenames), 
+																				m_pEffect(NULL),
+																				m_pInputLayout(NULL),
+																				m_pVertexBuffer(NULL),
+																				m_spriteCountMax(1024)
 {
 }
 
-
-SpriteRenderer::~SpriteRenderer(void)
+SpriteRenderer::~SpriteRenderer()
 {
+
 }
 
 HRESULT SpriteRenderer::ReloadShader(ID3D11Device* pDevice)
 {
-	assert(pDevice != NULL);
-
 	HRESULT hr;
 
-	ReleaseShader();
-
 	WCHAR path[MAX_PATH];
-	stringstream ss;
-	wstringstream wss;
-
-	// Find and load the rendering effect
-	V_RETURN(DXUTFindDXSDKMediaFileCch(path, MAX_PATH, L"SpriteRender.fxo"));
+	DXUTFindDXSDKMediaFileCch(path, MAX_PATH, L"SpriteRenderer.fxo");
 	ifstream is(path, ios_base::binary);
 	is.seekg(0, ios_base::end);
 	streampos pos = is.tellg();
@@ -76,14 +35,10 @@ HRESULT SpriteRenderer::ReloadShader(ID3D11Device* pDevice)
 	vector<char> effectBuffer((unsigned int)pos);
 	is.read(&effectBuffer[0], pos);
 	is.close();
-	V_RETURN(D3DX11CreateEffectFromMemory((const void*)&effectBuffer[0], effectBuffer.size(), D3D11_CREATE_DEVICE_DEBUG, pDevice, &m_pEffect));
+	V_RETURN(D3DX11CreateEffectFromMemory((const void*)&effectBuffer[0], effectBuffer.size(), 0, pDevice, &m_pEffect));    
 	assert(m_pEffect->IsValid());
-
-	SAFE_GET_MATRIX(m_pEffect, "g_ViewProjection", g_ViewProjectionEV);
-	SAFE_GET_VECTOR(m_pEffect, "g_CameraUp", g_CameraUpEV);
-	SAFE_GET_VECTOR(m_pEffect, "g_CameraRight", g_CameraRightEV);
-	SAFE_GET_RESOURCE(m_pEffect, "g_SpriteDiffuseArray", g_TextureEVA);
-	return S_OK;
+		
+	return hr;
 }
 
 void SpriteRenderer::ReleaseShader()
@@ -91,145 +46,165 @@ void SpriteRenderer::ReleaseShader()
 	SAFE_RELEASE(m_pEffect);
 }
 
-HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice){
-	m_spriteCountMax  = 2048;
-	//7.3.3
+HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice)
+{
 	HRESULT hr;
+	hr = S_OK;
 
-	D3D11_BUFFER_DESC bdV;
-	D3D11_SUBRESOURCE_DATA idV;
+	D3D11_BUFFER_DESC bd;
 
-	idV.pSysMem = NULL;
-	idV.SysMemPitch = sizeof(SpriteVertex);
-	idV.SysMemSlicePitch = 0;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.ByteWidth = m_spriteCountMax * sizeof(struct SpriteVertex);
+	bd.CPUAccessFlags = 0;
+	bd.MiscFlags = 0;
+	bd.Usage = D3D11_USAGE_DEFAULT;
 
-	bdV.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bdV.ByteWidth = m_spriteCountMax*sizeof(SpriteVertex);
-	bdV.CPUAccessFlags = 0;
-	bdV.MiscFlags = 0;
-	bdV.Usage = D3D11_USAGE_DEFAULT;
+	V_RETURN(pDevice->CreateBuffer(&bd,NULL,&m_pVertexBuffer));
 
-	V_RETURN(pDevice->CreateBuffer(&bdV, NULL, &m_pVertexBuffer)); 
-
-	const D3D11_INPUT_ELEMENT_DESC layout[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "RADIUS", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{ "TEXTUREINDEX", 0, DXGI_FORMAT_R32_SINT, 0, D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{ "ANIMATIONTIME", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{ "ALPHABLENDING", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{ "BLENDINGCOLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+	const D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "RADIUS",    0, DXGI_FORMAT_R32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXTUREINDEX",      0, DXGI_FORMAT_R32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "ASIZE",      0, DXGI_FORMAT_R32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "APROGRESS",      0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "OPACITY",      0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	D3DX11_PASS_DESC pd;
-	V_RETURN(m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0_Sprite")->GetDesc(&pd));
-	V_RETURN(pDevice->CreateInputLayout(layout, sizeof(layout)/sizeof(layout[0]), pd.pIAInputSignature, pd.IAInputSignatureSize, &m_pInputLayout ));
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->GetDesc(&pd);
+	V_RETURN(pDevice->CreateInputLayout(layout, sizeof(layout)/sizeof(layout[0]), pd.pIAInputSignature,pd.IAInputSignatureSize, &m_pInputLayout));
+	
+	typedef pair<D3D11_TEXTURE2D_DESC,pair<std::vector<D3D11_SUBRESOURCE_DATA>,std::vector<std::vector<unsigned char>>>> tD_type;
+	map<int,pair<vector<tD_type>,vector<int>>> tD;
+	
+	m_textureOffsets.clear();
+	m_textureOffsets.resize(m_textureFilenames.size());
 
-	g_DiffuseTexA.resize(m_textureFilenames.size());
-	g_TextureSRVA.resize(m_textureFilenames.size());
-	for(size_t i = 0; i < m_textureFilenames.size(); i++)
+	m_spriteSRV.clear();
+	m_spriteTex.clear();
+	m_spriteSRV.resize(MAXSIZE);
+	m_spriteTex.resize(MAXSIZE);
+
+	auto it=m_textureFilenames.begin();
+	for(unsigned int i=0;i<m_textureFilenames.size();i++,it++)
 	{
-		D3D11_TEXTURE2D_DESC tex2DDesc;
+		tD_type t;
 		bool sRgb;
-		vector<D3D11_SUBRESOURCE_DATA> subresourcesData;
-		vector<vector<unsigned char>> data;
-		subresourcesData.resize(m_textureFilenames.size());
-		LoadNtxArrayFromFiles(m_textureFilenames[i].file, m_textureFilenames[i].begin, m_textureFilenames[i].end, &tex2DDesc, data, subresourcesData, sRgb);
-		V_RETURN(pDevice->CreateTexture2D(&tex2DDesc, &subresourcesData[0], &g_DiffuseTexA[i]));
-		D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
-		shaderDesc.Format = tex2DDesc.Format;
-		shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		shaderDesc.Texture2DArray.ArraySize = tex2DDesc.ArraySize;
-		shaderDesc.Texture2DArray.FirstArraySlice = 0;
-		shaderDesc.Texture2DArray.MipLevels = tex2DDesc.MipLevels;
-		shaderDesc.Texture2DArray.MostDetailedMip = 0;
-		V_RETURN(pDevice->CreateShaderResourceView(g_DiffuseTexA[i], &shaderDesc, &g_TextureSRVA[i]));
+
+		V(LoadNtxArrayFromFiles(it->first,0,it->second-1,&t.first,t.second.second,t.second.first,sRgb));
+
+		for(unsigned int j=0;j<t.first.ArraySize*t.first.MipLevels;j++)
+		{
+			t.second.first[j].pSysMem = &t.second.second[j][0];
+		}
+		tD[t.first.Height*t.first.Width].first.push_back(t);
+		tD[t.first.Height*t.first.Width].second.push_back(i);
 	}
 
-	return S_OK;
+	unsigned int textureCount=0;
+	unsigned int resCount=1;
+	for(auto iter=tD.begin();iter!=tD.end()&&resCount<=MAXSIZE;iter++,resCount++)
+	{
+		auto it = *iter;
+		if(resCount==MAXSIZE&&tD.size()>MAXSIZE)
+		{
+			iter++;
+			for(;iter!=tD.end();iter++)
+			{
+				it.second.first.insert(it.second.first.end(),iter->second.first.begin(),iter->second.first.end());
+				it.second.second.insert(it.second.second.end(),iter->second.second.begin(),iter->second.second.end());
+			}
+			iter--;
+		}
+
+		unsigned int count=0;
+		for(unsigned int i=0;i<it.second.first.size();i++) count+=it.second.first[i].first.ArraySize;
+
+		std::vector<D3D11_SUBRESOURCE_DATA> subresData;
+		std::vector<std::vector<unsigned char>> texData;
+		D3D11_TEXTURE2D_DESC maxMipmap = it.second.first[0].first;
+		subresData.resize(count);
+		texData.resize(count);
+
+		unsigned int lastCount = textureCount;
+		for(unsigned int i=0;i<it.second.first.size();i++)
+		{
+			int mipLevel = (int)ceil(log10(it.second.first[i].first.Width/(float)maxMipmap.Width)/log10(2.f));
+
+			for(unsigned int j=0;j<it.second.first[i].first.ArraySize;j++,textureCount++)
+			{
+				texData[textureCount-lastCount] = it.second.first[i].second.second[j*it.second.first[i].first.MipLevels+mipLevel];
+				subresData[textureCount-lastCount] = it.second.first[i].second.first[j*it.second.first[i].first.MipLevels+mipLevel];
+				subresData[textureCount-lastCount].pSysMem = &texData[textureCount-lastCount][0];
+			}
+
+			m_textureOffsets[it.second.second[i]] = textureCount - it.second.first[i].first.ArraySize;
+		}
+		
+		maxMipmap.ArraySize = count;
+		maxMipmap.MipLevels = 1;
+
+		V_RETURN(pDevice->CreateTexture2D(&maxMipmap,&subresData[0],&m_spriteTex[resCount-1]));
+		V_RETURN(pDevice->CreateShaderResourceView(m_spriteTex[resCount-1],NULL,&m_spriteSRV[resCount-1]));
+
+	}
+	return hr;
 }
 
-void SpriteRenderer::ReleaseResources(){
+void SpriteRenderer::ReleaseResources()
+{
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pVertexBuffer);
-	for(size_t i = 0; i < m_textureFilenames.size(); i++){
-		SAFE_RELEASE(g_TextureSRVA[i]);
-	SAFE_RELEASE(g_DiffuseTexA[i]);
+	
+	for(int i=0;i<MAXSIZE;i++)
+	{
+		SAFE_RELEASE(m_spriteTex[i]);
+		SAFE_RELEASE(m_spriteSRV[i]);
 	}
 }
 
-void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const std::vector<SpriteVertex>& sprites, const CFirstPersonCamera& camera){
-	ID3D11DeviceContext* pd3DContext;
-	ID3DX11EffectPass* myPass = m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0_Sprite");
-	pDevice->GetImmediateContext(&pd3DContext);
-	D3D11_BOX box; 
-	box.left  = 0;
-	box.right = sprites.size() * sizeof(SpriteVertex); 
-	box.top   = 0;
-	box.bottom = 1; 
-	box.front = 0;
-	box.back   = 1; 
-	pd3DContext->UpdateSubresource(m_pVertexBuffer, 0, &box, &sprites[0], 0,0);
-	UINT stride[1] = {sizeof(SpriteVertex)};
-	UINT offset[1] = {0};
-	ID3D11Buffer* vertexbuffer[] = { m_pVertexBuffer};
-	pd3DContext->IASetVertexBuffers(0, 1, vertexbuffer, stride, offset);
-	pd3DContext->IASetInputLayout(m_pInputLayout);
-	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const CFirstPersonCamera& camera)
+{
+	ID3D11DeviceContext* dc;
+	pDevice->GetImmediateContext(&dc);
 
-	D3DXMATRIX viewProjection = (*camera.GetViewMatrix())*(*camera.GetProjMatrix());
-	g_ViewProjectionEV->SetMatrix((float*)viewProjection);
-	g_CameraRightEV->SetFloatVector(*camera.GetWorldRight());
-	g_CameraUpEV->SetFloatVector(*camera.GetWorldUp());
-	for(size_t i = 0; i < m_textureFilenames.size(); i++)
-		g_TextureEVA->GetElement(i)->AsShaderResource()->SetResource(g_TextureSRVA[i]);
+	D3D11_BOX box = {0,0,0,g_SpritesToRender.size()*sizeof(struct SpriteVertex),1,1};
+	dc->UpdateSubresource(m_pVertexBuffer,0,&box,&g_SpritesToRender[0],sizeof(struct SpriteVertex),0);
 
-	myPass->Apply(0,pd3DContext);
-	pd3DContext->Draw(sprites.size(),0);
-	SAFE_RELEASE(pd3DContext);
+	ID3D11Buffer* vb[] = {m_pVertexBuffer,};
+	UINT strides[] = {sizeof(struct SpriteVertex),};
+	UINT offsets[] = {0,};
+	dc->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	dc->IASetVertexBuffers(0,1,vb,strides,offsets);
+	dc->IASetInputLayout(m_pInputLayout);
+
+	D3DXMATRIX vp = (*camera.GetViewMatrix()) * (*camera.GetProjMatrix());
+	m_pEffect->GetVariableByName("g_ViewProjection")->AsMatrix()->SetMatrix(vp);
+	
+	m_pEffect->GetVariableByName("g_CamUp")->AsVector()->SetFloatVector(*camera.GetWorldUp());
+	m_pEffect->GetVariableByName("g_CamRight")->AsVector()->SetFloatVector(*camera.GetWorldRight());
+	
+	m_pEffect->GetVariableByName("g_Textures")->AsShaderResource()->SetResourceArray(&m_spriteSRV[0],0,MAXSIZE);
+
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0,dc);
+
+	dc->Draw(g_SpritesToRender.size(),0);
+
+	SAFE_RELEASE(dc);
 }
 
 void SpriteRenderer::RenderGUI(ID3D11Device* pDevice, const CFirstPersonCamera& camera)
 {
-	ID3D11DeviceContext* pd3DContext;
-	ID3DX11EffectPass* myPass = m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1_SpriteGUI");
-	pDevice->GetImmediateContext(&pd3DContext);
-	D3D11_BOX box; 
-	box.left  = 0;
-	box.right = g_GUISprites.size() * sizeof(SpriteVertex); 
-	box.top   = 0;
-	box.bottom = 1; 
-	box.front = 0;
-	box.back   = 1; 
-	pd3DContext->UpdateSubresource(m_pVertexBuffer, 0, &box, &g_GUISprites[0], 0,0);
-	UINT stride[1] = {sizeof(SpriteVertex)};
-	UINT offset[1] = {0};
-	ID3D11Buffer* vertexbuffer[] = { m_pVertexBuffer};
-	pd3DContext->IASetVertexBuffers(0, 1, vertexbuffer, stride, offset);
-	pd3DContext->IASetInputLayout(m_pInputLayout);
-	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-	D3DXMATRIX viewProjection = (*camera.GetViewMatrix())*(*camera.GetProjMatrix());
-	g_ViewProjectionEV->SetMatrix((float*)viewProjection);
-	//g_CameraRightEV->SetFloatVector(*camera.GetWorldRight());
-	//g_CameraUpEV->SetFloatVector(*camera.GetWorldUp());
-	for(size_t i = 0; i < m_textureFilenames.size(); i++)
-		g_TextureEVA->GetElement(i)->AsShaderResource()->SetResource(g_TextureSRVA[i]);
-
-	myPass->Apply(0,pd3DContext);
-	pd3DContext->Draw(g_GUISprites.size(),0);
-	SAFE_RELEASE(pd3DContext);
+	//TODO
 }
 
-HRESULT SpriteRenderer::LoadFile(const char * filename, std::vector<uint8_t>& data)
+unsigned int SpriteRenderer::GetTextureOffset(int textureIndex)
 {
-	FILE * filePointer = NULL;
-	errno_t error = fopen_s(&filePointer, filename, "rb");
-	if (error) 	{ return E_INVALIDARG; }
-	fseek(filePointer, 0, SEEK_END);
-	long bytesize = ftell(filePointer);
-	fseek(filePointer, 0, SEEK_SET);
-	data.resize(bytesize);
-	fread(&data[0], 1, bytesize, filePointer);
-	fclose(filePointer);
-	return S_OK;
+	return m_textureOffsets[textureIndex];
+}
+
+int SpriteRenderer::GetAnimationSize(int textureIndex)
+{
+	return m_textureFilenames[textureIndex].second-1;
 }

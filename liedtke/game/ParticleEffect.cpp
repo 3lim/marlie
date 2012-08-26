@@ -21,7 +21,6 @@ Particle(speed,mass,direction),
 {
 	Radius = size;
 	TextureIndex = texIndex;
-
 }
 
 void ParticleEffect::setScale(float s)
@@ -45,8 +44,8 @@ void ParticleEffect::move(float time)
 
 	}
 	m_TimeElapsed += time;
-	t = m_TimeElapsed/m_Duration;
-	a =1;
+	AnimationProgress = m_TimeElapsed/m_Duration;
+	Opacity =1;
 	Particle::move(time);
 }
 
