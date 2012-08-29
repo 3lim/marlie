@@ -415,9 +415,11 @@
     <ClCompile Include="DXUT\Optional\SDKmisc.cpp" />
     <ClCompile Include="DXUT\Optional\SDKsound.cpp" />
     <ClCompile Include="DXUT\Optional\SDKwavefile.cpp" />
+    <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyInstance.cpp" />
     <ClCompile Include="EnemyTransformation.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="ObjectTransformation.cpp" />
@@ -449,8 +451,10 @@
     <ClInclude Include="DXUT\Optional\SDKmisc.h" />
     <ClInclude Include="DXUT\Optional\SDKsound.h" />
     <ClInclude Include="DXUT\Optional\SDKwavefile.h" />
+    <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyInstance.h" />
     <ClInclude Include="EnemyTransformation.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />

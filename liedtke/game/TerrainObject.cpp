@@ -1,14 +1,10 @@
 #include "TerrainObject.h"
-#include "Mesh.h"
 
 
-TerrainObject::TerrainObject(std::string meshName, bool useNormal, float scale, float rotX, float rotY, float rotZ, float spacing, float offset, int maxCount, Mesh* objectMesh) 
-	: ObjectTransformation(ObjectTransformation(meshName, false, scale, rotX, rotY, rotZ, 0.f,0.f,0.f)),
-	o_UseNormal(useNormal),
+TerrainObject::TerrainObject(Mesh* m, float posX, float posZ, float offset, float scale, float rotX, float rotY, float rotZ, float spacing, int max) 
+	: GameObject(m, posX, offset, posZ, scale, rotX, rotY, rotZ, TERRAIN),
 	o_Spacing(spacing),
-	o_Offset(offset),
-	o_Mesh(objectMesh),
-	o_MaxCount(maxCount)
+	o_MaxCount(max)
 {
 }
 

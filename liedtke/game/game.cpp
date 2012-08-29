@@ -41,8 +41,12 @@
 #include "Particle.h"
 #include "ParticleEffect.h"
 #include "Skybox.h"
+#include "GameObject.h"
+#include "Enemy.h"
+
 #include "Macros.h"
 
+#include "debug.h"
 
 using namespace std;
 
@@ -113,11 +117,12 @@ MeshRenderer*			g_MeshRenderer = NULL;
 SpriteRenderer*			g_SpriteRenderer = NULL;
 Skybox*					g_SkyboxRenderer = NULL;
 
-map<string, EnemyTransformation*> g_EnemyTyp;	
-vector<ObjectTransformation> g_ObjectTransformations;
+map<string, Enemy*> g_EnemyTyp;
+//enthält alle GameObjects, die dauerhaft im Spiel sind
+vector<GameObject> g_StaticGameObjects;
 map<string, int> g_ObjectReferences;
 vector<TerrainObject> g_TerrainObjects;
-list<EnemyInstance> g_EnemyInstances;
+list<Enemy> g_EnemyInstances;
 vector<string> g_EnemyTypeNames;
 map<string, ProjectileType>  g_ProjectileTypes;
 vector<WeaponType>		g_WeaponTypes;
@@ -151,7 +156,7 @@ bool Omove = false;
 bool ORotate = false;
 bool OScale = false;
 int Oindex = 2;
-bool useDeveloperFeatures = false;
+bool useDeveloperFeatures = true;
 
 
 CHAR									g_SkyboxPath[MAX_PATH] = {'\0'};
@@ -240,10 +245,10 @@ void RenderText();
 
 void ReleaseShader();
 HRESULT ReloadShader(ID3D11Device* pd3dDevice);
-HRESULT ReloadConfig(ID3D11Device* pd3dDevice);
+HRESULT ReLoadConfig(ID3D11Device* pd3dDevice);
 void placeTerrainObject(TerrainObject*);
 void AutomaticPositioning();
-void loadConfig(bool reload);
+void LoadConfig(bool reload);
 
 bool VertexSort(SpriteVertex& a, SpriteVertex& b)
 {
@@ -304,7 +309,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 }
 
 
-void loadConfig(bool reload = false)
+void LoadConfig(bool reload = false)
 {
 	HRESULT hr;
 	WCHAR path[MAX_PATH];
@@ -315,8 +320,8 @@ void loadConfig(bool reload = false)
 	int hitpoints, units;
 	float sphere;
 	string effect;
-	string file_str, input_str, output_str, it, args, TargetName;
-	//		TargetName = MY_TARGETNAME;
+	string meshName;
+	string file_str, input_str, output_str, it, args;
 	// Parse the config file
 
 
@@ -372,29 +377,29 @@ void loadConfig(bool reload = false)
 			MeshRenderer::g_Meshes[name] = new Mesh((g_ResourcesPath + T3dPath).c_str(), (g_ResourcesPath+DiffusePath).c_str(), (g_ResourcesPath+SpecularPath).c_str(), (g_ResourcesPath+GlowPath).c_str(), (g_ResourcesPath+normal).c_str());
 		}
 		else if(var.compare("CameraObject") == 0) {
-			stream >> name >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
-			g_ObjectTransformations.push_back(ObjectTransformation(name, true, scale,rotX, rotY, rotZ, transX, transY, transZ));
-			g_ObjectReferences[name] = g_ObjectTransformations.size()-1;
+			stream >> meshName >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
+			g_StaticGameObjects.push_back(GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::CAMERA));
+			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("WorldObject") == 0) {
 			bool automaticHeight;
-			stream >> name >> scale >> rotX >> rotY >> rotZ >> transX >> transY >>transZ >> automaticHeight;
-			g_ObjectTransformations.push_back(ObjectTransformation(name,  false, scale,rotX, rotY, rotZ, transX, transY, transZ, automaticHeight));
-			g_ObjectReferences[name] = g_ObjectTransformations.size()-1;
+			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >>transZ >> automaticHeight;
+			g_StaticGameObjects.push_back(GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::WORLD));
+			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("TerrainObject") == 0)
 		{
-			stream >> name >> scale >> rotX >> rotY >> rotZ >> useNormal >> spacing >> offset >> maxCount;
-			g_TerrainObjects.push_back(TerrainObject(name, useNormal, scale, rotX, rotY, rotZ, spacing, offset, maxCount, MeshRenderer::g_Meshes[name]));
+			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> useNormal >> spacing >> offset >> maxCount;
+			g_TerrainObjects.push_back(TerrainObject(MeshRenderer::g_Meshes[meshName], 0,0,offset, scale, rotX, rotY, rotZ, spacing, maxCount ));
 		}
 		else if(var.compare("EnemyType") == 0){
-			string meshName;
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
-			g_EnemyTyp[name] = new EnemyTransformation(meshName, hitpoints, units, speed, MeshRenderer::g_Meshes[meshName], scale, rotX, rotY, rotZ, transX, transY, transZ, sphere);
+			g_EnemyTyp[name] = new Enemy(hitpoints, units, GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
+			g_EnemyTyp[name]->SetSpeed(speed);
 			if( effect.size() > 0  && effect.compare("-") != 0)
-				g_EnemyTyp[name]->setDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
+				g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);
 		}
 		else if(var.compare("Spawn") == 0)
@@ -424,7 +429,7 @@ void loadConfig(bool reload = false)
 					stream >> var;
 				} 
 			}
-			D3DXVECTOR3* p = &g_ObjectTransformations[g_ObjectReferences[name]].getPosition();
+			D3DXVECTOR3* p = g_StaticGameObjects[g_ObjectReferences[name]].GetPosition();
 			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp, &g_Particles));
 		} else if(var.compare("Explosion") == 0)
 		{
@@ -461,7 +466,7 @@ void loadConfig(bool reload = false)
 void InitApp()
 {
 	ShowCursor(false);
-	loadConfig();
+	LoadConfig();
 	g_SpriteRenderer = new SpriteRenderer(spriteFileNames);
 	g_MeshRenderer = new MeshRenderer();
 	g_SkyboxRenderer = new Skybox(g_SkyboxPath, g_BoundingBoxDiagonal*0.7f);
@@ -522,11 +527,11 @@ void RenderText()
 		g_TxtHelper->DrawTextLine( DXUTGetDeviceStats() );
 		std::wstringstream out;
 		out << Oindex << " "
-			<< g_ObjectTransformations[Oindex].getName().c_str()
+			<< (*g_StaticGameObjects[Oindex].GetName()).c_str()
 			<<"  Translation X: "
-			<< g_ObjectTransformations[Oindex].getTranslationX() << " Y: "
-			<< g_ObjectTransformations[Oindex].getTranslationY() << " Z: "
-			<< g_ObjectTransformations[Oindex].getTranslationZ() << " Scale: " << g_ObjectTransformations[Oindex].getScale();
+			<< g_StaticGameObjects[Oindex].GetPosition()->x << " Y: "
+			<< g_StaticGameObjects[Oindex].GetPosition()->y << " Z: "
+			<< g_StaticGameObjects[Oindex].GetPosition()->z << " Scale: " << g_StaticGameObjects[Oindex].GetScale();
 
 		g_TxtHelper->DrawTextLine(out.str().c_str());
 	}
@@ -927,7 +932,7 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	return S_OK;
 }
 
-HRESULT ReloadConfig(ID3D11Device* pd3dDevice)
+HRESULT ReLoadConfig(ID3D11Device* pd3dDevice)
 {
 	assert(pd3dDevice != NULL);
 
@@ -935,7 +940,7 @@ HRESULT ReloadConfig(ID3D11Device* pd3dDevice)
 	g_EnemyTyp.clear();
 	g_EnemyTypeNames.clear();
 	g_TerrainObjects.clear();
-	g_ObjectTransformations.clear();
+	g_StaticGameObjects.clear();
 	g_ObjectReferences.clear();
 	SpriteRenderer::g_SpritesToRender.clear();
 	g_Particles.clear();
@@ -944,7 +949,7 @@ HRESULT ReloadConfig(ID3D11Device* pd3dDevice)
 	ParticleEffect::g_ActiveEffects.clear();
 	ParticleEffect::g_ParticleEffects.clear();
 
-	loadConfig(true);
+	LoadConfig(true);
 
 	AutomaticPositioning();
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
@@ -1016,10 +1021,10 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 	if(bKeyDown && useDeveloperFeatures){
 		switch(nChar){
 		case 107:
-			Oindex = (++Oindex)%g_ObjectTransformations.size();
+			Oindex = (++Oindex)%g_StaticGameObjects.size();
 			break;
 		case 109:
-			Oindex = (--Oindex+g_ObjectTransformations.size())%g_ObjectTransformations.size();
+			Oindex = (--Oindex+g_StaticGameObjects.size())%g_StaticGameObjects.size();
 			break;
 		case 'M':
 			g_CameraMoving = !g_CameraMoving;
@@ -1042,43 +1047,43 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			break;
 		case  38: //Arrow Up
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(0,1,0);
+				g_StaticGameObjects[Oindex].Translate(0,1,0);
 			if(OScale)
-				g_ObjectTransformations[Oindex].scale(0.1f);
+				g_StaticGameObjects[Oindex].Scale(0.1f);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate(0, 1,0);
+				g_StaticGameObjects[Oindex].Rotate(0, 1,0);
 			break;
 		case  40: //Arrow Down
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(0,-1,0);
+				g_StaticGameObjects[Oindex].Translate(0,-1,0);
 			if(OScale)
-				g_ObjectTransformations[Oindex].scale(-0.1f);
+				g_StaticGameObjects[Oindex].Scale(-0.1f);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate(0, -1,0);
+				g_StaticGameObjects[Oindex].Rotate(0, -1,0);
 			break;
 		case  39: //Arrow Right
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(1,0,0);
+				g_StaticGameObjects[Oindex].Translate(1,0,0);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate(1, 0,0);
+				g_StaticGameObjects[Oindex].Rotate(1, 0,0);
 			break;
 		case  37: //arrow Left
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(-1,0,0);
+				g_StaticGameObjects[Oindex].Translate(-1,0,0);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate( -1,0,0);
+				g_StaticGameObjects[Oindex].Rotate( -1,0,0);
 			break;
 		case  187: // minus
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(0,0,-1);
+				g_StaticGameObjects[Oindex].Translate(0,0,-1);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate( 0,0,-1);
+				g_StaticGameObjects[Oindex].Rotate( 0,0,-1);
 			break;
 		case  189: // minus
 			if(Omove)
-				g_ObjectTransformations[Oindex].translate(0,0,1);
+				g_StaticGameObjects[Oindex].Translate(0,0,1);
 			if(ORotate)
-				g_ObjectTransformations[Oindex].rotate( 0,0,1);
+				g_StaticGameObjects[Oindex].Rotate( 0,0,1);
 			break;
 		} 
 	}else{ //KeyUp
@@ -1140,7 +1145,7 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 		ReloadShader(DXUTGetD3D11Device ());
 		break;
 	case IDC_RELOAD_Config:
-		ReloadConfig(DXUTGetD3D11Device());
+		ReLoadConfig(DXUTGetD3D11Device());
 		break;
 	case IDC_PAUSE:
 		g_GamePause = !g_GamePause;
@@ -1173,19 +1178,23 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//*********************************SpawnObjects	
 	if(fTime-g_LastSpawn> g_SpawnIntervall)
 	{
-		g_LastSpawn = fTime;
-		EnemyTransformation* myEnemy = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/RAND_MAX*g_EnemyTypeNames.size())]];
-		if(myEnemy->SpawnedEnemies < myEnemy->getCountUnits()){
-			myEnemy->SpawnedEnemies++;
+		Enemy* myEnemy = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
+		if(myEnemy->SpawnedEnemies < myEnemy->GetCountMaxUnits()){
+			Enemy newEnemy = Enemy(*myEnemy);
+			g_LastSpawn = fTime;
+			newEnemy.SpawnedEnemies++;
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
 			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
 			a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			D3DXVECTOR3 InnerPos(g_TargetCircle*cos(a), height, g_TargetCircle*sin(a));
-			D3DXVECTOR3 MovingDirection = InnerPos-outerPos;
+			D3DXVECTOR3 MovingDirection = D3DXVECTOR3(0,height,0)-outerPos;
 			D3DXVec3Normalize(&MovingDirection, &MovingDirection);
+			newEnemy.SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
+			newEnemy.AddForce(myEnemy->GetSpeed(), MovingDirection);
+			newEnemy.TranslateTo(outerPos.x, outerPos.y, outerPos.z);
 
-			g_EnemyInstances.push_back(EnemyInstance(myEnemy, outerPos, MovingDirection));
+			g_EnemyInstances.push_back(newEnemy);
 			//g_EnemyInstances[1].SetDestroyEffect(&g_ParticleEffects["Death1"]);
 			//auto g = --g_EnemyInstances.end();
 			//g->SetDestroyEffect(&ParticleEffect::g_ParticleEffects["bomb"]);
@@ -1195,23 +1204,23 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
-		g_ObjectTransformations[2].rotate(0,0,170*fElapsedTime);
-		g_ObjectTransformations[2].calculateWorldMatrix();
+		g_StaticGameObjects[2].Rotate(0,0,170*fElapsedTime);
+		g_StaticGameObjects[2].CalculateWorldMatrix();
 	}
 	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
 		//move
-		g_ObjectTransformations[4].translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
-		g_ObjectTransformations[4].calculateWorldMatrix();
+ 		g_StaticGameObjects[4].Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
+		g_StaticGameObjects[4].CalculateWorldMatrix();
 	}
 
 
 	//*********************************MovingObjects
-	g_ObjectTransformations[10].rotate(0,50.f*fElapsedTime,0);
-	g_ObjectTransformations[10].calculateWorldMatrix();
+	g_StaticGameObjects[10].Rotate(0,50.f*fElapsedTime,0);
+	g_StaticGameObjects[10].CalculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
 	{
-		ei->move(fElapsedTime);
+		ei->OnMove(fTime, fElapsedTime);
 	}
 	for(auto pi = g_Particles.begin(); pi != g_Particles.end(); pi++)
 	{
@@ -1237,22 +1246,22 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		else
 		{
 			del = false;
-			for(auto enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
+			for(list<Enemy>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
 				//D3DXVECTOR3 d =(shoot->Position-enemy->getCurrentPosition());
 				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
 				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
-				if(D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition())) < (shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize())){
+				if(D3DXVec3Length(&(shoot->Position-*enemy->GetPosition())) < (shoot->Radius +enemy->GetColliderRadius())*(shoot->Radius +enemy->GetColliderRadius())){
 					del = true;
 					enemy->OnHit(&shoot.operator*());
 					shoot->onHit();
 					shoot->Destroy();
 					auto shoot_rem = shoot;
 					shoot++;
-					if(enemy->getLife() <= 0)
+					if(enemy->IsDead())
 					{
-						g_PlayerPoints += enemy->getObject()->getPoints();
-						enemy->Death();
+						g_PlayerPoints += enemy->GetPoints();
+						enemy->OnDestroy();
 						auto enemy_rem = enemy;
 						enemy++;
 						g_EnemyInstances.erase(enemy_rem);
@@ -1272,13 +1281,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//*********************************DestroyObjects
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end();)
 	{
-		if(D3DXVec3Length(&ei->getCurrentPosition())-g_DestroyCircle > 0){
+		if(D3DXVec3Length(ei->GetPosition())-g_DestroyCircle > 0){
 			auto ei_rem = ei;
 			ei++;
-			ei_rem->getObject()->SpawnedEnemies--;
+			ei_rem->SpawnedEnemies--;
 			g_EnemyInstances.erase(ei_rem);
 		} else {
-			ei->calculateWorldMatrix();
+			ei->CalculateWorldMatrix();
 			ei++;
 		}
 	}
@@ -1402,7 +1411,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_Proj = (D3DXMATRIX*)&lightProjektionMatrix;
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
-	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_ObjectTransformations);
+	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects);
 	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances);
 
 
@@ -1429,7 +1438,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_ViewProj = &g_ViewProj;
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
-	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_ObjectTransformations);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_StaticGameObjects);
 	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances);
 
 	if(SpriteRenderer::g_SpritesToRender.size() >0)
@@ -1476,23 +1485,24 @@ void placeTerrainObject(TerrainObject* o){
 	{
 		float x = 0;random(-400.f,400.f,x);
 		float z = 0;random(-400.f,400.f,z);
-		o->translateTo(x, g_TerrainRenderer->getHeightAtPoint(x,z), z);
-		if(o->useNormal())
-		{
-			D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
-			o->rotate(n.x,n.y, n.z);
-		}
-		g_ObjectTransformations.push_back(*o);
+		float y = g_TerrainRenderer->getHeightAtPoint(x,z);
+		o->TranslateTo(x, y, z);
+		//if(o->useNormal())
+		//{
+		//	D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
+		//	o->rotate(n.x,n.y, n.z);
+		//}
+		g_StaticGameObjects.push_back(*o);
 	}
 }
 
 void AutomaticPositioning()
 {
-	for(auto it = g_ObjectTransformations.begin(); it != g_ObjectTransformations.end(); it++)
+	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 	{
-		if(it->automaticHeight())
-			it->translateTo(it->getTranslationX(), g_TerrainRenderer->getHeightAtPoint(it->getTranslationX(), it->getTranslationZ())+ it->getTranslationY(), it->getTranslationZ());
-		it->calculateWorldMatrix();
+		if(it->GetRelativePosition() == GameObject::TERRAIN)
+			it->TranslateTo(it->GetPosition()->x, g_TerrainRenderer->getHeightAtPoint(it->GetPosition()->x, it->GetPosition()->z)+ it->GetPosition()->y, it->GetPosition()->z);
+		it->CalculateWorldMatrix();
 	}
 }
 
@@ -1506,12 +1516,13 @@ void drawShipsOnRadar()
 	pShip.TextureIndex = 0;
 	vector<SpriteVertex> radarShips;
 
-	for_each(g_EnemyInstances.begin(), g_EnemyInstances.end(), [&](EnemyInstance it){
-		float x = it.getCurrentPosition().x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
-		float y = it.getCurrentPosition().x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
-			pShip.Position = D3DXVECTOR3(x,y,0);
-			radarShips.push_back(SpriteVertex(pShip));
-	});
+	for each(auto it in g_EnemyInstances)
+	{
+		float x = it.GetPosition()->x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float y = it.GetPosition()->y/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		pShip.Position = D3DXVECTOR3(x,y,0);
+		radarShips.push_back(SpriteVertex(pShip));
+	}
 }
 
 HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data)

@@ -230,6 +230,8 @@ HRESULT TerrainRenderer::ReloadShader(ID3D11Device* pDevice)
 	SAFE_GET_MATRIX(m_pEffect, "g_ViewProjection", m_ViewProjectionEV);
 	SAFE_GET_VECTOR(m_pEffect, "g_LightDir", m_LightDirEV);
 	SAFE_GET_MATRIX(m_pEffect, "g_LightViewProjMatrix", m_LightViewProjMatrixEV);
+
+	return S_OK;
 }
 
 void TerrainRenderer::ReleaseShader()

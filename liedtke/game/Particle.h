@@ -1,7 +1,6 @@
 #pragma once
 #include "SpriteRenderer.h"
-#include "GameObject.h"
-#include "SpriteRenderer.h"
+
 class Particle : public SpriteVertex
 {
 public:
