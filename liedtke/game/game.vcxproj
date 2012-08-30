@@ -419,7 +419,6 @@
     <ClCompile Include="EnemyInstance.cpp" />
     <ClCompile Include="EnemyTransformation.cpp" />
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="GameComponent.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
@@ -428,6 +427,7 @@
     <ClCompile Include="ParticleEffect.cpp" />
     <ClCompile Include="ProjectileType.cpp" />
     <ClCompile Include="Skybox.cpp" />
+    <ClCompile Include="SphereCollider.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
@@ -466,6 +466,7 @@
     <ClInclude Include="ProjectileType.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="SphereCollider.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="TerrainObject.h" />

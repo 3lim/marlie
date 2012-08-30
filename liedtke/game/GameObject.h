@@ -69,6 +69,8 @@ class GameObject
 	SpriteVertex* GetSprite() { return &myVertex; }
 	float GetColliderRadius() { return colliderSize; }
 
+	void AddComponent(GameComponent* c);
+
 protected:
 	std::vector<GameComponent*> Components;
 	D3DXVECTOR3 lookDirection;

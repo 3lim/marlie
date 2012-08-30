@@ -195,4 +195,6 @@ void GameObject::AddForce(float power, D3DXVECTOR3& dir)
 
 GameObject::~GameObject(void)
 {
+	for(auto it = Components.begin(); it != Components.end(); it++)
+		SAFE_DELETE(*it);
 }

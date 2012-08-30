@@ -43,6 +43,7 @@
 #include "Skybox.h"
 #include "GameObject.h"
 #include "Enemy.h"
+#include "SphereCollider.h"
 
 #include "Macros.h"
 
@@ -398,6 +399,7 @@ void LoadConfig(bool reload = false)
 			//g_EnemyTyp
 			g_EnemyTyp[name] = new Enemy(hitpoints, units, GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
 			g_EnemyTyp[name]->SetSpeed(speed);
+			g_EnemyTyp[name]->AddComponent(new SphereCollider(sphere));
 			if( effect.size() > 0  && effect.compare("-") != 0)
 				g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);

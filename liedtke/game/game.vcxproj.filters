@@ -69,7 +69,9 @@
     </ClCompile>
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Enemy.cpp" />
-    <ClCompile Include="GameComponent.cpp" />
+    <ClCompile Include="SphereCollider.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -145,7 +147,12 @@
     </ClInclude>
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Enemy.h" />
-    <ClInclude Include="GameComponent.h" />
+    <ClInclude Include="SphereCollider.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="GameComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
@@ -182,6 +189,9 @@
     </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{69597981-2dd8-4786-9bd6-5e777aaeebc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components">
+      <UniqueIdentifier>{e4df98f3-a406-4984-aeec-75203d3fad52}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
