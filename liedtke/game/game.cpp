@@ -1180,9 +1180,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	{
 		Enemy* myEnemy = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
 		if(myEnemy->SpawnedEnemies < myEnemy->GetCountMaxUnits()){
-			Enemy newEnemy = Enemy(*myEnemy);
 			g_LastSpawn = fTime;
-			newEnemy.SpawnedEnemies++;
+			//TODO: Spawn und Destroy von den Enemies besser abfragen, aktuell wird der Zähler nicht mehr dekrementiert
+			myEnemy->SpawnedEnemies++;
+			Enemy newEnemy = Enemy(*myEnemy);
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
 			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
@@ -1205,15 +1206,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
 		g_StaticGameObjects[2].Rotate(0,0,170*fElapsedTime);
-		g_StaticGameObjects[2].CalculateWorldMatrix();
 	}
 	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
 		//move
  		g_StaticGameObjects[4].Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
-		g_StaticGameObjects[4].CalculateWorldMatrix();
 	}
-
 
 	//*********************************MovingObjects
 	g_StaticGameObjects[10].Rotate(0,50.f*fElapsedTime,0);
@@ -1332,6 +1330,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
 	}
 */
+	//Neuberechnung von der Worldmatrix von statischen Objekten, theorethisch nicht nötig
+	//for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
+	//{
+	//	it->CalculateWorldMatrix();
+	//}
+
 }
 
 
@@ -1341,6 +1345,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 	float fElapsedTime, void* pUserContext )
 {
+
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
 	{

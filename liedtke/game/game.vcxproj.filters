@@ -69,6 +69,7 @@
     </ClCompile>
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="GameComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -144,6 +145,7 @@
     </ClInclude>
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="GameComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />

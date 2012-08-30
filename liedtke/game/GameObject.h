@@ -1,5 +1,7 @@
 #pragma once
 #include "SpriteRenderer.h"
+#include "ParticleEffect.h"
+#include "GameComponent.h"
 
 struct MeshObject
 {
@@ -42,12 +44,16 @@ class GameObject
 	void TranslateTo(float x, float y, float z); //set
 	void Rotate(float x, float y, float z);//addition
 	void RotateTo(float x, float y, float z);//set
+	void OnCreate();
 	void OnMove(double time, float elapsedTime);
-	void SetMeshOrientation(float x, float y, float z) 
-		{mMeshOirentation = D3DXMATRIX(x, y, z,0,
+	void OnHit(Particle* p);
+	void OnDestroy();
+
+	void SetMeshOrientation(float rotX, float rotY, float rotZ, float transX = 0.f, float transY = 0.f, float transZ = 0.f) 
+		{mMeshOirentation = D3DXMATRIX(rotX, rotY, rotZ,0,
 				0,1,0,0,
-				-z, y, x,0,
-				0,0,0,1);}
+				-rotZ, rotY, rotX,0,
+				transX,transY,transZ,1);}
 	//Fügt eine auf das GO wirkende Kraft hinzu
 	void AddForce(float power, float& directionX, float& directionY, float& directionZ);
 	//Fügt eine auf das GO wirkende Kraft hinzu, NormDir muss normalisiert sein!
@@ -64,8 +70,10 @@ class GameObject
 	float GetColliderRadius() { return colliderSize; }
 
 protected:
+	std::vector<GameComponent*> Components;
 	D3DXVECTOR3 lookDirection;
 private:
+
 	inline void calcScale();
 	//inline void calcRotate();
 	inline void calcTranslation();

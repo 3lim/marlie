@@ -15,15 +15,17 @@ Enemy::Enemy(int points, int units, GameObject& o) : GameObject(o),
 //	Translate(velocity.x, velocity.y, velocity.z);
 //}
 
-void Enemy::OnDestroy()
-{
-	SpawnedEnemies--;
-}
-
-void Enemy::OnHit(Particle* p)
-{
-	//TODO
-}
+//void Enemy::OnCreate()
+//{
+//	GameObject::OnCreate();
+//	SpawnedEnemies++;
+//}
+//
+//void Enemy::OnDestroy()
+//{
+//	GameObject::OnDestroy();
+//	SpawnedEnemies--;
+//}
 
 void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 {

@@ -144,10 +144,39 @@ void GameObject::CalculateWorldMatrix()
 	worldMatrix = mScale*mMeshOirentation*mRotate*mTranslation;
 }
 
+void GameObject::OnCreate()
+{
+	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
+		(*it)->OnCreate();
+	}
+}
+
 void GameObject::OnMove(double time, float elapsedTime)
 {
+	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
+		(*it)->OnMove(time, elapsedTime);
+	}
 	Translate(velocity.x*elapsedTime, velocity.y*elapsedTime, velocity.z*elapsedTime);
 }
+
+void GameObject::OnHit(Particle* p)
+{
+	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
+		(*it)->OnHit(NULL);
+	}
+}
+
+void GameObject::OnDestroy()
+{
+	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
+		(*it)->OnDestroy();
+	}
+}
+
 
 void GameObject::AddForce(float power, float& x, float& y, float& z)
 {
