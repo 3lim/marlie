@@ -1,6 +1,8 @@
 #include "GameObject.h"
 #include "MeshRenderer.h"
 
+#include "SphereCollider.h"
+
 #include "Macros.h"
 
 GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
@@ -61,6 +63,17 @@ GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, fl
 	RotateTo(rotX, rotY, rotZ);
 }
 
+GameObject* GameObject::Clone()
+{
+	//shallow Copy
+	GameObject* o = new GameObject(*this);
+	//cheat to deep Copy
+	o->Components.clear();
+	for each(GameComponent* c in Components)
+		//TODO verschiedene typen
+		o->AddComponent(new SphereCollider(*static_cast<SphereCollider*>(c)));
+	return o;
+}
 
 void GameObject::Scale(float s)
 {
@@ -191,6 +204,11 @@ void GameObject::AddForce(float power, D3DXVECTOR3& dir)
 	//D3DXVec3Normalize(&dir, &dir);
 	dir*= power;
 	D3DXVec3Add(&velocity, &velocity, &dir);
+}
+
+void GameObject::AddComponent(GameComponent* component)
+{
+	Components.push_back(component);
 }
 
 GameObject::~GameObject(void)

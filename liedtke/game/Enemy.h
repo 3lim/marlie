@@ -6,8 +6,9 @@ class Enemy :
 	public GameObject
 {
 public:
-	Enemy(int hitpoints, int maxUnits, GameObject& object);
+	Enemy(int hitpoints, int maxUnits, GameObject* object);
 	~Enemy(void);
+	Enemy* Clone();
 	//void OnCreate();
 	//void OnMove(double time, float elapsedTime);
 	//void OnHit(Particle* p);

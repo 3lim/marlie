@@ -25,10 +25,10 @@ public:
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
-	void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject>* object);
-	void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy>* object);
-	void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject>* object);
-	void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy>* object);
+	void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object);
+	void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technik);
 	void Deinit();

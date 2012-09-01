@@ -120,10 +120,10 @@ Skybox*					g_SkyboxRenderer = NULL;
 
 map<string, Enemy*> g_EnemyTyp;
 //enthält alle GameObjects, die dauerhaft im Spiel sind
-vector<GameObject> g_StaticGameObjects;
+vector<GameObject*> g_StaticGameObjects;
 map<string, int> g_ObjectReferences;
-vector<TerrainObject> g_TerrainObjects;
-list<Enemy> g_EnemyInstances;
+vector<TerrainObject*> g_TerrainObjects;
+list<Enemy*> g_EnemyInstances;
 vector<string> g_EnemyTypeNames;
 map<string, ProjectileType>  g_ProjectileTypes;
 vector<WeaponType>		g_WeaponTypes;
@@ -379,27 +379,27 @@ void LoadConfig(bool reload = false)
 		}
 		else if(var.compare("CameraObject") == 0) {
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
-			g_StaticGameObjects.push_back(GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::CAMERA));
+			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::CAMERA));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("WorldObject") == 0) {
 			bool automaticHeight;
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >>transZ >> automaticHeight;
-			g_StaticGameObjects.push_back(GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::WORLD));
+			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::WORLD));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("TerrainObject") == 0)
 		{
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> useNormal >> spacing >> offset >> maxCount;
-			g_TerrainObjects.push_back(TerrainObject(MeshRenderer::g_Meshes[meshName], 0,0,offset, scale, rotX, rotY, rotZ, spacing, maxCount ));
+			g_TerrainObjects.push_back(new TerrainObject(MeshRenderer::g_Meshes[meshName], 0,0,offset, scale, rotX, rotY, rotZ, spacing, maxCount ));
 		}
 		else if(var.compare("EnemyType") == 0){
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
-			g_EnemyTyp[name] = new Enemy(hitpoints, units, GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
+			g_EnemyTyp[name] = new Enemy(hitpoints, units, new GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
 			g_EnemyTyp[name]->SetSpeed(speed);
-			g_EnemyTyp[name]->AddComponent(new SphereCollider(sphere));
+			g_EnemyTyp[name]->AddComponent( new SphereCollider(sphere));
 			if( effect.size() > 0  && effect.compare("-") != 0)
 				g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);
@@ -431,7 +431,7 @@ void LoadConfig(bool reload = false)
 					stream >> var;
 				} 
 			}
-			D3DXVECTOR3* p = g_StaticGameObjects[g_ObjectReferences[name]].GetPosition();
+			D3DXVECTOR3* p = g_StaticGameObjects[g_ObjectReferences[name]]->GetPosition();
 			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp, &g_Particles));
 		} else if(var.compare("Explosion") == 0)
 		{
@@ -507,6 +507,16 @@ void DeinitApp(){
 	for(auto it=g_EnemyTyp.begin(); it!= g_EnemyTyp.end(); it++)
 		SAFE_DELETE(it->second);
 	g_EnemyTyp.clear();
+	for(auto it=g_EnemyInstances.begin(); it!= g_EnemyInstances.end(); it++)
+		SAFE_DELETE(*it);
+	g_EnemyInstances.clear();
+	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
+		//Terrain objekte verweisen alle auf das gleiche Objekt? im Speicher
+		SAFE_DELETE(*it);
+	g_StaticGameObjects.clear();
+	for(auto it = g_TerrainObjects.begin(); it != g_TerrainObjects.end(); it++)
+		SAFE_DELETE(*it);
+	g_TerrainObjects.clear();
 	SAFE_DELETE(g_SpriteRenderer);
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
@@ -529,11 +539,11 @@ void RenderText()
 		g_TxtHelper->DrawTextLine( DXUTGetDeviceStats() );
 		std::wstringstream out;
 		out << Oindex << " "
-			<< (*g_StaticGameObjects[Oindex].GetName()).c_str()
+			<< (*g_StaticGameObjects[Oindex]->GetName()).c_str()
 			<<"  Translation X: "
-			<< g_StaticGameObjects[Oindex].GetPosition()->x << " Y: "
-			<< g_StaticGameObjects[Oindex].GetPosition()->y << " Z: "
-			<< g_StaticGameObjects[Oindex].GetPosition()->z << " Scale: " << g_StaticGameObjects[Oindex].GetScale();
+			<< g_StaticGameObjects[Oindex]->GetPosition()->x << " Y: "
+			<< g_StaticGameObjects[Oindex]->GetPosition()->y << " Z: "
+			<< g_StaticGameObjects[Oindex]->GetPosition()->z << " Scale: " << g_StaticGameObjects[Oindex]->GetScale();
 
 		g_TxtHelper->DrawTextLine(out.str().c_str());
 	}
@@ -755,7 +765,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	//terrainObjects place and set to draw Ojects
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
-		placeTerrainObject(o._Ptr);
+		placeTerrainObject(*o);
 
 
 	//Skybox
@@ -955,7 +965,7 @@ HRESULT ReLoadConfig(ID3D11Device* pd3dDevice)
 
 	AutomaticPositioning();
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
-		placeTerrainObject(o._Ptr);
+		placeTerrainObject(*o);
 
 	return S_OK;
 }
@@ -1049,43 +1059,43 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			break;
 		case  38: //Arrow Up
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(0,1,0);
+				g_StaticGameObjects[Oindex]->Translate(0,1,0);
 			if(OScale)
-				g_StaticGameObjects[Oindex].Scale(0.1f);
+				g_StaticGameObjects[Oindex]->Scale(0.1f);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate(0, 1,0);
+				g_StaticGameObjects[Oindex]->Rotate(0, 1,0);
 			break;
 		case  40: //Arrow Down
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(0,-1,0);
+				g_StaticGameObjects[Oindex]->Translate(0,-1,0);
 			if(OScale)
-				g_StaticGameObjects[Oindex].Scale(-0.1f);
+				g_StaticGameObjects[Oindex]->Scale(-0.1f);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate(0, -1,0);
+				g_StaticGameObjects[Oindex]->Rotate(0, -1,0);
 			break;
 		case  39: //Arrow Right
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(1,0,0);
+				g_StaticGameObjects[Oindex]->Translate(1,0,0);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate(1, 0,0);
+				g_StaticGameObjects[Oindex]->Rotate(1, 0,0);
 			break;
 		case  37: //arrow Left
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(-1,0,0);
+				g_StaticGameObjects[Oindex]->Translate(-1,0,0);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate( -1,0,0);
+				g_StaticGameObjects[Oindex]->Rotate( -1,0,0);
 			break;
 		case  187: // minus
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(0,0,-1);
+				g_StaticGameObjects[Oindex]->Translate(0,0,-1);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate( 0,0,-1);
+				g_StaticGameObjects[Oindex]->Rotate( 0,0,-1);
 			break;
 		case  189: // minus
 			if(Omove)
-				g_StaticGameObjects[Oindex].Translate(0,0,1);
+				g_StaticGameObjects[Oindex]->Translate(0,0,1);
 			if(ORotate)
-				g_StaticGameObjects[Oindex].Rotate( 0,0,1);
+				g_StaticGameObjects[Oindex]->Rotate( 0,0,1);
 			break;
 		} 
 	}else{ //KeyUp
@@ -1185,7 +1195,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			g_LastSpawn = fTime;
 			//TODO: Spawn und Destroy von den Enemies besser abfragen, aktuell wird der Zähler nicht mehr dekrementiert
 			myEnemy->SpawnedEnemies++;
-			Enemy newEnemy = Enemy(*myEnemy);
+			Enemy* newEnemy = myEnemy->Clone();
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
 			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
@@ -1193,9 +1203,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			D3DXVECTOR3 InnerPos(g_TargetCircle*cos(a), height, g_TargetCircle*sin(a));
 			D3DXVECTOR3 MovingDirection = D3DXVECTOR3(0,height,0)-outerPos;
 			D3DXVec3Normalize(&MovingDirection, &MovingDirection);
-			newEnemy.SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
-			newEnemy.AddForce(myEnemy->GetSpeed(), MovingDirection);
-			newEnemy.TranslateTo(outerPos.x, outerPos.y, outerPos.z);
+			newEnemy->SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
+			newEnemy->AddForce(myEnemy->GetSpeed(), MovingDirection);
+			newEnemy->TranslateTo(outerPos.x, outerPos.y, outerPos.z);
 
 			g_EnemyInstances.push_back(newEnemy);
 			//g_EnemyInstances[1].SetDestroyEffect(&g_ParticleEffects["Death1"]);
@@ -1207,20 +1217,20 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
-		g_StaticGameObjects[2].Rotate(0,0,170*fElapsedTime);
+		g_StaticGameObjects[2]->Rotate(0,0,170*fElapsedTime);
 	}
 	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
 		//move
- 		g_StaticGameObjects[4].Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
+ 		g_StaticGameObjects[4]->Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
 	}
 
 	//*********************************MovingObjects
-	g_StaticGameObjects[10].Rotate(0,50.f*fElapsedTime,0);
-	g_StaticGameObjects[10].CalculateWorldMatrix();
+	g_StaticGameObjects[10]->Rotate(0,50.f*fElapsedTime,0);
+	g_StaticGameObjects[10]->CalculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
 	{
-		ei->OnMove(fTime, fElapsedTime);
+		(*ei)->OnMove(fTime, fElapsedTime);
 	}
 	for(auto pi = g_Particles.begin(); pi != g_Particles.end(); pi++)
 	{
@@ -1246,22 +1256,22 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		else
 		{
 			del = false;
-			for(list<Enemy>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
+			for(list<Enemy*>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
 				//D3DXVECTOR3 d =(shoot->Position-enemy->getCurrentPosition());
 				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
 				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
-				if(D3DXVec3Length(&(shoot->Position-*enemy->GetPosition())) < (shoot->Radius +enemy->GetColliderRadius())*(shoot->Radius +enemy->GetColliderRadius())){
+				if(D3DXVec3Length(&(shoot->Position-*(*enemy)->GetPosition())) < (shoot->Radius +(*enemy)->GetColliderRadius())*(shoot->Radius +(*enemy)->GetColliderRadius())){
 					del = true;
-					enemy->OnHit(&shoot.operator*());
+					(*enemy)->OnHit(&shoot.operator*());
 					shoot->onHit();
 					shoot->Destroy();
 					auto shoot_rem = shoot;
 					shoot++;
-					if(enemy->IsDead())
+					if((*enemy)->IsDead())
 					{
-						g_PlayerPoints += enemy->GetPoints();
-						enemy->OnDestroy();
+						g_PlayerPoints += (*enemy)->GetPoints();
+						(*enemy)->OnDestroy();
 						auto enemy_rem = enemy;
 						enemy++;
 						g_EnemyInstances.erase(enemy_rem);
@@ -1281,13 +1291,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//*********************************DestroyObjects
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end();)
 	{
-		if(D3DXVec3Length(ei->GetPosition())-g_DestroyCircle > 0){
+		if(D3DXVec3Length((*ei)->GetPosition())-g_DestroyCircle > 0){
 			auto ei_rem = ei;
 			ei++;
-			ei_rem->SpawnedEnemies--;
+			(*ei_rem)->SpawnedEnemies--;
 			g_EnemyInstances.erase(ei_rem);
 		} else {
-			ei->CalculateWorldMatrix();
+			(*ei)->CalculateWorldMatrix();
 			ei++;
 		}
 	}
@@ -1499,7 +1509,7 @@ void placeTerrainObject(TerrainObject* o){
 		//	D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
 		//	o->rotate(n.x,n.y, n.z);
 		//}
-		g_StaticGameObjects.push_back(*o);
+		g_StaticGameObjects.push_back(o);
 	}
 }
 
@@ -1507,9 +1517,9 @@ void AutomaticPositioning()
 {
 	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 	{
-		if(it->GetRelativePosition() == GameObject::TERRAIN)
-			it->TranslateTo(it->GetPosition()->x, g_TerrainRenderer->getHeightAtPoint(it->GetPosition()->x, it->GetPosition()->z)+ it->GetPosition()->y, it->GetPosition()->z);
-		it->CalculateWorldMatrix();
+		if((*it)->GetRelativePosition() == GameObject::TERRAIN)
+			(*it)->TranslateTo((*it)->GetPosition()->x, g_TerrainRenderer->getHeightAtPoint((*it)->GetPosition()->x, (*it)->GetPosition()->z)+ (*it)->GetPosition()->y, (*it)->GetPosition()->z);
+		(*it)->CalculateWorldMatrix();
 	}
 }
 
@@ -1525,8 +1535,8 @@ void drawShipsOnRadar()
 
 	for each(auto it in g_EnemyInstances)
 	{
-		float x = it.GetPosition()->x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
-		float y = it.GetPosition()->y/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float x = it->GetPosition()->x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float y = it->GetPosition()->y/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
 		pShip.Position = D3DXVECTOR3(x,y,0);
 		radarShips.push_back(SpriteVertex(pShip));
 	}

@@ -25,12 +25,12 @@ class GameObject
 		TERRAIN,
 		CAMERA
 	};
-
-
 	GameObject(SpriteVertex v, PositionType relativeTo);
 	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
 	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
 	~GameObject(void);
+
+	GameObject* Clone();
 
 	//void SetPosition(D3DXVECTOR3& p) { *position = p;}
 	//void SetSize(float& s) { if(tObject == MESH)  myMesh.Scale = D3DXVECTOR3(s,s,s); else myVertex.Radius = s; }

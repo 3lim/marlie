@@ -56,46 +56,46 @@ void MeshRenderer::setEffectVariables()
 	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object._Ptr, m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET);
 	}
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, &(GameObject)object.operator*(), m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET);
 	}
 }
 
- void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject>* o)
+ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object._Ptr, m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
- void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy>* o)
+ void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, &(GameObject)object.operator*(), m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
 //void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technique)

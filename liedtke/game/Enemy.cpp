@@ -1,7 +1,6 @@
 #include "Enemy.h"
 
-
-Enemy::Enemy(int points, int units, GameObject& o) : GameObject(o),
+Enemy::Enemy(int points, int units, GameObject* o) : GameObject(*o),
 	hitpoints(points),
 	maxUnits(units),
 	takenDamage(0),
@@ -33,6 +32,12 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 	this->speed = speed;
 	lookDirection = dir;
 	AddForce(speed, dir);
+}
+
+Enemy* Enemy::Clone()
+{
+	Enemy* e = new Enemy(hitpoints, maxUnits, GameObject::Clone());
+	return e;
 }
 
 
