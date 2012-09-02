@@ -68,7 +68,7 @@ class GameObject
 	float GetColliderRadius() { return colliderSize; }
 
 	void AddComponent(GameComponent* c);
-
+	std::vector<GameComponent*> GetComponent(GameComponent::componentType cType);
 protected:
 	std::vector<GameComponent*> Components;
 	D3DXVECTOR3 lookDirection;

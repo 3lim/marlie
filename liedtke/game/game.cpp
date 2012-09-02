@@ -1173,7 +1173,7 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 	}
 }
 
-
+SphereCollider* enemyCollider;
 //--------------------------------------------------------------------------------------
 // Handle updates to the scene.  This is called regardless of which D3D API is used
 //--------------------------------------------------------------------------------------
@@ -1272,7 +1272,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
 				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
-				if(D3DXVec3Length(&(shoot->Position-*(*enemy)->GetPosition())) < (shoot->Radius +(*enemy)->GetColliderRadius())*(shoot->Radius +(*enemy)->GetColliderRadius())){
+				enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)[0]);
+				if(D3DXVec3Length(&(shoot->Position-*(*enemy)->GetPosition())) < (shoot->Radius +enemyCollider->GetSphereRadius())){
 					del = true;
 					(*enemy)->OnHit(&shoot.operator*());
 					shoot->onHit();
@@ -1521,8 +1522,6 @@ void placeTerrainObject(TerrainObject* o){
 		//}
 		g_StaticGameObjects.push_back(o->Clone());
 	}
-	
-	//TODO: release of terrainObjects vector da dieser ab hier nicht mehr gebraucht werden müsste
 }
 
 void AutomaticPositioning()

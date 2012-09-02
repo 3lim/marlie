@@ -225,6 +225,16 @@ void GameObject::AddComponent(GameComponent* component)
 	Components.push_back(component);
 }
 
+std::vector<GameComponent*> GameObject::GetComponent(GameComponent::componentType t)
+{
+	std::vector<GameComponent*> result;
+	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
+		if((*it)->GetType() == t)
+			result.push_back(*it);
+	}
+	return result;
+}
 GameObject::~GameObject(void)
 {
 	for(auto it = Components.begin(); it != Components.end(); it++)

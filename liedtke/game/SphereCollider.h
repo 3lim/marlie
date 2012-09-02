@@ -10,6 +10,7 @@ public:
 	void OnMove(double time, float elapsedTime) const;
 	void OnHit(GameComponent* collider) const;
 	void OnDestroy() const;
+	float GetSphereRadius() { return sphereSize; }
 private:
 	float sphereSize;
 };
