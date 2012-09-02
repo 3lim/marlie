@@ -516,7 +516,6 @@ void DeinitApp(){
 		SAFE_DELETE(*it);
 	g_EnemyInstances.clear();
 	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
-		//Terrain objekte verweisen alle auf das gleiche Objekt? im Speicher
 		SAFE_DELETE(*it);
 	g_StaticGameObjects.clear();
 	for(auto it = g_TerrainObjects.begin(); it != g_TerrainObjects.end(); it++)
@@ -1520,7 +1519,7 @@ void placeTerrainObject(TerrainObject* o){
 		//	D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
 		//	o->rotate(n.x,n.y, n.z);
 		//}
-		g_StaticGameObjects.push_back(new GameObject(*o));
+		g_StaticGameObjects.push_back(o->Clone());
 	}
 	
 	//TODO: release of terrainObjects vector da dieser ab hier nicht mehr gebraucht werden müsste

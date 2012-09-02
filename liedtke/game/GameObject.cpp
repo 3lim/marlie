@@ -234,6 +234,9 @@ void GameObject::AddComponent(GameComponent* component)
 
 GameObject::~GameObject(void)
 {
+	for(auto it = Components.begin(); it != Components.end(); )
+		//SAFE_DELETE(*it);
+		it = Components.erase(it);
 	for(auto it = Components.begin(); it != Components.end(); it++)
 	{
 		SAFE_DELETE(*it);
