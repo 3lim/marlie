@@ -54,6 +54,10 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 	AddForce(speed, dir);
 }
 
+Enemy* Enemy::Clone()
+{
+	return new Enemy(this);
+}
 
 Enemy::~Enemy(void)
 {

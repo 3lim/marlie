@@ -2,15 +2,13 @@
 
 
 SphereCollider::SphereCollider(float s) : sphereSize(s)
-	
 {
-	myType = GameComponent::SphereCollider;
+	myType = GameComponent::tSphereCollider;
 }
 
 
 SphereCollider::~SphereCollider(void)
 {
-	myType = GameComponent::SphereCollider;
 }
 
 void SphereCollider::OnCreate() const

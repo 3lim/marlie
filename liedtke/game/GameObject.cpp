@@ -86,14 +86,7 @@ GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, fl
 
 GameObject* GameObject::Clone()
 {
-	//shallow Copy
-	GameObject* o = new GameObject(*this);
-	//cheat to deep Copy
-	o->Components.clear();
-	for each(GameComponent* c in Components)
-		//TODO verschiedene typen
-		o->AddComponent(new SphereCollider(*static_cast<SphereCollider*>(c)));
-	return o;
+	return new GameObject(this);
 }
 
 void GameObject::Scale(float s)
@@ -234,9 +227,6 @@ void GameObject::AddComponent(GameComponent* component)
 
 GameObject::~GameObject(void)
 {
-	for(auto it = Components.begin(); it != Components.end(); )
-		//SAFE_DELETE(*it);
-		it = Components.erase(it);
 	for(auto it = Components.begin(); it != Components.end(); it++)
 	{
 		SAFE_DELETE(*it);
