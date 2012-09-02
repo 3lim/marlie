@@ -1,11 +1,31 @@
 #include "Enemy.h"
 
-Enemy::Enemy(int points, int units, GameObject* o) : GameObject(*o),
+Enemy::Enemy(Enemy* e) : GameObject(e),
+	hitpoints(e->hitpoints),
+	takenDamage(e->takenDamage),
+	speed(e->speed),
+	maxUnits(e->maxUnits),
+	effect(e->effect),
+	SpawnedEnemies(e->SpawnedEnemies)
+{
+}
+//
+//Enemy::Enemy(int points, int units, GameObject* o) : GameObject(o),
+//	hitpoints(points),
+//	maxUnits(units),
+//	takenDamage(0),
+//	SpawnedEnemies(0)
+//{
+//}
+
+Enemy::Enemy(int points, int units, std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo) : GameObject(meshName, posX, posY, posZ, scale, rotX, rotY, rotZ, relativeTo),
 	hitpoints(points),
 	maxUnits(units),
 	takenDamage(0),
 	SpawnedEnemies(0)
+
 {
+
 }
 
 //void Enemy::OnMove(double time, float elapsedTime)
@@ -32,12 +52,6 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 	this->speed = speed;
 	lookDirection = dir;
 	AddForce(speed, dir);
-}
-
-Enemy* Enemy::Clone()
-{
-	Enemy* e = new Enemy(hitpoints, maxUnits, GameObject::Clone());
-	return e;
 }
 
 

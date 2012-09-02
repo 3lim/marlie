@@ -397,7 +397,9 @@ void LoadConfig(bool reload = false)
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
-			g_EnemyTyp[name] = new Enemy(hitpoints, units, new GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
+
+			//g_EnemyTyp[name] = new Enemy(hitpoints, units, new GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
+			g_EnemyTyp[name] = new Enemy(hitpoints, units, meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD);
 			g_EnemyTyp[name]->SetSpeed(speed);
 			g_EnemyTyp[name]->AddComponent( new SphereCollider(sphere));
 			if( effect.size() > 0  && effect.compare("-") != 0)
@@ -504,8 +506,11 @@ void InitApp()
 void DeinitApp(){
 	g_TerrainRenderer->Deinit();
 	g_MeshRenderer->Deinit();
+	Enemy* t;
 	for(auto it=g_EnemyTyp.begin(); it!= g_EnemyTyp.end(); it++)
+	{
 		SAFE_DELETE(it->second);
+	}
 	g_EnemyTyp.clear();
 	for(auto it=g_EnemyInstances.begin(); it!= g_EnemyInstances.end(); it++)
 		SAFE_DELETE(*it);
@@ -538,6 +543,7 @@ void RenderText()
 		g_TxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
 		g_TxtHelper->DrawTextLine( DXUTGetDeviceStats() );
 		std::wstringstream out;
+		if(g_StaticGameObjects.size() > Oindex)
 		out << Oindex << " "
 			<< (*g_StaticGameObjects[Oindex]->GetName()).c_str()
 			<<"  Translation X: "
@@ -765,9 +771,11 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	//terrainObjects place and set to draw Ojects
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
-		placeTerrainObject(*o);
-
-
+{		
+	placeTerrainObject(*o);
+	SAFE_DELETE(*o);
+	}
+	g_TerrainObjects.clear();
 	//Skybox
 	if(g_UseSkybox){
 		V(g_SkyboxRenderer->CreateResources(pd3dDevice));
@@ -1190,12 +1198,14 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//*********************************SpawnObjects	
 	if(fTime-g_LastSpawn> g_SpawnIntervall)
 	{
-		Enemy* myEnemy = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
-		if(myEnemy->SpawnedEnemies < myEnemy->GetCountMaxUnits()){
+		if(g_EnemyTypeNames.size() > 0)
+		{
+		Enemy* myEnemyType = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
+		if(myEnemyType->SpawnedEnemies < myEnemyType->GetCountMaxUnits()){
 			g_LastSpawn = fTime;
 			//TODO: Spawn und Destroy von den Enemies besser abfragen, aktuell wird der Zähler nicht mehr dekrementiert
-			myEnemy->SpawnedEnemies++;
-			Enemy* newEnemy = myEnemy->Clone();
+			myEnemyType->SpawnedEnemies++;
+			Enemy* newEnemy = new Enemy(myEnemyType);
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
 			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
@@ -1204,7 +1214,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			D3DXVECTOR3 MovingDirection = D3DXVECTOR3(0,height,0)-outerPos;
 			D3DXVec3Normalize(&MovingDirection, &MovingDirection);
 			newEnemy->SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
-			newEnemy->AddForce(myEnemy->GetSpeed(), MovingDirection);
+			newEnemy->AddForce(myEnemyType->GetSpeed(), MovingDirection);
 			newEnemy->TranslateTo(outerPos.x, outerPos.y, outerPos.z);
 
 			g_EnemyInstances.push_back(newEnemy);
@@ -1214,6 +1224,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			pushText("Achtung: Ein neuer Feind ist nun in Reichweite!", D3DXCOLOR(1.0f, 0.15f, 0.f, 1.f));
 		}
 	}
+	}
+	//todo memory leak chekc
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
@@ -1226,8 +1238,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 
 	//*********************************MovingObjects
-	g_StaticGameObjects[10]->Rotate(0,50.f*fElapsedTime,0);
-	g_StaticGameObjects[10]->CalculateWorldMatrix();
+	//g_StaticGameObjects[10]->Rotate(0,50.f*fElapsedTime,0);
+	//g_StaticGameObjects[10]->CalculateWorldMatrix();
 	for(auto ei = g_EnemyInstances.begin(); ei != g_EnemyInstances.end(); ei++)
 	{
 		(*ei)->OnMove(fTime, fElapsedTime);
@@ -1494,7 +1506,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		OutputDebugString( L"\n" );
 		dwTimefirst = GetTickCount();
 	}
-	//cout << "render ende";
 }
 
 void placeTerrainObject(TerrainObject* o){
@@ -1509,8 +1520,10 @@ void placeTerrainObject(TerrainObject* o){
 		//	D3DXVECTOR3 n = g_TerrainRenderer->getNormalAtPoint(x,z,1);
 		//	o->rotate(n.x,n.y, n.z);
 		//}
-		g_StaticGameObjects.push_back(o);
+		g_StaticGameObjects.push_back(new GameObject(*o));
 	}
+	
+	//TODO: release of terrainObjects vector da dieser ab hier nicht mehr gebraucht werden müsste
 }
 
 void AutomaticPositioning()

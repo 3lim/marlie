@@ -25,16 +25,14 @@ class GameObject
 		TERRAIN,
 		CAMERA
 	};
+	GameObject(GameObject* toClone);
 	GameObject(SpriteVertex v, PositionType relativeTo);
 	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
 	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
-	~GameObject(void);
+	virtual ~GameObject(void);
 
 	GameObject* Clone();
 
-	//void SetPosition(D3DXVECTOR3& p) { *position = p;}
-	//void SetSize(float& s) { if(tObject == MESH)  myMesh.Scale = D3DXVECTOR3(s,s,s); else myVertex.Radius = s; }
-	
 	//Setzt Die Farbe, welche über die Textur geblendet werden soll a = 0 == keine Farbveränderung
 	void SetColor(D3DXCOLOR& c) { tObject == MESH ? myMesh.Color = c : myVertex.Color = c;}
 	void SetColliderRadius(float r) { colliderSize = r; }
@@ -77,16 +75,12 @@ protected:
 private:
 
 	inline void calcScale();
-	//inline void calcRotate();
 	inline void calcTranslation();
 	inline void calcAnim();
 	PositionType tPosition;
 	ObjectType tObject;
 	SpriteVertex myVertex;
 	MeshObject myMesh;
-	//D3DXVECTOR3* position;
-	//D3DXVECTOR3* size;
-	//D3DXCOLOR* color;
 	D3DXVECTOR3 velocity;
 
 	D3DXMATRIX worldMatrix;

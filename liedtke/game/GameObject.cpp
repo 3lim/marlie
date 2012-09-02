@@ -5,6 +5,27 @@
 
 #include "Macros.h"
 
+//shallow Copy
+GameObject::GameObject(GameObject* o) : tObject(o->tObject),
+	tPosition(o->tPosition),
+	velocity(o->velocity),
+	lookDirection(o->lookDirection),
+	mMeshOirentation(o->mMeshOirentation),
+	colliderSize(0),
+	mAnim(o->mAnim),
+	mTranslation(o->mTranslation),
+	mRotate(o->mRotate),
+	mScale(o->mScale),
+	worldMatrix(o->worldMatrix),
+	myMesh(o->myMesh),
+	myVertex(o->myVertex)
+{
+	//cheat to deep Copy
+	for each(GameComponent* c in o->Components)
+		//TODO verschiedene typen
+		AddComponent(new SphereCollider(*static_cast<SphereCollider*>(c)));
+}
+
 GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
 //	myMesh(NULL),
 	//position(&v.Position),
@@ -214,5 +235,8 @@ void GameObject::AddComponent(GameComponent* component)
 GameObject::~GameObject(void)
 {
 	for(auto it = Components.begin(); it != Components.end(); it++)
+	{
 		SAFE_DELETE(*it);
+	}
+	Components.clear();
 }
