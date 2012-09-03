@@ -1,7 +1,8 @@
 #include "gcProjectile.h"
 #include "Enemy.h"
 
-gcProjectile::gcProjectile(int d) : dmg(d)
+gcProjectile::gcProjectile(int d, float s) : dmg(d),
+	speed(s)
 {
 	myType = GameComponent::tProjectile;
 }
