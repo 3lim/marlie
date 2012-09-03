@@ -26,7 +26,7 @@ class GameObject
 		CAMERA
 	};
 	GameObject(GameObject* toClone);
-	GameObject(SpriteVertex v, PositionType relativeTo);
+	GameObject(SpriteVertex v, int textureIndex, float scale, float posX, float posY, float posZ, PositionType relativeTo);
 	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
 	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
 	virtual ~GameObject(void);

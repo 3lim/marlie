@@ -35,7 +35,7 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 	}
 }
 
-GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
+GameObject::GameObject(SpriteVertex v, int textureIndex, float scale, float posX, float posY, float posZ, PositionType tPos) : myVertex(v),
 //	myMesh(NULL),
 	//position(&v.Position),
 	//color(&v.Color),
@@ -45,13 +45,13 @@ GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
 	lookDirection(1,0,0),
 	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
-	myVertex.TextureIndex = 0;
+	myVertex.TextureIndex = textureIndex;
 	myVertex.AnimationSize = 0;
 	myVertex.AnimationProgress = 0;
 	myVertex.Opacity = 1.f;
 	SetColor(D3DXCOLOR(0,0,0,0));
-	ScaleTo(0);
-	TranslateTo(0,0,0);
+	ScaleTo(scale);
+	TranslateTo(posX,posY,posZ);
 	RotateTo(0,0,0);
 }
 

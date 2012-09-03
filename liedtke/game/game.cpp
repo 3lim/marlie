@@ -44,6 +44,7 @@
 #include "GameObject.h"
 #include "Enemy.h"
 #include "SphereCollider.h"
+#include "gcProjectile.h"
 
 #include "Macros.h"
 
@@ -125,7 +126,7 @@ map<string, int> g_ObjectReferences;
 vector<TerrainObject*> g_TerrainObjects;
 list<Enemy*> g_EnemyInstances;
 vector<string> g_EnemyTypeNames;
-map<string, ProjectileType*>  g_ProjectileTypes;
+map<string, GameObject*>  g_ProjectileTypes;
 vector<WeaponType>		g_WeaponTypes;
 //SpriteRenderer
 vector<pair<string, int>>			spriteFileNames;
@@ -419,12 +420,16 @@ void LoadConfig(bool reload = false)
 		} else if(var.compare("Projectile") == 0)
 		{
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass;
-			g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
+			//g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
+			GameObject* proj = new GameObject(SpriteVertex(), textureIndex, radius, 0,0,0,  GameObject::WORLD); 
+			proj->AddComponent(new SphereCollider(radius));
+			proj->AddComponent(new gcProjectile(damage, speed, cooldown));
+			g_ProjectileTypes[name] = proj;
 		} else if(var.compare("Weapon") == 0)
 		{
 			stream >> name >> x >> y >> z;
 			stream >> var;
-			vector<ProjectileType*> tmp;
+			vector<GameObject*> tmp;
 			if(var.compare("{") == 0)
 			{
 				stream >> var;
@@ -787,7 +792,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	//7.2.2
 	g_SpriteRenderer->CreateResources(pd3dDevice);
-	for_each(g_ProjectileTypes.begin(), g_ProjectileTypes.end(), [&](pair<string, ProjectileType*> i){
+	for_each(g_ProjectileTypes.begin(), g_ProjectileTypes.end(), [&](pair<string, GameObject*> i){
 		i.second->GetSprite()->AnimationSize = g_SpriteRenderer->GetAnimationSize(i.second->GetSprite()->TextureIndex);
 		i.second->GetSprite()->TextureIndex = g_SpriteRenderer->GetTextureOffset(i.second->GetSprite()->TextureIndex);
 	});
