@@ -5,24 +5,19 @@
 #include <ctime>
 #include "Particle.h"
 
-#include "objecttransformation.h"
-class ProjectileType {
+#include "GameObject.h"
+class ProjectileType : public GameObject {
 public:
-	ProjectileType(void);
-	ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, float damage);
+	ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, int damage);
 	~ProjectileType(void);
-	bool fire(Particle* p, D3DXVECTOR3 direction, double& gameTime);
+	GameObject* fire(D3DXVECTOR3 direction, double& gameTime);
 	void setIndexOffset(int index);
-	SpriteVertex m_Sprite;
 private:
 	
 	std::string m_TypeName;
-	float m_Speed;
-	float m_Mass;
 	float m_Cooldown;
 	float m_Damage;
 	double m_NextSpawn;
-
-	
+	float m_speed;
 };
 

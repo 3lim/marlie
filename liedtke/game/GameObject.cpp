@@ -11,7 +11,6 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 	velocity(o->velocity),
 	lookDirection(o->lookDirection),
 	mMeshOirentation(o->mMeshOirentation),
-	colliderSize(0),
 	mAnim(o->mAnim),
 	mTranslation(o->mTranslation),
 	mRotate(o->mRotate),
@@ -34,12 +33,16 @@ GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
-	colliderSize(0)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
-	calcScale();
-	calcTranslation();
-	D3DXMatrixRotationYawPitchRoll(&mRotate, 0,0,0);
+	myVertex.TextureIndex = 0;
+	myVertex.AnimationSize = 0;
+	myVertex.AnimationProgress = 0;
+	myVertex.Opacity = 1.f;
+	SetColor(D3DXCOLOR(0,0,0,0));
+	ScaleTo(0);
+	TranslateTo(0,0,0);
+	RotateTo(0,0,0);
 }
 
 GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType tPos) :
@@ -49,8 +52,7 @@ GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& sc
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
-	colliderSize(0)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
 	myMesh.MeshToRender = m;
 	myMesh.Position =  D3DXVECTOR3(posX, posY, posZ);;
@@ -69,8 +71,7 @@ GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, fl
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
-	colliderSize(0)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
 	myMesh.Name = m;
 	myMesh.MeshToRender = MeshRenderer::g_Meshes[m];
@@ -188,7 +189,7 @@ void GameObject::OnMove(double time, float elapsedTime)
 	Translate(velocity.x*elapsedTime, velocity.y*elapsedTime, velocity.z*elapsedTime);
 }
 
-void GameObject::OnHit(Particle* p)
+void GameObject::OnHit(GameObject* p)
 {
 	for(auto it = Components.begin(); it != Components.end(); it++)
 	{
@@ -227,13 +228,16 @@ void GameObject::AddComponent(GameComponent* component)
 
 std::vector<GameComponent*> GameObject::GetComponent(GameComponent::componentType t)
 {
-	std::vector<GameComponent*> result;
-	for(auto it = Components.begin(); it != Components.end(); it++)
-	{
-		if((*it)->GetType() == t)
-			result.push_back(*it);
-	}
-	return result;
+	//vermutlich bei vielen Components langsam
+	//std::vector<GameComponent*> result;
+	//for(auto it = Components.begin(); it != Components.end(); it++)
+	//{
+	//	if((*it)->GetType() == t)
+	//		result.push_back(*it);
+	//}
+	//return result;
+	//ist map besser? ich hoffe es
+
 }
 GameObject::~GameObject(void)
 {

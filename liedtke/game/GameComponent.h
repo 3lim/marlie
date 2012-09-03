@@ -6,7 +6,8 @@ public:
 	//no perfect workaround for instanceof but a fast way
 	enum componentType
 	{
-		tSphereCollider
+		tSphereCollider,
+		tProjectile
 	};
 	virtual ~GameComponent() {};
 	virtual void OnCreate() const = 0;

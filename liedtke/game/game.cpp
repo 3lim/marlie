@@ -125,12 +125,12 @@ map<string, int> g_ObjectReferences;
 vector<TerrainObject*> g_TerrainObjects;
 list<Enemy*> g_EnemyInstances;
 vector<string> g_EnemyTypeNames;
-map<string, ProjectileType>  g_ProjectileTypes;
+map<string, ProjectileType*>  g_ProjectileTypes;
 vector<WeaponType>		g_WeaponTypes;
 //SpriteRenderer
 vector<pair<string, int>>			spriteFileNames;
 //vector<SpriteVertex>		g_SpritesToRender;
-list<Particle> g_Particles;
+list<GameObject*> g_Particles;
 list<DISPLAYTEXT> g_DisplayTEXTBOX;
 list<DISPLAYTEXT> g_DisplayTextLeft;
 list<DISPLAYTEXT> g_DisplayTextRight;
@@ -419,7 +419,7 @@ void LoadConfig(bool reload = false)
 		} else if(var.compare("Projectile") == 0)
 		{
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass;
-			g_ProjectileTypes[name] = ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
+			g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
 		} else if(var.compare("Weapon") == 0)
 		{
 			stream >> name >> x >> y >> z;
@@ -429,7 +429,7 @@ void LoadConfig(bool reload = false)
 			{
 				stream >> var;
 				while(var.compare("}") != 0){
-					tmp.push_back(&g_ProjectileTypes[var]);
+					tmp.push_back(g_ProjectileTypes[var]);
 					stream >> var;
 				} 
 			}
@@ -521,6 +521,10 @@ void DeinitApp(){
 	for(auto it = g_TerrainObjects.begin(); it != g_TerrainObjects.end(); it++)
 		SAFE_DELETE(*it);
 	g_TerrainObjects.clear();
+	for(auto it =g_ProjectileTypes.begin(); it != g_ProjectileTypes.end(); it++)
+		SAFE_DELETE(it->second);
+	for(auto it = g_Particles.begin(); it != g_Particles.end(); it++)
+		SAFE_DELETE(*it);
 	SAFE_DELETE(g_SpriteRenderer);
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
@@ -783,9 +787,9 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	//7.2.2
 	g_SpriteRenderer->CreateResources(pd3dDevice);
-	for_each(g_ProjectileTypes.begin(), g_ProjectileTypes.end(), [&](pair<string, ProjectileType> i){
-		i.second.m_Sprite.AnimationSize = g_SpriteRenderer->GetAnimationSize(i.second.m_Sprite.TextureIndex);
-		i.second.m_Sprite.TextureIndex = g_SpriteRenderer->GetTextureOffset(i.second.m_Sprite.TextureIndex);
+	for_each(g_ProjectileTypes.begin(), g_ProjectileTypes.end(), [&](pair<string, ProjectileType*> i){
+		i.second->GetSprite()->AnimationSize = g_SpriteRenderer->GetAnimationSize(i.second->GetSprite()->TextureIndex);
+		i.second->GetSprite()->TextureIndex = g_SpriteRenderer->GetTextureOffset(i.second->GetSprite()->TextureIndex);
 	});
 	for_each(ParticleEffect::g_ParticleEffects.begin(), ParticleEffect::g_ParticleEffects.end(), [&](pair<string,ParticleEffect> it){
 		it.second.AnimationSize = g_SpriteRenderer->GetAnimationSize(it.second.TextureIndex);
@@ -1173,7 +1177,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 	}
 }
 
-SphereCollider* enemyCollider;
 //--------------------------------------------------------------------------------------
 // Handle updates to the scene.  This is called regardless of which D3D API is used
 //--------------------------------------------------------------------------------------
@@ -1245,23 +1248,25 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 	for(auto pi = g_Particles.begin(); pi != g_Particles.end(); pi++)
 	{
-		pi->move(fElapsedTime);
+		(*pi)->OnMove(fTime, fElapsedTime);
 	}
 
 	bool del = false;
 	//*********************************Check Collisions
-	for(auto shoot = g_Particles.begin(); shoot != g_Particles.end();){
+	for(auto it = g_Particles.begin(); it != g_Particles.end();){
 		//Collision mit dem Boden
-		if(g_TerrainRenderer->getHeightAtPoint(shoot->getPosition().x, shoot->getPosition().z) > shoot->getPosition().y)
+		auto shoot = *it; 
+		if(g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z) > shoot->GetPosition()->y)
 		{
 
 			ParticleEffect p = ParticleEffect(ParticleEffect::g_ParticleEffects["bomb"]);
-			p.setVertexPosition(shoot->getPosition()+D3DXVECTOR3(0,p.getSize()*0.5f,0));
+			p.setVertexPosition(*shoot->GetPosition()+D3DXVECTOR3(0,p.getSize()*0.5f,0));
 			p.setScale(1);
 			ParticleEffect::g_ActiveEffects.push_back(p);
 
-			auto shoot_rem = shoot; 
-			shoot++;
+			auto shoot_rem = it; 
+			it++;
+			SAFE_DELETE(*shoot_rem);
 			g_Particles.erase(shoot_rem);
 		}
 		else
@@ -1272,14 +1277,15 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
 				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
-				enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)[0]);
-				if(D3DXVec3Length(&(shoot->Position-*(*enemy)->GetPosition())) < (shoot->Radius +enemyCollider->GetSphereRadius())){
+				SphereCollider* enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)[0]);
+				SphereCollider* shootCollider = static_cast<SphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)[0]);
+				if(D3DXVec3Length(&(*shoot->GetPosition()-*(*enemy)->GetPosition())) < (shootCollider->GetSphereRadius() +enemyCollider->GetSphereRadius())){
 					del = true;
-					(*enemy)->OnHit(&shoot.operator*());
-					shoot->onHit();
-					shoot->Destroy();
-					auto shoot_rem = shoot;
-					shoot++;
+					(*enemy)->OnHit(shoot);
+					shoot->OnHit(*enemy);
+					//shoot->Destroy();
+					auto shoot_rem = it;
+					it++;
 					if((*enemy)->IsDead())
 					{
 						g_PlayerPoints += (*enemy)->GetPoints();
@@ -1288,6 +1294,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 						enemy++;
 						g_EnemyInstances.erase(enemy_rem);
 					}
+					SAFE_DELETE(*shoot_rem);
 					g_Particles.erase(shoot_rem);
 					break; //Ein Projektiel kann nur ein Gegner treffen
 				}
@@ -1295,7 +1302,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 					enemy++;
 			}
 			if(!del)
-				shoot++;
+				it++;
 		}
 	}
 
@@ -1315,11 +1322,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 	for(auto ei = g_Particles.begin(); ei != g_Particles.end();)
 	{
-		if(D3DXVec3Length(&ei->getPosition())-g_DestroyCircle > 0){
-			auto ei_rem = ei;
+		if(D3DXVec3Length((*ei)->GetPosition())-g_DestroyCircle > 0){
+			auto particle_rem = ei;
 			ei++;
-			//ei_rem->getObject()->SpawnedEnemies--;
-			g_Particles.erase(ei_rem);
+			//particle_rem->getObject()->SpawnedEnemies--;
+			SAFE_DELETE(*particle_rem);
+			g_Particles.erase(particle_rem);
 		} else
 			ei++;
 	}
@@ -1346,7 +1354,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for each(auto it in g_Particles)
 	{
 		//g_SpritesToRender.push_back(it);
-		SpriteRenderer::g_SpritesToRender[i++] = (SpriteVertex)it;
+		SpriteRenderer::g_SpritesToRender[i++] = *it->GetSprite();
 	}
 	sort(SpriteRenderer::g_SpritesToRender.begin(), SpriteRenderer::g_SpritesToRender.end(), VertexSort);
 	/*if(g_SpritesToRender.size() > 2048)

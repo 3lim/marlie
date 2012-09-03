@@ -72,6 +72,9 @@
     <ClCompile Include="SphereCollider.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="gcProjectile.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -151,6 +154,9 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="GameComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="gcProjectile.h">
       <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>

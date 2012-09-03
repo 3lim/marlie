@@ -1,36 +1,38 @@
 #include "ProjectileType.h"
+#include "SphereCollider.h"
+#include "gcProjectile.h"
 
-
-ProjectileType::ProjectileType(){
-
-};
-ProjectileType::ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, float damage) :
-			m_TypeName(name),
-			m_Speed(speed),
-			m_Cooldown(cooldown),
-			m_Damage(damage),
-			m_Sprite(),
-			m_Mass(mass)
+ProjectileType::ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, int damage) :GameObject(SpriteVertex(), GameObject::WORLD),
+	m_TypeName(name),
+	m_Cooldown(cooldown),
+	m_Damage(damage),
+	m_speed(speed)
 {
-	m_Sprite.Position = D3DXVECTOR3(0,0,0);
-	m_Sprite.Radius = radius;
-	m_Sprite.TextureIndex = texture;
+	Scale(radius);	
+	myVertex.TextureIndex = texture;
+	AddComponent(new SphereCollider(radius));
+	AddComponent(new gcProjectile(damage));
+
 }
 
-bool ProjectileType::fire(Particle* p, D3DXVECTOR3 direction, double& gameTime)
+GameObject* ProjectileType::fire(D3DXVECTOR3 direction, double& gameTime)
 {
+	GameObject* p = NULL;
 	if(m_NextSpawn < gameTime){
  		m_NextSpawn = gameTime + m_Cooldown;
+		p = Clone();
+		p->AddForce(m_speed, direction);
 		//*p= Particle(m_Speed, m_Mass, direction); 
-		p->setDirection(direction);
-		p->setMass(m_Mass);
-		p->setSpeed(m_Speed);
-		p->setDamage(m_Damage);
-		p->setVertexPosition(m_Sprite.Position);
-		p->setVertexSize(m_Sprite.Radius);
-		p->setVertexTexindex(m_Sprite.TextureIndex);
-		return true;
-	} else return false;
+		//p->setDirection(direction);
+		//p->setMass(m_Mass);
+		//p->setSpeed(m_Speed);
+		//p->setDamage(m_Damage);
+		//p->setVertexPosition(m_Sprite.Position);
+		//p->setVertexSize(GetScale());
+		//p->setVertexTexindex(myVertex.TextureIndex);
+		return p;
+	}
+	return NULL;
 }
 
 ProjectileType::~ProjectileType(void)
@@ -39,5 +41,5 @@ ProjectileType::~ProjectileType(void)
 
 void ProjectileType::setIndexOffset(int i)
 {
-	m_Sprite.TextureIndex = i;
+	myVertex.TextureIndex = i;
 }

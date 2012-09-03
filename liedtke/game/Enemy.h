@@ -21,6 +21,7 @@ public:
 	int SpawnedEnemies;
 	bool IsDead() { return hitpoints < takenDamage; }
 	int GetPoints() { return hitpoints; }
+	void OnHit(GameObject* object);
 private:
 		int hitpoints;
 		int takenDamage;

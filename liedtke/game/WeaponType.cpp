@@ -17,7 +17,7 @@ using namespace std;
 //	m_Spawnpoint(D3DXVECTOR3(x,y,z))
 //{
 //}
-WeaponType::WeaponType(std::string name,float x, float y, float z, std::vector<ProjectileType*> projectiles, list<Particle>* particles)
+WeaponType::WeaponType(std::string name,float x, float y, float z, std::vector<ProjectileType*> projectiles, list<GameObject*>* particles)
 	: m_Name(name),
 	//m_Weapon(weapon),
 	m_particles(particles),
@@ -44,11 +44,11 @@ WeaponType::WeaponType(std::string name,float x, float y, float z, std::vector<P
 
 void WeaponType::fire(size_t i, CFirstPersonCamera* camera, double& gameTime)
 {
-	Particle newShot;
+	GameObject* newShot = m_tProjectile[min(m_tProjectile.size(),max(0,i))]->fire(*camera->GetWorldAhead(), gameTime);
 	//m_Weapon->getPosition();
-	if(m_tProjectile[min(m_tProjectile.size(),max(0,i))]->fire(&newShot, *camera->GetWorldAhead(), gameTime)){
-		newShot.Position += m_Spawnpoint;
-		D3DXVec3TransformCoord(&newShot.Position, &newShot.Position, camera->GetWorldMatrix());//Offset durch den Spawnpoint berechnen und anschließend in World Space übersetzten
+	if(newShot!=NULL){
+		newShot->Translate(m_Spawnpoint.x,m_Spawnpoint.y,m_Spawnpoint.z);//verschiebe das Projektil zur Kanone
+		D3DXVec3TransformCoord(newShot->GetPosition(), newShot->GetPosition(), camera->GetWorldMatrix());//Offset durch den Spawnpoint berechnen und anschließend in World Space übersetzten
 		m_particles->push_back(newShot);
 	} 
 }

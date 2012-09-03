@@ -2,7 +2,7 @@
 #include "SpriteRenderer.h"
 #include "ParticleEffect.h"
 #include "GameComponent.h"
-
+#include <map>
 struct MeshObject
 {
 	D3DXVECTOR3 Position;
@@ -35,7 +35,6 @@ class GameObject
 
 	//Setzt Die Farbe, welche über die Textur geblendet werden soll a = 0 == keine Farbveränderung
 	void SetColor(D3DXCOLOR& c) { tObject == MESH ? myMesh.Color = c : myVertex.Color = c;}
-	void SetColliderRadius(float r) { colliderSize = r; }
 	void Scale(float s); //addition on scale
 	void ScaleTo(float s); //Set scale to
 	void Translate(float x, float y, float z); //addition
@@ -44,7 +43,7 @@ class GameObject
 	void RotateTo(float x, float y, float z);//set
 	void OnCreate();
 	void OnMove(double time, float elapsedTime);
-	void OnHit(Particle* p);
+	void OnHit(GameObject* p);
 	void OnDestroy();
 
 	void SetMeshOrientation(float rotX, float rotY, float rotZ, float transX = 0.f, float transY = 0.f, float transZ = 0.f) 
@@ -65,13 +64,15 @@ class GameObject
 	Mesh* GetMesh() { return myMesh.MeshToRender; }
 	std::string* GetName() { return tObject == MESH ? &myMesh.Name : NULL; }
 	SpriteVertex* GetSprite() { return &myVertex; }
-	float GetColliderRadius() { return colliderSize; }
 
 	void AddComponent(GameComponent* c);
 	std::vector<GameComponent*> GetComponent(GameComponent::componentType cType);
 protected:
 	std::vector<GameComponent*> Components;
+	std::map<GameComponent::componentType, vector<GameComponent*>> myComponents
 	D3DXVECTOR3 lookDirection;
+	SpriteVertex myVertex;
+	MeshObject myMesh;
 private:
 
 	inline void calcScale();
@@ -79,8 +80,6 @@ private:
 	inline void calcAnim();
 	PositionType tPosition;
 	ObjectType tObject;
-	SpriteVertex myVertex;
-	MeshObject myMesh;
 	D3DXVECTOR3 velocity;
 
 	D3DXMATRIX worldMatrix;
@@ -89,6 +88,5 @@ private:
 	D3DXMATRIX mTranslation;
 	D3DXMATRIX mAnim;
 	D3DXMATRIX mMeshOirentation;
-	float colliderSize;
 };
 

@@ -1,5 +1,5 @@
 #include "Enemy.h"
-
+#include "gcProjectile.h"
 Enemy::Enemy(Enemy* e) : GameObject(e),
 	hitpoints(e->hitpoints),
 	takenDamage(e->takenDamage),
@@ -52,6 +52,11 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 	this->speed = speed;
 	lookDirection = dir;
 	AddForce(speed, dir);
+}
+
+void Enemy::OnHit(GameObject* o)
+{
+	takenDamage += ((gcProjectile*)o->GetComponent(GameComponent::tProjectile)[0])->GetDamage();
 }
 
 Enemy* Enemy::Clone()
