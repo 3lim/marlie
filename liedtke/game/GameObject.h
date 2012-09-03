@@ -66,10 +66,10 @@ class GameObject
 	SpriteVertex* GetSprite() { return &myVertex; }
 
 	void AddComponent(GameComponent* c);
-	std::vector<GameComponent*> GetComponent(GameComponent::componentType cType);
+	std::vector<GameComponent*>* GetComponent(GameComponent::componentType cType);
 protected:
-	std::vector<GameComponent*> Components;
-	std::map<GameComponent::componentType, vector<GameComponent*>> myComponents
+	//std::vector<GameComponent*> Components;
+	std::map<GameComponent::componentType, std::vector<GameComponent*>> myComponents;
 	D3DXVECTOR3 lookDirection;
 	SpriteVertex myVertex;
 	MeshObject myMesh;

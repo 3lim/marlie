@@ -1277,8 +1277,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
 				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
-				SphereCollider* enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)[0]);
-				SphereCollider* shootCollider = static_cast<SphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)[0]);
+ 				SphereCollider* enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
+				SphereCollider* shootCollider = static_cast<SphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)->at(0));
 				if(D3DXVec3Length(&(*shoot->GetPosition()-*(*enemy)->GetPosition())) < (shootCollider->GetSphereRadius() +enemyCollider->GetSphereRadius())){
 					del = true;
 					(*enemy)->OnHit(shoot);
@@ -1292,6 +1292,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 						(*enemy)->OnDestroy();
 						auto enemy_rem = enemy;
 						enemy++;
+						SAFE_DELETE(*enemy_rem);
 						g_EnemyInstances.erase(enemy_rem);
 					}
 					SAFE_DELETE(*shoot_rem);
@@ -1313,7 +1314,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		if(D3DXVec3Length((*ei)->GetPosition())-g_DestroyCircle > 0){
 			auto ei_rem = ei;
 			ei++;
-			(*ei_rem)->SpawnedEnemies--;
+			//(*ei_rem)->SpawnedEnemies--;
+			SAFE_DELETE(*ei_rem);
 			g_EnemyInstances.erase(ei_rem);
 		} else {
 			(*ei)->CalculateWorldMatrix();
@@ -1325,7 +1327,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		if(D3DXVec3Length((*ei)->GetPosition())-g_DestroyCircle > 0){
 			auto particle_rem = ei;
 			ei++;
-			//particle_rem->getObject()->SpawnedEnemies--;
 			SAFE_DELETE(*particle_rem);
 			g_Particles.erase(particle_rem);
 		} else

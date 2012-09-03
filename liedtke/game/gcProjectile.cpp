@@ -3,6 +3,7 @@
 
 gcProjectile::gcProjectile(int d) : dmg(d)
 {
+	myType = GameComponent::tProjectile;
 }
 
 

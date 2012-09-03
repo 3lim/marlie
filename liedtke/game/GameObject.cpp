@@ -2,7 +2,7 @@
 #include "MeshRenderer.h"
 
 #include "SphereCollider.h"
-
+#include "gcProjectile.h"
 #include "Macros.h"
 
 //shallow Copy
@@ -20,9 +20,19 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 	myVertex(o->myVertex)
 {
 	//cheat to deep Copy
-	for each(GameComponent* c in o->Components)
+	for(auto it = o->myComponents.begin(); it != o->myComponents.end(); it++){
 		//TODO verschiedene typen
-		AddComponent(new SphereCollider(*static_cast<SphereCollider*>(c)));
+		GameComponent::componentType t = it->first;
+		for each(GameComponent* c in it->second)
+			switch(t){
+			case(GameComponent::tSphereCollider):
+					AddComponent(new SphereCollider(*static_cast<SphereCollider*>(c)));
+					break;
+			case(GameComponent::tProjectile):
+				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(c)));
+				break;
+		}
+	}
 }
 
 GameObject::GameObject(SpriteVertex v, PositionType tPos) : myVertex(v),
@@ -174,7 +184,8 @@ void GameObject::CalculateWorldMatrix()
 
 void GameObject::OnCreate()
 {
-	for(auto it = Components.begin(); it != Components.end(); it++)
+	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
+	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
 		(*it)->OnCreate();
 	}
@@ -182,7 +193,8 @@ void GameObject::OnCreate()
 
 void GameObject::OnMove(double time, float elapsedTime)
 {
-	for(auto it = Components.begin(); it != Components.end(); it++)
+	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
+	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
 		(*it)->OnMove(time, elapsedTime);
 	}
@@ -191,7 +203,8 @@ void GameObject::OnMove(double time, float elapsedTime)
 
 void GameObject::OnHit(GameObject* p)
 {
-	for(auto it = Components.begin(); it != Components.end(); it++)
+	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
+	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
 		(*it)->OnHit(NULL);
 	}
@@ -199,7 +212,8 @@ void GameObject::OnHit(GameObject* p)
 
 void GameObject::OnDestroy()
 {
-	for(auto it = Components.begin(); it != Components.end(); it++)
+	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
+	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
 		(*it)->OnDestroy();
 	}
@@ -223,10 +237,10 @@ void GameObject::AddForce(float power, D3DXVECTOR3& dir)
 
 void GameObject::AddComponent(GameComponent* component)
 {
-	Components.push_back(component);
+	myComponents[component->GetType()].push_back(component);
 }
 
-std::vector<GameComponent*> GameObject::GetComponent(GameComponent::componentType t)
+std::vector<GameComponent*>* GameObject::GetComponent(GameComponent::componentType t)
 {
 	//vermutlich bei vielen Components langsam
 	//std::vector<GameComponent*> result;
@@ -237,13 +251,15 @@ std::vector<GameComponent*> GameObject::GetComponent(GameComponent::componentTyp
 	//}
 	//return result;
 	//ist map besser? ich hoffe es
-
+	return &myComponents[t];
 }
 GameObject::~GameObject(void)
 {
-	for(auto it = Components.begin(); it != Components.end(); it++)
+	for(auto it = myComponents.begin(); it != myComponents.end(); it++)
 	{
-		SAFE_DELETE(*it);
+		for(auto i = it->second.begin(); i != it->second.end(); i++)
+			SAFE_DELETE(*i);
+		it->second.clear();
 	}
-	Components.clear();
+	myComponents.clear();
 }

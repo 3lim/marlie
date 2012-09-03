@@ -56,7 +56,7 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 
 void Enemy::OnHit(GameObject* o)
 {
-	takenDamage += ((gcProjectile*)o->GetComponent(GameComponent::tProjectile)[0])->GetDamage();
+	takenDamage += ((gcProjectile*)o->GetComponent(GameComponent::tProjectile)->at(0))->GetDamage();
 }
 
 Enemy* Enemy::Clone()

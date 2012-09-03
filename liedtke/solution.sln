@@ -1,15 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resources_pc", "resources_pc\resources_pc.vcxproj", "{77E95BCC-67FD-4089-9563-27D66A7423E5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA} = {3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "game\game.vcxproj", "{D29C6982-A589-4081-89B1-91E78D7C41E2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DF460EAB-570D-4B50-9089-2E2FC801BF38} = {DF460EAB-570D-4B50-9089-2E2FC801BF38}
-		{77E95BCC-67FD-4089-9563-27D66A7423E5} = {77E95BCC-67FD-4089-9563-27D66A7423E5}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Effects11", "game\Effects11\Effects11_2010.vcxproj", "{DF460EAB-570D-4B50-9089-2E2FC801BF38}"
@@ -32,15 +26,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Debug|Win32.ActiveCfg = Debug|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Debug|Win32.Build.0 = Debug|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Debug|x64.ActiveCfg = Debug|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Profile|Win32.ActiveCfg = Release|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Profile|Win32.Build.0 = Release|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Profile|x64.ActiveCfg = Release|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Release|Win32.ActiveCfg = Release|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Release|Win32.Build.0 = Release|Win32
-		{77E95BCC-67FD-4089-9563-27D66A7423E5}.Release|x64.ActiveCfg = Release|Win32
 		{D29C6982-A589-4081-89B1-91E78D7C41E2}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D29C6982-A589-4081-89B1-91E78D7C41E2}.Debug|Win32.Build.0 = Debug|Win32
 		{D29C6982-A589-4081-89B1-91E78D7C41E2}.Debug|x64.ActiveCfg = Debug|x64
