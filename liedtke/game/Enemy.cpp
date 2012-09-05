@@ -18,7 +18,7 @@ Enemy::Enemy(Enemy* e) : GameObject(e),
 //{
 //}
 
-Enemy::Enemy(int points, int units, std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo) : GameObject(meshName, posX, posY, posZ, scale, rotX, rotY, rotZ, relativeTo),
+Enemy::Enemy(int points, int units, std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo) : GameObject(meshName, posX, posY, posZ, scale, rotX, rotY, rotZ, 0 ,relativeTo),
 	hitpoints(points),
 	maxUnits(units),
 	takenDamage(0),

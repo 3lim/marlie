@@ -45,8 +45,9 @@
 #include "Enemy.h"
 #include "SphereCollider.h"
 #include "gcProjectile.h"
-
+#include "gcMass.h"
 #include "Macros.h"
+#include "ParticleSystem.h"
 
 #include "debug.h"
 
@@ -135,7 +136,7 @@ list<GameObject*> g_Particles;
 list<DISPLAYTEXT> g_DisplayTEXTBOX;
 list<DISPLAYTEXT> g_DisplayTextLeft;
 list<DISPLAYTEXT> g_DisplayTextRight;
-
+std::list<ParticleSystem*> g_activeParticleSystems;
 //map<string, ParticleEffect> g_ParticleEffects;
 //list<ParticleEffect> g_ActiveEffects;
 
@@ -380,13 +381,13 @@ void LoadConfig(bool reload = false)
 		}
 		else if(var.compare("CameraObject") == 0) {
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
-			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::CAMERA));
+			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, 0,GameObject::CAMERA));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("WorldObject") == 0) {
 			bool automaticHeight;
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >>transZ >> automaticHeight;
-			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, GameObject::WORLD));
+			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("TerrainObject") == 0)
@@ -421,9 +422,11 @@ void LoadConfig(bool reload = false)
 		{
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass;
 			//g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
-			GameObject* proj = new GameObject(SpriteVertex(), textureIndex, radius, 0,0,0,  GameObject::WORLD); 
+			GameObject* proj = new GameObject(textureIndex, radius, 0,0,0); 
 			proj->AddComponent(new SphereCollider(radius));
 			proj->AddComponent(new gcProjectile(damage, speed, cooldown));
+			if(mass > 0)
+				proj->AddComponent(new gcMass(mass));
 			g_ProjectileTypes[name] = proj;
 		} else if(var.compare("Weapon") == 0)
 		{
@@ -439,13 +442,13 @@ void LoadConfig(bool reload = false)
 				} 
 			}
 			D3DXVECTOR3* p = g_StaticGameObjects[g_ObjectReferences[name]]->GetPosition();
-			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp, &g_Particles));
+			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp));
 		} else if(var.compare("Explosion") == 0)
 		{
 			int count;
 			float duration;
 			stream >> name >> textureIndex >> duration >> scale >> speed >> mass >> x >> y >> z >> count;
-			ParticleEffect::g_ParticleEffects[name] = ParticleEffect(name, duration, scale, textureIndex, count, D3DXVECTOR3(x,y,z), speed, mass);
+			ParticleSystem::g_ParticleSystems[name] = new  ParticleSystem(textureIndex, 0, 0, 0, 0, GameObject::WORLD, new GameObject(textureIndex, scale, 0,0,0, duration), 0,0,0, 1, duration, true);
 			stream >> var;
 			if(var.compare("{") == 0)
 			{
@@ -530,6 +533,9 @@ void DeinitApp(){
 		SAFE_DELETE(it->second);
 	for(auto it = g_Particles.begin(); it != g_Particles.end(); it++)
 		SAFE_DELETE(*it);
+	for(auto it = ParticleSystem::g_ParticleSystems.begin(); it != ParticleSystem::g_ParticleSystems.end(); it++)
+		SAFE_DELETE(it->second);
+	ParticleSystem::g_ParticleSystems.clear();
 	SAFE_DELETE(g_SpriteRenderer);
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
@@ -796,9 +802,11 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 		i.second->GetSprite()->AnimationSize = g_SpriteRenderer->GetAnimationSize(i.second->GetSprite()->TextureIndex);
 		i.second->GetSprite()->TextureIndex = g_SpriteRenderer->GetTextureOffset(i.second->GetSprite()->TextureIndex);
 	});
-	for_each(ParticleEffect::g_ParticleEffects.begin(), ParticleEffect::g_ParticleEffects.end(), [&](pair<string,ParticleEffect> it){
-		it.second.AnimationSize = g_SpriteRenderer->GetAnimationSize(it.second.TextureIndex);
-		it.second.TextureIndex = g_SpriteRenderer->GetTextureOffset(it.second.TextureIndex);
+	for_each(ParticleSystem::g_ParticleSystems.begin(), ParticleSystem::g_ParticleSystems.end(), [&](pair<string,ParticleSystem*> it){
+		it.second->SetSpriteAnimationSize(g_SpriteRenderer->GetAnimationSize(it.second->GetTextureIndex()));
+		it.second->SetTextureIndex(g_SpriteRenderer->GetTextureOffset(it.second->GetTextureIndex()));
+		it.second->SetEmittedAnimationSize(g_SpriteRenderer->GetAnimationSize(it.second->GetEmittedTextureIndex()));
+		it.second->SetEmittedTextureIndex(g_SpriteRenderer->GetTextureOffset(it.second->GetEmittedTextureIndex()));
 	});
 	//Shadow Map
 
@@ -1182,6 +1190,8 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 	}
 }
 
+//todo
+list<GameObject*> g_emittedParticles;
 //--------------------------------------------------------------------------------------
 // Handle updates to the scene.  This is called regardless of which D3D API is used
 //--------------------------------------------------------------------------------------
@@ -1232,7 +1242,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		}
 	}
 	}
-	//todo memory leak chekc
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
@@ -1261,14 +1270,14 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for(auto it = g_Particles.begin(); it != g_Particles.end();){
 		//Collision mit dem Boden
 		auto shoot = *it; 
-		if(g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z) > shoot->GetPosition()->y)
+		if(shoot->GetComponent(GameComponent::tSphereCollider)->size() == 0)
+		{it++; continue;}
+		float theight = g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z);
+		if( theight > shoot->GetPosition()->y)
 		{
-
-			ParticleEffect p = ParticleEffect(ParticleEffect::g_ParticleEffects["bomb"]);
-			p.setVertexPosition(*shoot->GetPosition()+D3DXVECTOR3(0,p.getSize()*0.5f,0));
-			p.setScale(1);
-			ParticleEffect::g_ActiveEffects.push_back(p);
-
+			ParticleSystem::g_activeParticleSystems.push_back(ParticleSystem::g_ParticleSystems["bomb"]->Clone());
+			(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(shoot->GetPosition()->x,theight,shoot->GetPosition()->z);
+			(*ParticleSystem::g_activeParticleSystems.begin())->StartEmit(fTime);
 			auto shoot_rem = it; 
 			it++;
 			SAFE_DELETE(*shoot_rem);
@@ -1337,10 +1346,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		} else
 			ei++;
 	}
-	//Nach Destroy alle Particle zum Rendern übergeben
-	SpriteRenderer::g_SpritesToRender.resize(g_Particles.size());
-	int i = 0;
-	SpriteRenderer::g_SpritesToRender.push_back(*g_SkyboxRenderer->getSun());
 
 	//*********************************DeathEffects
 	for(auto it = ParticleEffect::g_ActiveEffects.begin(); it != ParticleEffect::g_ActiveEffects.end(); )
@@ -1356,13 +1361,44 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		else
 			it++;
 	}
-
+	//int startPositionParticleAdd = 0;
+	for(auto it = ParticleSystem::g_activeParticleSystems.begin(); it != ParticleSystem::g_activeParticleSystems.end();)
+	{
+		(*it)->Emit(fTime);
+		(*it)->OnMove(fTime, fElapsedTime);
+		auto it_rem = it;
+		it++;
+		if((*it_rem)->CheckParticles(fTime))
+		{
+			SAFE_DELETE(*it_rem)
+			ParticleSystem::g_activeParticleSystems.erase(it_rem);
+		}
+		else
+		{
+			if((*it_rem)->GetType() == GameObject::SPRITE)
+			{
+				//int size = SpriteRenderer::g_SpritesToRender.size();
+				//SpriteRenderer::g_SpritesToRender.resize(size+(*it)->DisplayedParticles()->size());
+				g_emittedParticles.insert(g_emittedParticles.end(),(*it_rem)->DisplayedParticles()->begin(), (*it_rem)->DisplayedParticles()->end());
+				//startPositionParticleAdd+= size;
+			}
+		}
+	}
+	//Nach Destroy alle Particle zum Rendern übergeben
+	SpriteRenderer::g_SpritesToRender.resize(g_Particles.size()+g_emittedParticles.size());
+	int i = 0;
+	SpriteRenderer::g_SpritesToRender.push_back(*g_SkyboxRenderer->getSun());
 	for each(auto it in g_Particles)
 	{
 		//g_SpritesToRender.push_back(it);
 		SpriteRenderer::g_SpritesToRender[i++] = *it->GetSprite();
 	}
+	for each(auto it in g_emittedParticles)
+		SpriteRenderer::g_SpritesToRender[i++] = *it->GetSprite();
+	g_emittedParticles.clear();
+	
 	sort(SpriteRenderer::g_SpritesToRender.begin(), SpriteRenderer::g_SpritesToRender.end(), VertexSort);
+	
 	/*if(g_SpritesToRender.size() > 2048)
 	{
 		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);

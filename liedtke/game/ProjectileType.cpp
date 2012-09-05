@@ -2,7 +2,7 @@
 #include "SphereCollider.h"
 #include "gcProjectile.h"
 
-ProjectileType::ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, int damage) :GameObject(SpriteVertex(), texture,radius, 0,0,0, GameObject::WORLD),
+ProjectileType::ProjectileType(std::string name, float radius, int texture, float speed, float mass, float cooldown, int damage) :GameObject(texture,radius, 0,0,0, 0, GameObject::WORLD),
 	m_TypeName(name),
 	m_Cooldown(cooldown),
 	m_Damage(damage),

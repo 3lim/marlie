@@ -26,9 +26,9 @@ class GameObject
 		CAMERA
 	};
 	GameObject(GameObject* toClone);
-	GameObject(SpriteVertex v, int textureIndex, float scale, float posX, float posY, float posZ, PositionType relativeTo);
-	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
-	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType relativeTo);
+	GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float duration = 0.f, PositionType relativeTo = WORLD);
+	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 0.f, PositionType relativeTo = WORLD);
+	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 0.f, PositionType relativeTo = WORLD);
 	virtual ~GameObject(void);
 
 	GameObject* Clone();
@@ -64,6 +64,10 @@ class GameObject
 	Mesh* GetMesh() { return myMesh.MeshToRender; }
 	std::string* GetName() { return tObject == MESH ? &myMesh.Name : NULL; }
 	SpriteVertex* GetSprite() { return &myVertex; }
+	void SetSpriteAnimationSize(int size) { myVertex.AnimationSize = size; }
+	int GetSpriteAnimationSize() { return myVertex.AnimationSize; }
+	void SetTextureIndex(int i) { myVertex.TextureIndex = i; }
+	int GetTextureIndex() { return myVertex.TextureIndex; }
 
 	void AddComponent(GameComponent* c);
 	std::vector<GameComponent*>* GetComponent(GameComponent::componentType cType);
@@ -73,6 +77,7 @@ protected:
 	D3DXVECTOR3 lookDirection;
 	SpriteVertex myVertex;
 	MeshObject myMesh;
+	float duration;
 private:
 
 	inline void calcScale();
@@ -81,6 +86,7 @@ private:
 	PositionType tPosition;
 	ObjectType tObject;
 	D3DXVECTOR3 velocity;
+	//Vertex Animation
 
 	D3DXMATRIX worldMatrix;
 	D3DXMATRIX mScale;

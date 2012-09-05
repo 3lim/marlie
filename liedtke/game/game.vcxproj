@@ -420,12 +420,14 @@
     <ClCompile Include="EnemyTransformation.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="gcMass.cpp" />
     <ClCompile Include="gcProjectile.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="ObjectTransformation.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleEffect.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="ProjectileType.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="SphereCollider.cpp" />
@@ -458,6 +460,7 @@
     <ClInclude Include="EnemyTransformation.h" />
     <ClInclude Include="GameComponent.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="gcMass.h" />
     <ClInclude Include="gcProjectile.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Mesh.h" />
@@ -465,6 +468,7 @@
     <ClInclude Include="ObjectTransformation.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleEffect.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="ProjectileType.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />

@@ -75,6 +75,10 @@
     <ClCompile Include="gcProjectile.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="gcMass.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -159,6 +163,10 @@
     <ClInclude Include="gcProjectile.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="gcMass.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />

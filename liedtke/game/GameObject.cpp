@@ -3,7 +3,10 @@
 
 #include "SphereCollider.h"
 #include "gcProjectile.h"
+#include "gcMass.h"
+
 #include "Macros.h"
+
 
 //shallow Copy
 GameObject::GameObject(GameObject* o) : tObject(o->tObject),
@@ -17,7 +20,8 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 	mScale(o->mScale),
 	worldMatrix(o->worldMatrix),
 	myMesh(o->myMesh),
-	myVertex(o->myVertex)
+	myVertex(o->myVertex),
+	duration(o->duration)
 {
 	//cheat to deep Copy
 	for(auto it = o->myComponents.begin(); it != o->myComponents.end(); it++){
@@ -31,11 +35,14 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 			case(GameComponent::tProjectile):
 				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(c)));
 				break;
+			case(GameComponent::tMass):
+				AddComponent(new gcMass(*static_cast<gcMass*>(c)));
+				break;
 		}
 	}
 }
 
-GameObject::GameObject(SpriteVertex v, int textureIndex, float scale, float posX, float posY, float posZ, PositionType tPos) : myVertex(v),
+GameObject::GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float dur, PositionType tPos) :
 //	myMesh(NULL),
 	//position(&v.Position),
 	//color(&v.Color),
@@ -43,7 +50,8 @@ GameObject::GameObject(SpriteVertex v, int textureIndex, float scale, float posX
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
+	duration(dur)
 {
 	myVertex.TextureIndex = textureIndex;
 	myVertex.AnimationSize = 0;
@@ -55,14 +63,15 @@ GameObject::GameObject(SpriteVertex v, int textureIndex, float scale, float posX
 	RotateTo(0,0,0);
 }
 
-GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType tPos) :
+GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, float dur,PositionType tPos) :
 	//position(NULL),
 	//color(&myMesh.Color),
 	tObject(MESH),
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
+	duration(dur)
 {
 	myMesh.MeshToRender = m;
 	myMesh.Position =  D3DXVECTOR3(posX, posY, posZ);;
@@ -74,14 +83,15 @@ GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& sc
 	calcTranslation();
 	RotateTo(rotX, rotY, rotZ);
 }
-GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType tPos) :
+GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, float dur,PositionType tPos) :
 //position(NULL),
 	//color(&myMesh.Color),
 	tObject(MESH),
 	tPosition(tPos),
 	velocity(0,0,0),
 	lookDirection(1,0,0),
-	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
+	duration(dur)
 {
 	myMesh.Name = m;
 	myMesh.MeshToRender = MeshRenderer::g_Meshes[m];
@@ -187,7 +197,7 @@ void GameObject::OnCreate()
 	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
-		(*it)->OnCreate();
+		(*it)->OnCreate(this);
 	}
 }
 
@@ -196,9 +206,13 @@ void GameObject::OnMove(double time, float elapsedTime)
 	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
-		(*it)->OnMove(time, elapsedTime);
+		(*it)->OnMove(this, time, elapsedTime);
 	}
 	Translate(velocity.x*elapsedTime, velocity.y*elapsedTime, velocity.z*elapsedTime);
+	if(tObject == SPRITE)
+		//calculate SpriteProgress
+		myVertex.AnimationProgress += elapsedTime/duration;
+
 }
 
 void GameObject::OnHit(GameObject* p)
@@ -206,7 +220,8 @@ void GameObject::OnHit(GameObject* p)
 	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
-		(*it)->OnHit(NULL);
+		//todo
+		(*it)->OnHit(this, NULL);
 	}
 }
 
@@ -215,7 +230,7 @@ void GameObject::OnDestroy()
 	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
-		(*it)->OnDestroy();
+		(*it)->OnDestroy(this);
 	}
 }
 
