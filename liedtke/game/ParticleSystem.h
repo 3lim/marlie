@@ -1,6 +1,7 @@
 #pragma once
 #include "gameobject.h"
 #include "SpriteRenderer.h"
+#include <list>
 class ParticleSystem :
 	public GameObject
 {
@@ -27,11 +28,11 @@ public:
 	int GetEmittedAnimationSize() { return emitedObject->GetSpriteAnimationSize(); }
 	void SetEmittedTextureIndex(int i) { emitedObject->SetTextureIndex(i); }
 	int GetEmittedTextureIndex() { return emitedObject->GetTextureIndex(); }
-
 private:
 	GameObject::ObjectType emittedType;
 	GameObject* emitedObject;
 	D3DXVECTOR3 emitedDirection;
+	D3DXVECTOR3 emitOffset;
 	size_t maxCount;
 	float intervall;
 	size_t emittedCount;

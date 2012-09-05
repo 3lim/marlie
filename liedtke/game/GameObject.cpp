@@ -7,6 +7,23 @@
 
 #include "Macros.h"
 
+GameObject::GameObject(void) : tPosition(GameObject::WORLD),
+	tObject(GameObject::SPRITE),
+	velocity(0,0,0),
+	worldMatrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
+	lookDirection(1,0,0),
+	mMeshOirentation(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1),
+	duration(1.f)
+{
+	myVertex.AnimationProgress = 0;
+	myVertex.AnimationSize = 1;
+	myVertex.TextureIndex = 0;
+	myVertex.Opacity = 1;
+	SetColor(D3DXCOLOR(0,0,0,0));
+	RotateTo(0,0,0);
+	TranslateTo(0,0,0);
+	ScaleTo(0.f);
+}
 
 //shallow Copy
 GameObject::GameObject(GameObject* o) : tObject(o->tObject),
@@ -83,7 +100,7 @@ GameObject::GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& sc
 	calcTranslation();
 	RotateTo(rotX, rotY, rotZ);
 }
-GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, float dur,PositionType tPos) :
+GameObject::GameObject(std::string& m, float& posX, float& posY, float& posZ, float scale, float rotX, float rotY, float rotZ, float dur,PositionType tPos) :
 //position(NULL),
 	//color(&myMesh.Color),
 	tObject(MESH),
@@ -162,6 +179,15 @@ void GameObject::TranslateTo(float x, float y, float z)
 	}
 	calcTranslation();
 }
+void GameObject::TranslateTo(D3DXVECTOR3& p)
+{
+	if(tObject == MESH){
+		myMesh.Position = p;
+	} else {
+		myVertex.Position = p;
+	}
+	calcTranslation();
+}
 
 void GameObject::Rotate(float x, float y, float z)
 {
@@ -192,12 +218,12 @@ void GameObject::CalculateWorldMatrix()
 	worldMatrix = mScale*mMeshOirentation*mRotate*mTranslation;
 }
 
-void GameObject::OnCreate()
+void GameObject::OnCreate(double gameTime)
 {
 	for(auto Components = myComponents.begin(); Components != myComponents.end(); Components++)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
-		(*it)->OnCreate(this);
+		(*it)->OnCreate(this, gameTime);
 	}
 }
 
@@ -221,7 +247,7 @@ void GameObject::OnHit(GameObject* p)
 	for(auto it = Components->second.begin(); it != Components->second.end(); it++)
 	{
 		//todo
-		(*it)->OnHit(this, NULL);
+		(*it)->OnHit(this, p);
 	}
 }
 

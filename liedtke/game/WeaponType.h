@@ -1,14 +1,12 @@
 #pragma once
-#include "ProjectileType.h"
 #include "Mesh.h"
-#include "ObjectTransformation.h"
 #include <string>
 #include <vector>
 #include <list>
 #include "GameObject.h"
 
 extern std::list<GameObject*> g_Particles;
-class WeaponType
+class WeaponType : public GameObject
 {
 public:
 	//WeaponType(std::string name, D3DXVECTOR3 spawnpoint, ObjectTransformation* weapon, std::vector<ProjectileType*> projectiles);
@@ -21,7 +19,6 @@ public:
 
 private:
 	std::string m_Name;
-	ObjectTransformation* m_Weapon;
 	std::vector<GameObject*> m_tProjectile;
 	D3DXVECTOR3 m_Spawnpoint;
 	std::vector<double> m_nextSpawnTimes;

@@ -30,16 +30,10 @@
 #include "MeshRenderer.h"
 #include "Mesh.h"
 #include "T3d.h"
-#include "ObjectTransformation.h"
 #include "TerrainObject.h"
-#include "EnemyTransformation.h"
-#include "EnemyInstance.h"
 #include "SpriteRenderer.h"
-#include "ProjectileType.h"
 #include "WeaponType.h"
 #include "debug.h"
-#include "Particle.h"
-#include "ParticleEffect.h"
 #include "Skybox.h"
 #include "GameObject.h"
 #include "Enemy.h"
@@ -158,7 +152,7 @@ bool p_Fire2;
 bool Omove = false;
 bool ORotate = false;
 bool OScale = false;
-int Oindex = 2;
+size_t Oindex = 2;
 bool useDeveloperFeatures = true;
 
 
@@ -301,7 +295,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 
 	DXUTCreateWindow( L"The M.A.R.L.I.E. Project"); // You may change the title
 	DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 1280, 720 );
-	
+
 	AutomaticPositioning();
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
@@ -381,7 +375,7 @@ void LoadConfig(bool reload = false)
 		}
 		else if(var.compare("CameraObject") == 0) {
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
-			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, 0,GameObject::CAMERA));
+			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, 1.f,GameObject::CAMERA));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
 		else if(var.compare("WorldObject") == 0) {
@@ -404,8 +398,8 @@ void LoadConfig(bool reload = false)
 			g_EnemyTyp[name] = new Enemy(hitpoints, units, meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD);
 			g_EnemyTyp[name]->SetSpeed(speed);
 			g_EnemyTyp[name]->AddComponent( new SphereCollider(sphere));
-			if( effect.size() > 0  && effect.compare("-") != 0)
-				g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
+			//if( effect.size() > 0  && effect.compare("-") != 0)
+			//	g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
 			g_EnemyTypeNames.push_back(name);
 		}
 		else if(var.compare("Spawn") == 0)
@@ -420,13 +414,19 @@ void LoadConfig(bool reload = false)
 			spriteFileNames.push_back(p);
 		} else if(var.compare("Projectile") == 0)
 		{
-			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass;
+			string createEffect, destroyeffect = "";
+			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass >> createEffect >> destroyeffect;
 			//g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
 			GameObject* proj = new GameObject(textureIndex, radius, 0,0,0); 
 			proj->AddComponent(new SphereCollider(radius));
-			proj->AddComponent(new gcProjectile(damage, speed, cooldown));
+			if(createEffect.compare("-") == 0)
+				createEffect = "";
+			if(destroyeffect.compare("-") == 0)
+				destroyeffect = "";
+			proj->AddComponent(new gcProjectile((int)damage, speed, cooldown, createEffect, destroyeffect));
 			if(mass > 0)
-				proj->AddComponent(new gcMass(mass));
+					proj->AddComponent(new gcMass(mass));
+
 			g_ProjectileTypes[name] = proj;
 		} else if(var.compare("Weapon") == 0)
 		{
@@ -447,15 +447,17 @@ void LoadConfig(bool reload = false)
 		{
 			int count;
 			float duration;
-			stream >> name >> textureIndex >> duration >> scale >> speed >> mass >> x >> y >> z >> count;
-			ParticleSystem::g_ParticleSystems[name] = new  ParticleSystem(textureIndex, 0, 0, 0, 0, GameObject::WORLD, new GameObject(textureIndex, scale, 0,0,0, duration), 0,0,0, 1, duration, true);
+			float offx, offy, offz;
+			stream >> name >> textureIndex >> duration >> scale >> offx >> offy >> offz >> speed >> mass >> x >> y >> z >> count;
+			ParticleSystem* p = new  ParticleSystem(textureIndex, 0, 0, 0, 0, GameObject::WORLD, new GameObject(textureIndex, scale, offx,offy,offz, duration), x,y,z, 1, duration, true);
+			ParticleSystem::g_ParticleSystems[name] = p;
 			stream >> var;
 			if(var.compare("{") == 0)
 			{
 				stream >> var;
 				while(var.compare("}") != 0)
 				{
-					ParticleEffect::g_ParticleEffects[name].SetChildEffect(var);
+					//ParticleEffect::g_ParticleEffects[name].SetChildEffect(var);
 					stream >> var;
 				}
 			}
@@ -513,16 +515,19 @@ void InitApp()
 //5.2.6
 void DeinitApp(){
 	g_TerrainRenderer->Deinit();
+	_CrtCheckMemory();
 	g_MeshRenderer->Deinit();
-	Enemy* t;
+	_CrtCheckMemory();
+	//als erstes müssen alle instances und erst danach die prefabs löschen
+	for(auto it=g_EnemyInstances.begin(); it!= g_EnemyInstances.end(); it++)
+		SAFE_DELETE(*it);
+	g_EnemyInstances.clear();
 	for(auto it=g_EnemyTyp.begin(); it!= g_EnemyTyp.end(); it++)
 	{
 		SAFE_DELETE(it->second);
 	}
 	g_EnemyTyp.clear();
-	for(auto it=g_EnemyInstances.begin(); it!= g_EnemyInstances.end(); it++)
-		SAFE_DELETE(*it);
-	g_EnemyInstances.clear();
+	_CrtCheckMemory();
 	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 		SAFE_DELETE(*it);
 	g_StaticGameObjects.clear();
@@ -536,7 +541,10 @@ void DeinitApp(){
 	for(auto it = ParticleSystem::g_ParticleSystems.begin(); it != ParticleSystem::g_ParticleSystems.end(); it++)
 		SAFE_DELETE(it->second);
 	ParticleSystem::g_ParticleSystems.clear();
+
+	_CrtCheckMemory();
 	SAFE_DELETE(g_SpriteRenderer);
+
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
 	SAFE_DELETE(g_TerrainRenderer);
@@ -982,8 +990,8 @@ HRESULT ReLoadConfig(ID3D11Device* pd3dDevice)
 	g_Particles.clear();
 	g_WeaponTypes.clear();
 	g_ProjectileTypes.clear();
-	ParticleEffect::g_ActiveEffects.clear();
-	ParticleEffect::g_ParticleEffects.clear();
+	ParticleSystem::g_activeParticleSystems.clear();
+	ParticleSystem::g_ParticleSystems.clear();
 
 	LoadConfig(true);
 
@@ -1220,8 +1228,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		Enemy* myEnemyType = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
 		if(myEnemyType->SpawnedEnemies < myEnemyType->GetCountMaxUnits()){
 			g_LastSpawn = fTime;
-			//TODO: Spawn und Destroy von den Enemies besser abfragen, aktuell wird der Zähler nicht mehr dekrementiert
-			myEnemyType->SpawnedEnemies++;
 			Enemy* newEnemy = new Enemy(myEnemyType);
 			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
 			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
@@ -1275,11 +1281,18 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		float theight = g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z);
 		if( theight > shoot->GetPosition()->y)
 		{
-			ParticleSystem::g_activeParticleSystems.push_back(ParticleSystem::g_ParticleSystems["bomb"]->Clone());
-			(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(shoot->GetPosition()->x,theight,shoot->GetPosition()->z);
-			(*ParticleSystem::g_activeParticleSystems.begin())->StartEmit(fTime);
+			//todo ground objekt besser machen
+			GameObject* ground = new GameObject(0, 0, shoot->GetPosition()->x, theight, shoot->GetPosition()->z);
+			ground->AddComponent(new SphereCollider(0,"bomb"));
+			shoot->OnHit(ground);
+			SAFE_DELETE(ground);
+
+			//ParticleSystem::g_activeParticleSystems.push_front(ParticleSystem::g_ParticleSystems["bomb"]->Clone());
+			//(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(shoot->GetPosition()->x,theight,shoot->GetPosition()->z);
+			//(*ParticleSystem::g_activeParticleSystems.begin())->StartEmit(fTime);
 			auto shoot_rem = it; 
 			it++;
+			
 			SAFE_DELETE(*shoot_rem);
 			g_Particles.erase(shoot_rem);
 		}
@@ -1348,19 +1361,19 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	}
 
 	//*********************************DeathEffects
-	for(auto it = ParticleEffect::g_ActiveEffects.begin(); it != ParticleEffect::g_ActiveEffects.end(); )
-	{
-		it->move(fElapsedTime);
-		SpriteRenderer::g_SpritesToRender.push_back(it->getSpriteToRender());//jedes bewegte Sprite soll an den Renderer Übergeben werden, der nur mit nem Vector arbeitet
-		if(it->isTimeOver())
-		{
-			auto itrem = it;
-			it++;
-			ParticleEffect::g_ActiveEffects.erase(itrem);
-		}
-		else
-			it++;
-	}
+	//for(auto it = ParticleEffect::g_ActiveEffects.begin(); it != ParticleEffect::g_ActiveEffects.end(); )
+	//{
+	//	it->move(fElapsedTime);
+	//	SpriteRenderer::g_SpritesToRender.push_back(it->getSpriteToRender());//jedes bewegte Sprite soll an den Renderer Übergeben werden, der nur mit nem Vector arbeitet
+	//	if(it->isTimeOver())
+	//	{
+	//		auto itrem = it;
+	//		it++;
+	//		ParticleEffect::g_ActiveEffects.erase(itrem);
+	//	}
+	//	else
+	//		it++;
+	//}
 	//int startPositionParticleAdd = 0;
 	for(auto it = ParticleSystem::g_activeParticleSystems.begin(); it != ParticleSystem::g_activeParticleSystems.end();)
 	{

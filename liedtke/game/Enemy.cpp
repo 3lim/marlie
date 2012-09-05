@@ -6,8 +6,10 @@ Enemy::Enemy(Enemy* e) : GameObject(e),
 	speed(e->speed),
 	maxUnits(e->maxUnits),
 	effect(e->effect),
-	SpawnedEnemies(e->SpawnedEnemies)
+	SpawnedEnemies(e->SpawnedEnemies),
+	enemyPrefab(e)
 {
+	e->SpawnedEnemies++;
 }
 //
 //Enemy::Enemy(int points, int units, GameObject* o) : GameObject(o),
@@ -22,8 +24,8 @@ Enemy::Enemy(int points, int units, std::string& meshName, float& posX, float& p
 	hitpoints(points),
 	maxUnits(units),
 	takenDamage(0),
-	SpawnedEnemies(0)
-
+	SpawnedEnemies(0),
+	enemyPrefab(NULL)
 {
 
 }
@@ -66,4 +68,6 @@ Enemy* Enemy::Clone()
 
 Enemy::~Enemy(void)
 {
+	if(enemyPrefab != NULL)
+		enemyPrefab->SpawnedEnemies--;
 }

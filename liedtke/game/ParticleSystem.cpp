@@ -62,7 +62,8 @@ void ParticleSystem::Emit(double gameTime)
 	{
 		nextEmit = gameTime+intervall;
 		GameObject* p = emitedObject->Clone();
-		p->TranslateTo(this->GetPosition()->x, this->GetPosition()->y, this->GetPosition()->z);
+		D3DXVECTOR3 start = *GetPosition() + *emitedObject->GetPosition();
+		p->TranslateTo(start);
 		emittedParticles.push_back(p);
 		emittedCount++;
 		mapLifetimeParticles.push_back(std::pair<double, GameObject*>(gameTime+duration, p));

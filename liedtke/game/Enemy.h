@@ -1,6 +1,5 @@
 #pragma once
 #include "GameObject.h"
-#include "ParticleEffect.h"
 
 class Enemy :
 	public GameObject
@@ -16,17 +15,18 @@ public:
 	void SetSpeed(float speed) { this->speed = speed; }
 	//void SetDirection(D3DXVECTOR3& dir) { lookDirection = dir; }
 	float GetSpeed() { return speed; }
-	void SetDeathEffect(ParticleEffect* p) { effect = p; }
+	void SetDeathEffect(GameObject* p) { effect = p; }
 	int GetCountMaxUnits() { return maxUnits; }
 	int SpawnedEnemies;
 	bool IsDead() { return hitpoints < takenDamage; }
 	int GetPoints() { return hitpoints; }
 	void OnHit(GameObject* object);
 private:
-		int hitpoints;
-		int takenDamage;
-		float speed;
-		int maxUnits;
-		ParticleEffect* effect;
+	int hitpoints;
+	int takenDamage;
+	float speed;
+	int maxUnits;
+	GameObject* effect;
+	Enemy* enemyPrefab;
 };
 

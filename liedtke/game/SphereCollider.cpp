@@ -1,7 +1,8 @@
 #include "SphereCollider.h"
 
 
-SphereCollider::SphereCollider(float s) : sphereSize(s)
+SphereCollider::SphereCollider(float s, std::string hit) : sphereSize(s),
+	hitEffect(hit)
 {
 	myType = GameComponent::tSphereCollider;
 }
@@ -11,17 +12,17 @@ SphereCollider::~SphereCollider(void)
 {
 }
 
-void SphereCollider::OnCreate(const void* sender) const
+void SphereCollider::OnCreate(const void* sender, double gameTime) const
 {
 	//nothing
 }
 
-void SphereCollider::OnMove(const void* sender, double t, float elapsedT) const
+void SphereCollider::OnMove(const void* sender, double t, float elapsedT)
 {
 	//nothing
 }
 
-void SphereCollider::OnHit(const void* sender, GameComponent* object) const
+void SphereCollider::OnHit(const void* sender,  const void* oponentGameObject) const
 {
 	//todo
 }

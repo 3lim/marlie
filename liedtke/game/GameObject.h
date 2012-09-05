@@ -1,6 +1,5 @@
 #pragma once
 #include "SpriteRenderer.h"
-#include "ParticleEffect.h"
 #include "GameComponent.h"
 #include <map>
 struct MeshObject
@@ -25,10 +24,11 @@ class GameObject
 		TERRAIN,
 		CAMERA
 	};
+	GameObject(void);
 	GameObject(GameObject* toClone);
-	GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float duration = 0.f, PositionType relativeTo = WORLD);
-	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 0.f, PositionType relativeTo = WORLD);
-	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 0.f, PositionType relativeTo = WORLD);
+	GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float duration = 1.f, PositionType relativeTo = WORLD);
+	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 1.f, PositionType relativeTo = WORLD);
+	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float scale, float rotX, float rotY, float rotZ,  float duration = 1.f, PositionType relativeTo = WORLD);
 	virtual ~GameObject(void);
 
 	GameObject* Clone();
@@ -39,9 +39,10 @@ class GameObject
 	void ScaleTo(float s); //Set scale to
 	void Translate(float x, float y, float z); //addition
 	void TranslateTo(float x, float y, float z); //set
+	void TranslateTo(D3DXVECTOR3& position); //set
 	void Rotate(float x, float y, float z);//addition
 	void RotateTo(float x, float y, float z);//set
-	void OnCreate();
+	void OnCreate(double gameTime);
 	void OnMove(double time, float elapsedTime);
 	void OnHit(GameObject* p);
 	void OnDestroy();
