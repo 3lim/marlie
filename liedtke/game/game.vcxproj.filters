@@ -73,6 +73,7 @@
     <ClCompile Include="gcSphereCollider.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="FrustumCulling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="gcSphereCollider.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="FrustumCulling.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />

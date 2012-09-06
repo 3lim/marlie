@@ -42,6 +42,7 @@
 #include "gcMass.h"
 #include "Macros.h"
 #include "ParticleSystem.h"
+#include "FrustumCulling.h"
 
 #include "debug.h"
 
@@ -113,7 +114,7 @@ TerrainRenderer*		g_TerrainRenderer = NULL;
 MeshRenderer*			g_MeshRenderer = NULL;
 SpriteRenderer*			g_SpriteRenderer = NULL;
 Skybox*					g_SkyboxRenderer = NULL;
-
+FrustumCulling			g_Frustum;
 map<string, Enemy*> g_EnemyTyp;
 //enthält alle GameObjects, die dauerhaft im Spiel sind
 vector<GameObject*> g_StaticGameObjects;
@@ -484,10 +485,12 @@ void InitApp()
 {
 	ShowCursor(false);
 	LoadConfig();
+	g_Frustum = FrustumCulling();
 	g_SpriteRenderer = new SpriteRenderer(spriteFileNames);
-	g_MeshRenderer = new MeshRenderer();
+	g_MeshRenderer = new MeshRenderer(&g_Frustum);
 	g_SkyboxRenderer = new Skybox(g_SkyboxPath, g_BoundingBoxDiagonal*0.7f);
 	g_TerrainRenderer = new TerrainRenderer(g_TerrainPath, g_TerrainWidth, g_TerrainDepth, g_TerrainHeight, g_TerrainSpinning, g_TerrainSpinSpeed);
+
 	// Intialize the user interface
 	g_SettingsDlg.Init( &g_DialogResourceManager );
 	g_HUD.Init( &g_DialogResourceManager );
@@ -858,7 +861,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	V(pd3dDevice->CreateTexture2D(&shadowTex_Desc, NULL, &g_ShadowMap));
 	V(pd3dDevice->CreateDepthStencilView(g_ShadowMap, &shadowDSV_Desc, &g_ShadowMapDSV));
 	V(pd3dDevice->CreateShaderResourceView(g_ShadowMap, &shadowSRV_Desc, &g_ShadowMapSRV));
-
 
 	return S_OK;
 }
@@ -1284,7 +1286,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	for(auto it = g_Particles.begin(); it != g_Particles.end();){
 		//Collision mit dem Boden
 		auto shoot = *it; 
-		if(shoot->GetComponent(GameComponent::tProjectile)->size() == 0)
+		if(shoot->GetComponent(GameComponent::tSphereCollider)->size() == 0)
 		{it++; continue;}
 		float theight = g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z);
 		if( theight > shoot->GetPosition()->y)
@@ -1303,8 +1305,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			del = false;
 			for(list<Enemy*>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
 				//if abstand < radius
-				gcSphereCollider* enemyCollider = (gcSphereCollider*)(*enemy)->GetComponent(GameComponent::tSphereCollider,0);
-				gcSphereCollider* shootCollider = (gcSphereCollider*)(shoot)->GetComponent(GameComponent::tSphereCollider,0);
+ 				gcSphereCollider* enemyCollider = static_cast<gcSphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
+				gcSphereCollider* shootCollider = static_cast<gcSphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)->at(0));
 				if(D3DXVec3Length(&(*shoot->GetPosition()-*(*enemy)->GetPosition())) < (shootCollider->GetSphereRadius() +enemyCollider->GetSphereRadius())){
 					del = true;
 					(*enemy)->OnHit(shoot);
@@ -1411,6 +1413,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_emittedParticles.clear();
 	
 	sort(SpriteRenderer::g_SpritesToRender.begin(), SpriteRenderer::g_SpritesToRender.end(), VertexSort);
+	
 	/*if(g_SpritesToRender.size() > 2048)
 	{
 		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
@@ -1424,17 +1427,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 }
 
-D3DXPLANE g_Frustum[6];
-bool IsObjectInFrustum(GameObject* object){
-	for(int i=0; i<6; i++) 
-	{
-		if(D3DXPlaneDotCoord(&g_Frustum[i], object->GetPosition()) < -((gcSphereCollider*)object->GetComponent(GameComponent::tSphereCollider, 0))->GetSphereRadius())
-		{
-			return false;
-		}
-	}
-	return true;
-}
 
 //--------------------------------------------------------------------------------------
 // Render the scene using the D3D11 device
@@ -1442,94 +1434,6 @@ bool IsObjectInFrustum(GameObject* object){
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 	float fElapsedTime, void* pUserContext )
 {
-	float zMinimum, r;
-	D3DXMATRIX matrix;
-
-	const D3DXMATRIX* view, *proj;
-	D3DXVECTOR4 lightDirView;
-	D3DXMATRIX cameraView;
-	view = g_Camera.GetViewMatrix();
-	proj = g_Camera.GetProjMatrix();
-	g_ViewProj = (*view) * (*proj);
-
-
-	matrix = *proj;
-	// Calculate the minimum Z distance in the frustum.
-	zMinimum = -proj->_43 / proj->_33;
-	//screendepth
-	r = (cameraVP.MaxDepth - cameraVP.MinDepth) / (cameraVP.MaxDepth - cameraVP.MinDepth - zMinimum);
-	matrix._33 = r;
-	matrix._43 = -r * zMinimum;
-
-	// Create the frustum matrix from the view matrix and updated projection matrix.
-	D3DXMatrixMultiply(&matrix, view, &matrix);
-
-	// Calculate near plane of frustum.
-	g_Frustum[0].a = matrix._14 + matrix._13;
-	g_Frustum[0].b = matrix._24 + matrix._23;
-	g_Frustum[0].c = matrix._34 + matrix._33;
-	g_Frustum[0].d = matrix._44 + matrix._43;
-	D3DXPlaneNormalize(&g_Frustum[0], &g_Frustum[0]);
-
-	// Calculate far plane of frustum.
-	g_Frustum[1].a = matrix._14 - matrix._13; 
-	g_Frustum[1].b = matrix._24 - matrix._23;
-	g_Frustum[1].c = matrix._34 - matrix._33;
-	g_Frustum[1].d = matrix._44 - matrix._43;
-	D3DXPlaneNormalize(&g_Frustum[1], &g_Frustum[1]);
-
-	// Calculate left plane of frustum.
-	g_Frustum[2].a = matrix._14 + matrix._11; 
-	g_Frustum[2].b = matrix._24 + matrix._21;
-	g_Frustum[2].c = matrix._34 + matrix._31;
-	g_Frustum[2].d = matrix._44 + matrix._41;
-	D3DXPlaneNormalize(&g_Frustum[2], &g_Frustum[2]);
-
-	// Calculate right plane of frustum.
-	g_Frustum[3].a = matrix._14 - matrix._11; 
-	g_Frustum[3].b = matrix._24 - matrix._21;
-	g_Frustum[3].c = matrix._34 - matrix._31;
-	g_Frustum[3].d = matrix._44 - matrix._41;
-	D3DXPlaneNormalize(&g_Frustum[3], &g_Frustum[3]);
-
-	// Calculate top plane of frustum.
-	g_Frustum[4].a = matrix._14 - matrix._12; 
-	g_Frustum[4].b = matrix._24 - matrix._22;
-	g_Frustum[4].c = matrix._34 - matrix._32;
-	g_Frustum[4].d = matrix._44 - matrix._42;
-	D3DXPlaneNormalize(&g_Frustum[4], &g_Frustum[4]);
-
-	// Calculate bottom plane of frustum.
-	g_Frustum[5].a = matrix._14 + matrix._12;
-	g_Frustum[5].b = matrix._24 + matrix._22;
-	g_Frustum[5].c = matrix._34 + matrix._32;
-	g_Frustum[5].d = matrix._44 + matrix._42;
-	D3DXPlaneNormalize(&g_Frustum[5], &g_Frustum[5]);
-
-		
-	//do frustum culling
-	MeshRenderer::g_MeshesToRender.resize(g_StaticGameObjects.size()+g_EnemyInstances.size());
-	int nr =0;
-	for each(auto object in g_StaticGameObjects)
-	{
-			
-		// Check if the radius of the sphere is inside the view frustum.
-		// Noch nicht effektiv, da zu wenig Objekte und da keine "BoundingBox" richtig berechnet
-		//if(object->GetRelativePosition() != GameObject::CAMERA)
-		//	if(!IsObjectInFrustum(object))
-		//		continue;
-		MeshRenderer::g_MeshesToRender[nr++] = object;
-	}
-	for each(auto object in g_EnemyInstances)
-	{
-			
-		// Check if the radius of the sphere is inside the view frustum.
-			if(!IsObjectInFrustum(object))
-				continue;
-		MeshRenderer::g_MeshesToRender[nr++] = object;
-	}
-	//MeshRenderer::g_MeshesToRender.shrink_to_fit();
-
 
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
@@ -1546,7 +1450,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		return;
 	}
 		
-
 	pDSV = DXUTGetD3D11DepthStencilView();
 	pRTV = DXUTGetD3D11RenderTargetView();
 
@@ -1555,10 +1458,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
 
 
-	UINT one = 1;
-	pd3dImmediateContext->RSGetViewports(&one, &cameraVP);
 
 	g_ShadowMap->GetDesc(&shadowMap_desc);
+	UINT one = 1;
+	pd3dImmediateContext->RSGetViewports(&one, &cameraVP);
 	shadowVP = D3D11_VIEWPORT(cameraVP);
 	shadowVP.Width = static_cast<float>(shadowMap_desc.Width);
 	shadowVP.Height = static_cast<float>(shadowMap_desc.Height);
@@ -1570,7 +1473,15 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 
 
-	// Update variables that change once per frame
+	const D3DXMATRIX* view, *proj;
+	D3DXVECTOR4 lightDirView;
+	D3DXMATRIX cameraView;
+	view = g_Camera.GetViewMatrix();
+	proj = g_Camera.GetProjMatrix();
+	g_ViewProj = (*view) * (*proj);
+	g_Frustum.CalculateFrustum(&g_ViewProj);
+
+// Update variables that change once per frame
 	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)
 	D3DXMatrixOrthoLH(&lightProjektionMatrix, g_BoundingBoxDiagonal, g_BoundingBoxDiagonal, 0.0001f, g_BoundingBoxDiagonal); //ProjektionMatrix
 	D3DXMatrixLookAtLH(&lightViewMatrix, &vLightDir, &lightAt, &lightUp); //ViewMatrix
@@ -1595,9 +1506,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_Proj = (D3DXMATRIX*)&lightProjektionMatrix;
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
-	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects);
-	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances);
-	g_MeshRenderer->ShadowMeshes(pd3dDevice);
+	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects);
+	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances);
+
 
 	//*****normal Scene Rendering*****//
 
@@ -1622,9 +1533,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_ViewProj = &g_ViewProj;
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
-	//g_MeshRenderer->RenderMeshes(pd3dDevice, &g_StaticGameObjects);
-	//g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances);
-	g_MeshRenderer->RenderMeshes(pd3dDevice);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_StaticGameObjects);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances);
 
 	if(SpriteRenderer::g_SpritesToRender.size() >0)
 		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
@@ -1640,6 +1550,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
+		
 		g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
 		pd3dImmediateContext->DrawIndexed(1, 0, 0);
 
@@ -1662,8 +1573,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		OutputDebugString( L"\n" );
 		dwTimefirst = GetTickCount();
 	}
-
-	MeshRenderer::g_MeshesToRender.clear();
 }
 
 void placeTerrainObject(TerrainObject* o){

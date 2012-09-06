@@ -12,6 +12,7 @@
 #include "T3d.h"
 #include "GameObject.h"
 #include "Enemy.h"
+#include "FrustumCulling.h"
 
 extern ID3D11ShaderResourceView*		g_ShadowMapSRV;
 
@@ -20,7 +21,7 @@ class MeshRenderer
 {
 public:
 	static std::vector<GameObject*> g_MeshesToRender;
-	MeshRenderer(void);
+	MeshRenderer(FrustumCulling* f);
 	~MeshRenderer(void);
 	HRESULT ReloadShader(ID3D11Device* pDevice);
 	void ReleaseShader();
@@ -49,6 +50,7 @@ public:
 	D3DXMATRIX* g_invView;
 private:
 	inline void setEffectVariables(void);
+	FrustumCulling* g_Frustum;
 	ID3DX11Effect* m_pEffect;
 	ID3DX11EffectTechnique* m_RenderET;
 	ID3DX11EffectTechnique* m_ShadowET;

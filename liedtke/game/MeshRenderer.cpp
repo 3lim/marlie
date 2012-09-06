@@ -19,8 +19,7 @@
 using namespace std;
 
 std::map<std::string, Mesh*> MeshRenderer::g_Meshes;
-std::vector<GameObject*> MeshRenderer::g_MeshesToRender;
-MeshRenderer::MeshRenderer(void) :
+MeshRenderer::MeshRenderer(FrustumCulling* f) :
 m_pEffect(NULL),
 	m_RenderET(NULL),
 	m_MeshInputLayout(NULL),
@@ -42,6 +41,8 @@ m_pEffect(NULL),
 {
 	//stride = sizeof(T3dVertex);
 	vbs[1] = NULL;
+	g_Frustum = f;
+	stride = sizeof(T3dVertex);
 
 }
 
@@ -51,16 +52,12 @@ MeshRenderer::~MeshRenderer(void)
 
 void MeshRenderer::setEffectVariables()
 {
-	m_LightColorEV->SetFloatVector(*g_LightColor);
-	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
-	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
-	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 }
 
  void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
@@ -70,69 +67,32 @@ void MeshRenderer::setEffectVariables()
 
  void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
-	//for(auto object = o->begin(); object != o->end(); object++)
-	//{
-	//	RenderMesh(pDevice, *object, m_ShadowET);
-	//}
-	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
+	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		if(*object==NULL)
-			return;
-		RenderMesh(pDevice, *object, m_RenderET);
+		RenderMesh(pDevice, *object, m_ShadowET);
 	}
 }
 
  void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
 		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
-
-  void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice)
-{
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
-	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
-	{
-		if(*object==NULL)
-			return;
-		RenderMesh(pDevice, *object, m_RenderET);
-	}
-}
-
- void MeshRenderer::RenderMeshes(ID3D11Device* pDevice)
-{
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
-	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
-	{
-		if(*object==NULL)
-			return;
-		RenderMesh(pDevice, *object, m_RenderET);
-	}
-}
-
  void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
-	//for(auto object = o->begin(); object != o->end(); object++)
-	//{
-	//	RenderMesh(pDevice, *object, m_RenderET);
-	//}
-	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
+	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		if(*object==NULL)
-			return;
 		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
@@ -174,6 +134,8 @@ void MeshRenderer::setEffectVariables()
 //}
 void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technique)
 {
+	if(!g_Frustum->IsObjectInFrustum(object))
+		return;
 	mesh = object->GetMesh();
 	vbs[0] = mesh->GetVertexBuffer();
 
@@ -183,6 +145,11 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, 
 	m_SpecularEV->SetResource(mesh->GetSpecularSRV());
 	m_GlowEV->SetResource(mesh->GetGlowSRV());
 	m_NormalEV->SetResource(mesh->GetNormalSRV());
+
+	m_LightColorEV->SetFloatVector(*g_LightColor);
+	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
+	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
+	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 
 	WorldView = *object->GetWorld();
 	WorldViewProjektion = WorldView;

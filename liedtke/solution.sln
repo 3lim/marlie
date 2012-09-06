@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "game\game.vcxproj", "{D29C6982-A589-4081-89B1-91E78D7C41E2}"
 	ProjectSection(ProjectDependencies) = postProject
+		{3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA} = {3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA}
 		{DF460EAB-570D-4B50-9089-2E2FC801BF38} = {DF460EAB-570D-4B50-9089-2E2FC801BF38}
+		{77E95BCC-67FD-4089-9563-27D66A7423E5} = {77E95BCC-67FD-4089-9563-27D66A7423E5}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Effects11", "game\Effects11\Effects11_2010.vcxproj", "{DF460EAB-570D-4B50-9089-2E2FC801BF38}"
@@ -17,6 +19,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ResourceBuilder", "ResourceBuilder\ResourceBuilder.vcxproj", "{3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resources_pc", "resources_pc\resources_pc.vcxproj", "{77E95BCC-67FD-4089-9563-27D66A7423E5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA} = {3AF09A4A-9A3C-42B3-AC6D-794D7F17F9BA}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
