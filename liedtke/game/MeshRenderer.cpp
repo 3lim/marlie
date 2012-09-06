@@ -19,6 +19,7 @@
 using namespace std;
 
 std::map<std::string, Mesh*> MeshRenderer::g_Meshes;
+std::vector<GameObject*> MeshRenderer::g_MeshesToRender;
 MeshRenderer::MeshRenderer(void) :
 m_pEffect(NULL),
 	m_RenderET(NULL),
@@ -72,9 +73,15 @@ void MeshRenderer::setEffectVariables()
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
-	for(auto object = o->begin(); object != o->end(); object++)
+	//for(auto object = o->begin(); object != o->end(); object++)
+	//{
+	//	RenderMesh(pDevice, *object, m_ShadowET);
+	//}
+	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
 	{
-		RenderMesh(pDevice, *object, m_ShadowET);
+		if(*object==NULL)
+			return;
+		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
 
@@ -88,13 +95,44 @@ void MeshRenderer::setEffectVariables()
 		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
+
+  void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice)
+{
+	stride = sizeof(T3dVertex);
+	setEffectVariables();
+	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
+	{
+		if(*object==NULL)
+			return;
+		RenderMesh(pDevice, *object, m_RenderET);
+	}
+}
+
+ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice)
+{
+	stride = sizeof(T3dVertex);
+	setEffectVariables();
+	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
+	{
+		if(*object==NULL)
+			return;
+		RenderMesh(pDevice, *object, m_RenderET);
+	}
+}
+
  void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
 	stride = sizeof(T3dVertex);
 	setEffectVariables();
 	//UINT offset = 0;
-	for(auto object = o->begin(); object != o->end(); object++)
+	//for(auto object = o->begin(); object != o->end(); object++)
+	//{
+	//	RenderMesh(pDevice, *object, m_RenderET);
+	//}
+	for(auto object = g_MeshesToRender.begin(); object != g_MeshesToRender.end(); object++)
 	{
+		if(*object==NULL)
+			return;
 		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }

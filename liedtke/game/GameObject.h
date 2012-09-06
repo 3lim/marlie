@@ -72,11 +72,17 @@ class GameObject
 	int GetTextureIndex() { return myVertex.TextureIndex; }
 
 	void AddComponent(GameComponent* c);
+	GameComponent* GetComponent(GameComponent::componentType cType, size_t);
 	std::vector<GameComponent*>* GetComponent(GameComponent::componentType cType);
-	void AddChild(GameObject* object);
+	//template<class _t> 
+	//_t*  GetComponent(int i) { return (_t*)myComponents[typeid(_t).name()][i]; }
+
+	//template<class _t> 
+	//size_t GetComponentSize() { return myComponents[typeid(_t).name()].size(); }
+void AddChild(GameObject* object);
 protected:
 	//std::vector<GameComponent*> Components;
-	std::map<GameComponent::componentType, std::vector<GameComponent*>> myComponents;
+	std::map<int, std::vector<GameComponent*>> myComponents;
 	D3DXVECTOR3 lookDirection;
 	SpriteVertex myVertex;
 	MeshObject myMesh;

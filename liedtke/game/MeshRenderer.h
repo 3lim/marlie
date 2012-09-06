@@ -19,7 +19,7 @@ extern ID3D11ShaderResourceView*		g_ShadowMapSRV;
 class MeshRenderer
 {
 public:
-	static std::vector<GameObject*> g_MeschesToRender;
+	static std::vector<GameObject*> g_MeshesToRender;
 	MeshRenderer(void);
 	~MeshRenderer(void);
 	HRESULT ReloadShader(ID3D11Device* pDevice);
@@ -30,6 +30,8 @@ public:
 	void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
 	void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object);
 	void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
+	void RenderMeshes(ID3D11Device* pDevice);
+	void ShadowMeshes(ID3D11Device* pDevice);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technik);
 	void Deinit();

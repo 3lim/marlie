@@ -43,7 +43,7 @@ void gcProjectile::OnMove(const void* sender, double time, float elapsedTime)
 
 void gcProjectile::OnHit(const void* sender, const void* gameObject) const
 {
-	gcSphereCollider* sp = (gcSphereCollider*)(*((GameObject*)gameObject)->GetComponent(GameComponent::tSphereCollider))[0];
+	gcSphereCollider* sp = (gcSphereCollider*)((GameObject*)gameObject)->GetComponent(GameComponent::tSphereCollider, 0);
 	if( sp->GetHitEffect().length() > 0){
 		ParticleSystem::g_activeParticleSystems.push_front(ParticleSystem::g_ParticleSystems[sp->GetHitEffect()]->Clone());
 		(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(*((GameObject*)sender)->GetPosition());

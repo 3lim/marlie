@@ -49,7 +49,7 @@ void WeaponType::fire(size_t i, CFirstPersonCamera* camera, double& gameTime)
 	if(m_nextSpawnTimes[i] < gameTime)
 	{
 		GameObject* newShot = m_tProjectile[min(m_tProjectile.size(),max(0,i))]->Clone();
-		gcProjectile* p = (gcProjectile*)newShot->GetComponent(GameComponent::tProjectile)->at(0);
+		gcProjectile* p = (gcProjectile*)newShot->GetComponent(GameComponent::tProjectile, 0);
 		m_nextSpawnTimes[i] = gameTime+p->GetCooldown();
 		newShot->Translate(m_Spawnpoint.x,m_Spawnpoint.y,m_Spawnpoint.z);//verschiebe das Projektil zur Kanone
 		newShot->AddForce(p->GetSpeed(), (D3DXVECTOR3)*camera->GetWorldAhead());

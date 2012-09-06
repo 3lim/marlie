@@ -44,25 +44,24 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 {
 	//cheat to deep Copy
 	for(auto it = o->myComponents.begin(); it != o->myComponents.end(); it++){
-		GameComponent::componentType t = it->first;
 		for each(GameComponent* c in it->second)
-			switch(t){
+			switch(c->GetType())
+			{			
 			case(GameComponent::tSphereCollider):
-					AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(c)));
-					break;
+				AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(c)));
+				break;
 			case(GameComponent::tProjectile):
 				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(c)));
 				break;
 			case(GameComponent::tMass):
 				AddComponent(new gcMass(*static_cast<gcMass*>(c)));
 				break;
-		}
+			}
+		for each(auto it in o->children)
+			children.push_back(it->Clone());
 	}
-	for each(auto it in o->children)
-		children.push_back(it->Clone());
 }
-
-GameObject::GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float dur, PositionType tPos) :
+	GameObject::GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float dur, PositionType tPos) :
 //	myMesh(NULL),
 	//position(&v.Position),
 	//color(&v.Color),
@@ -321,12 +320,30 @@ std::vector<GameComponent*>* GameObject::GetComponent(GameComponent::componentTy
 	//for(auto it = Components.begin(); it != Components.end(); it++)
 	//{
 	//	if((*it)->GetType() == t)
+
 	//		result.push_back(*it);
 	//}
 	//return result;
 	//ist map besser? ich hoffe es
 	return &myComponents[t];
 }
+
+GameComponent* GameObject::GetComponent(GameComponent::componentType t, size_t i)
+{
+	return myComponents[t][i];
+}
+
+//template<class _t> 
+//_t* GameObject::GetComponent<gcSphereCollider>(int i)
+//{
+//	return myComponents[typeid(_t).name()][i];
+//}
+//template<class _t> 
+//size_t GameObject::GetComponentSize()
+//{
+//	return myComponents[typeid(_t).name()].size();
+//}
+
 
 void GameObject::AddChild(GameObject* object)
 {
