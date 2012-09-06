@@ -82,7 +82,7 @@ class GameObject
 void AddChild(GameObject* object);
 protected:
 	//std::vector<GameComponent*> Components;
-	std::map<int, std::vector<GameComponent*>> myComponents;
+	std::map<GameComponent::componentType, std::vector<GameComponent*>> myComponents;
 	D3DXVECTOR3 lookDirection;
 	SpriteVertex myVertex;
 	MeshObject myMesh;

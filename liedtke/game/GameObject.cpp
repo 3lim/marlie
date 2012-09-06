@@ -44,22 +44,22 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 {
 	//cheat to deep Copy
 	for(auto it = o->myComponents.begin(); it != o->myComponents.end(); it++){
+		GameComponent::componentType t = it->first;
 		for each(GameComponent* c in it->second)
-			switch(c->GetType())
-			{			
+			switch(t){
 			case(GameComponent::tSphereCollider):
-				AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(c)));
-				break;
+					AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(c)));
+					break;
 			case(GameComponent::tProjectile):
 				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(c)));
 				break;
 			case(GameComponent::tMass):
 				AddComponent(new gcMass(*static_cast<gcMass*>(c)));
 				break;
-			}
-		for each(auto it in o->children)
-			children.push_back(it->Clone());
+		}
 	}
+	for each(auto it in o->children)
+		children.push_back(it->Clone());
 }
 	GameObject::GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float dur, PositionType tPos) :
 //	myMesh(NULL),
