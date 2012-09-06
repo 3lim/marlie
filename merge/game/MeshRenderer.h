@@ -3,15 +3,16 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <cstdint>
-
 #include <map>
 
+#include <DXUT.h>
 
-#include "ObjectTransformation.h"
-#include "EnemyInstance.h"
-#include "Mesh.h"
+#include "Effects11/Inc/d3dx11effect.h"
+#include "ntx\NTX.h"
 #include "T3d.h"
+#include "GameObject.h"
+#include "Enemy.h"
+#include "FrustumCulling.h"
 
 extern ID3D11ShaderResourceView*		g_ShadowMapSRV;
 
@@ -19,17 +20,21 @@ extern ID3D11ShaderResourceView*		g_ShadowMapSRV;
 class MeshRenderer
 {
 public:
-	MeshRenderer(void);
+	static std::vector<GameObject*> g_MeshesToRender;
+	MeshRenderer(FrustumCulling* f);
 	~MeshRenderer(void);
 	HRESULT ReloadShader(ID3D11Device* pDevice);
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
-	void RenderMeshes(ID3D11Device* pDevice, std::vector<ObjectTransformation>* object);
-	void RenderMeshes(ID3D11Device* pDevice, std::list<EnemyInstance>* object);
-	void ShadowMeshes(ID3D11Device* pDevice, std::vector<ObjectTransformation>* object);
-	void ShadowMeshes(ID3D11Device* pDevice, std::list<EnemyInstance>* object);
-	void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
+	void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object);
+	void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object);
+	void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object);
+	void RenderMeshes(ID3D11Device* pDevice);
+	void ShadowMeshes(ID3D11Device* pDevice);
+	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
+	void RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technik);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);
@@ -45,6 +50,7 @@ public:
 	D3DXMATRIX* g_invView;
 private:
 	inline void setEffectVariables(void);
+	FrustumCulling* g_Frustum;
 	ID3DX11Effect* m_pEffect;
 	ID3DX11EffectTechnique* m_RenderET;
 	ID3DX11EffectTechnique* m_ShadowET;

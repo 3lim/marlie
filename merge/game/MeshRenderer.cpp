@@ -1,3 +1,5 @@
+#include "MeshRenderer.h"
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -9,15 +11,15 @@
 #include "DXUTgui.h"
 #include "DXUTsettingsDlg.h"
 #include "DXUT\Optional\SDKmisc.h"
+#include "GameObject.h"
 
 #include "Macros.h"
-
-#include "MeshRenderer.h"
+#include "debug.h"
 
 using namespace std;
 
 std::map<std::string, Mesh*> MeshRenderer::g_Meshes;
-MeshRenderer::MeshRenderer(void) :
+MeshRenderer::MeshRenderer(FrustumCulling* f) :
 m_pEffect(NULL),
 	m_RenderET(NULL),
 	m_MeshInputLayout(NULL),
@@ -39,6 +41,8 @@ m_pEffect(NULL),
 {
 	//stride = sizeof(T3dVertex);
 	vbs[1] = NULL;
+	g_Frustum = f;
+	stride = sizeof(T3dVertex);
 
 }
 
@@ -48,57 +52,91 @@ MeshRenderer::~MeshRenderer(void)
 
 void MeshRenderer::setEffectVariables()
 {
-	m_LightColorEV->SetFloatVector(*g_LightColor);
-	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
-	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
-	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<ObjectTransformation>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object._Ptr, m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET);
 	}
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<EnemyInstance>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object->getObject(), m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET);
 	}
 }
 
- void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<ObjectTransformation>* o)
+ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object._Ptr, m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
- void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<EnemyInstance>* o)
+ void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
 {
-	stride = sizeof(T3dVertex);
-	setEffectVariables();
+	//stride = sizeof(T3dVertex);
+	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, object->getObject(), m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET);
 	}
 }
-void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technique)
+//void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technique)
+//{
+//	mesh = MeshRenderer::g_Meshes[object->getName()];
+//	vbs[0] = mesh->GetVertexBuffer();
+//
+//	pd3DContext->IASetInputLayout(m_MeshInputLayout);
+//
+//	m_DiffuseEV->SetResource(mesh->GetDiffuseSRV());
+//	m_SpecularEV->SetResource(mesh->GetSpecularSRV());
+//	m_GlowEV->SetResource(mesh->GetGlowSRV());
+//	m_NormalEV->SetResource(mesh->GetNormalSRV());
+//
+//	WorldView = object->g_World;
+//	WorldViewProjektion = WorldView;
+//	//WorldLightViewProjMatrix = object->g_World*(*g_LightViewProjMatrix);
+//	if(object->isCameraView()){
+//		//WorldViewProjektion = object->g_World *(*g_Proj);
+//		WorldView *= *g_invView;
+//	} else {
+//		WorldViewProjektion *= *g_View;
+//	}
+//	WorldViewProjektion *= *g_Proj;
+//	D3DXMatrixInverse(&WorldViewNormals,0,&WorldView);
+//	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
+//
+//	WorldLightViewProjMatrix = WorldView* *g_LightViewProjMatrix;
+//	m_WorldViewEV->SetMatrix(WorldView);
+//	m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
+//	m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
+//	m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
+//	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
+//	pd3DContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+//	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
+//	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+//}
+void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technique)
 {
-	mesh = MeshRenderer::g_Meshes[object->getName()];
+	if(!g_Frustum->IsObjectInFrustum(object))
+		return;
+	mesh = object->GetMesh();
 	vbs[0] = mesh->GetVertexBuffer();
 
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
@@ -108,10 +146,15 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation
 	m_GlowEV->SetResource(mesh->GetGlowSRV());
 	m_NormalEV->SetResource(mesh->GetNormalSRV());
 
-	WorldView = object->g_World;
+	m_LightColorEV->SetFloatVector(*g_LightColor);
+	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
+	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
+	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
+
+	WorldView = *object->GetWorld();
 	WorldViewProjektion = WorldView;
 	//WorldLightViewProjMatrix = object->g_World*(*g_LightViewProjMatrix);
-	if(object->isCameraView()){
+	if(object->GetRelativePosition() == GameObject::CAMERA){
 		//WorldViewProjektion = object->g_World *(*g_Proj);
 		WorldView *= *g_invView;
 	} else {

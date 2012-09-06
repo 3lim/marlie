@@ -1,24 +1,17 @@
 #pragma once
-#include "objecttransformation.h"
-#include "Mesh.h"
+#include "GameObject.h"
+
 class TerrainObject :
-	public ObjectTransformation
+	public GameObject
 {
 public:
-	TerrainObject(std::string meshName, bool useNormal, float scale, float rotX, float rotY, float rotZ, float spacing, float offset, int max, Mesh* object);
+	TerrainObject(Mesh* m, float posX, float posZ, float offset, float scale, float rotX, float rotY, float rotZ, float spacing, int max);
 	~TerrainObject(void);
 
-	bool isAlignedToNormal() { return o_UseNormal;}
-	float getOffset() { return o_Offset;}
 	float getSpacing() { return o_Spacing;}
-	Mesh* getMesh() { return o_Mesh; }
 	int getMaxCount() { return o_MaxCount; }
-	bool useNormal() { return o_UseNormal; }
 private:
-	Mesh* o_Mesh;
-	float o_Offset;
 	float o_Spacing;
-	bool o_UseNormal;
 	int o_MaxCount;
 };
 

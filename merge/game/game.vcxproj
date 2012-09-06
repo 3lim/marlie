@@ -172,7 +172,7 @@
       <EnableDebugInfo>true</EnableDebugInfo>
     </FX_HLSL>
     <ResourceCompile>
-      <PreprocessorDefinitions>MY_SOLUTIONDIR=$(SolutionDir);MY_TARGETNAME =$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'">
@@ -415,17 +415,17 @@
     <ClCompile Include="DXUT\Optional\SDKmisc.cpp" />
     <ClCompile Include="DXUT\Optional\SDKsound.cpp" />
     <ClCompile Include="DXUT\Optional\SDKwavefile.cpp" />
-    <ClCompile Include="EnemyInstance.cpp" />
-    <ClCompile Include="EnemyTransformation.cpp" />
+    <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="FrustumCulling.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="gcMass.cpp" />
+    <ClCompile Include="gcProjectile.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
-    <ClCompile Include="ObjectTransformation.cpp" />
-    <ClCompile Include="Particle.cpp" />
-    <ClCompile Include="ParticleEffect.cpp" />
-    <ClCompile Include="ProjectileType.cpp" />
-    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Skybox.cpp" />
+    <ClCompile Include="gcSphereCollider.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
@@ -450,18 +450,19 @@
     <ClInclude Include="DXUT\Optional\SDKmisc.h" />
     <ClInclude Include="DXUT\Optional\SDKsound.h" />
     <ClInclude Include="DXUT\Optional\SDKwavefile.h" />
-    <ClInclude Include="EnemyInstance.h" />
-    <ClInclude Include="EnemyTransformation.h" />
+    <ClInclude Include="Enemy.h" />
+    <ClInclude Include="FrustumCulling.h" />
+    <ClInclude Include="GameComponent.h" />
+    <ClInclude Include="GameObject.h" />
+    <ClInclude Include="gcMass.h" />
+    <ClInclude Include="gcProjectile.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />
-    <ClInclude Include="ObjectTransformation.h" />
-    <ClInclude Include="Particle.h" />
-    <ClInclude Include="ParticleEffect.h" />
-    <ClInclude Include="ProjectileType.h" />
-    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="gcSphereCollider.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="TerrainObject.h" />

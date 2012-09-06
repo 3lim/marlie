@@ -11,7 +11,8 @@
     <ShowAllFiles>false</ShowAllFiles>
     <LocalDebuggerEnvironment>
     </LocalDebuggerEnvironment>
-    <LocalDebuggerCommandArguments>-dir="$(SolutionDir)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>
+    </LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>

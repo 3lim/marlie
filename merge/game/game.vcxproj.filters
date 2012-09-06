@@ -47,12 +47,6 @@
     <ClCompile Include="..\..\..\external\ntx\NTX.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="EnemyInstance.cpp" />
-    <ClCompile Include="EnemyTransformation.cpp" />
-    <ClCompile Include="ObjectTransformation.cpp" />
-    <ClCompile Include="Particle.cpp" />
-    <ClCompile Include="ParticleEffect.cpp" />
-    <ClCompile Include="ProjectileType.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
     <ClCompile Include="WeaponType.cpp" />
     <ClCompile Include="MeshRenderer.cpp">
@@ -64,10 +58,22 @@
     <ClCompile Include="Skybox.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="TerrainRenderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="gcProjectile.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="gcMass.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="gcSphereCollider.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="FrustumCulling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -121,12 +127,6 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="Macros.h" />
-    <ClInclude Include="EnemyInstance.h" />
-    <ClInclude Include="EnemyTransformation.h" />
-    <ClInclude Include="ObjectTransformation.h" />
-    <ClInclude Include="Particle.h" />
-    <ClInclude Include="ParticleEffect.h" />
-    <ClInclude Include="ProjectileType.h" />
     <ClInclude Include="TerrainObject.h" />
     <ClInclude Include="WeaponType.h" />
     <ClInclude Include="MeshRenderer.h">
@@ -138,10 +138,25 @@
     <ClInclude Include="Skybox.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h" />
     <ClInclude Include="TerrainRenderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="GameObject.h" />
+    <ClInclude Include="Enemy.h" />
+    <ClInclude Include="GameComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="gcProjectile.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="gcMass.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="gcSphereCollider.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="FrustumCulling.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
@@ -178,6 +193,9 @@
     </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{69597981-2dd8-4786-9bd6-5e777aaeebc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components">
+      <UniqueIdentifier>{e4df98f3-a406-4984-aeec-75203d3fad52}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
