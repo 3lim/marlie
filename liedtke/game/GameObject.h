@@ -2,6 +2,7 @@
 #include "SpriteRenderer.h"
 #include "GameComponent.h"
 #include <map>
+#include <list>
 struct MeshObject
 {
 	D3DXVECTOR3 Position;
@@ -26,9 +27,9 @@ class GameObject
 	};
 	GameObject(void);
 	GameObject(GameObject* toClone);
-	GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float duration = 1.f, PositionType relativeTo = WORLD);
-	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float duration = 1.f, PositionType relativeTo = WORLD);
-	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float scale, float rotX, float rotY, float rotZ,  float duration = 1.f, PositionType relativeTo = WORLD);
+	GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float AniDuration = 1.f, PositionType relativeTo = WORLD);
+	GameObject(Mesh* m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ,  float AniDuration = 1.f, PositionType relativeTo = WORLD);
+	GameObject(std::string& meshName, float& posX, float& posY, float& posZ, float scale, float rotX, float rotY, float rotZ,  float AniDuration = 1.f, PositionType relativeTo = WORLD);
 	virtual ~GameObject(void);
 
 	GameObject* Clone();
@@ -72,6 +73,7 @@ class GameObject
 
 	void AddComponent(GameComponent* c);
 	std::vector<GameComponent*>* GetComponent(GameComponent::componentType cType);
+	void AddChild(GameObject* object);
 protected:
 	//std::vector<GameComponent*> Components;
 	std::map<GameComponent::componentType, std::vector<GameComponent*>> myComponents;
@@ -79,6 +81,8 @@ protected:
 	SpriteVertex myVertex;
 	MeshObject myMesh;
 	float duration;
+	std::list<GameObject*> children;
+	GameObject* parent;
 private:
 
 	inline void calcScale();

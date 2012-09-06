@@ -424,7 +424,7 @@
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Skybox.cpp" />
-    <ClCompile Include="SphereCollider.cpp" />
+    <ClCompile Include="gcSphereCollider.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="T3d.cpp" />
     <ClCompile Include="TerrainObject.cpp" />
@@ -460,7 +460,7 @@
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />
-    <ClInclude Include="SphereCollider.h" />
+    <ClInclude Include="gcSphereCollider.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="T3d.h" />
     <ClInclude Include="TerrainObject.h" />

@@ -1,12 +1,12 @@
 #pragma once
 #include "GameComponent.h"
 #include "GameObject.h"
-class SphereCollider :
+class gcSphereCollider :
 	public GameComponent
 {
 public:
-	SphereCollider(float SphereSize, std::string hitEffect = "");
-	virtual ~SphereCollider(void);
+	gcSphereCollider(float SphereSize, std::string hitEffect = "");
+	virtual ~gcSphereCollider(void);
 	void OnCreate(const void* sender, double gameTime) const;
 	void OnMove(const void* sender, double time, float elapsedTime) ;
 	void OnHit(const void* sender, const void* oponentGameObject) const;

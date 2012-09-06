@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.h"
+#include "ParticleSystem.h"
 
 class Enemy :
 	public GameObject
@@ -21,6 +22,8 @@ public:
 	bool IsDead() { return hitpoints < takenDamage; }
 	int GetPoints() { return hitpoints; }
 	void OnHit(GameObject* object);
+	void AddDeathEffect(std::string p) { deathEffect = p; }
+	void DeathEffect(double gameTime);
 private:
 	int hitpoints;
 	int takenDamage;
@@ -28,5 +31,6 @@ private:
 	int maxUnits;
 	GameObject* effect;
 	Enemy* enemyPrefab;
+	std::string deathEffect;
 };
 

@@ -63,9 +63,6 @@
     </ClCompile>
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Enemy.cpp" />
-    <ClCompile Include="SphereCollider.cpp">
-      <Filter>Components</Filter>
-    </ClCompile>
     <ClCompile Include="gcProjectile.cpp">
       <Filter>Components</Filter>
     </ClCompile>
@@ -73,6 +70,9 @@
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="gcSphereCollider.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -142,9 +142,6 @@
     </ClInclude>
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Enemy.h" />
-    <ClInclude Include="SphereCollider.h">
-      <Filter>Components</Filter>
-    </ClInclude>
     <ClInclude Include="GameComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
@@ -155,6 +152,9 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="gcSphereCollider.h">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />

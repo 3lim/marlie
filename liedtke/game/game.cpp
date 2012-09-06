@@ -37,7 +37,7 @@
 #include "Skybox.h"
 #include "GameObject.h"
 #include "Enemy.h"
-#include "SphereCollider.h"
+#include "gcSphereCollider.h"
 #include "gcProjectile.h"
 #include "gcMass.h"
 #include "Macros.h"
@@ -133,6 +133,7 @@ list<DISPLAYTEXT> g_DisplayTextRight;
 std::list<ParticleSystem*> g_activeParticleSystems;
 //map<string, ParticleEffect> g_ParticleEffects;
 //list<ParticleEffect> g_ActiveEffects;
+GameObject* g_Ground;
 
 //SpawnParameters
 double g_LastSpawn = 0;
@@ -397,9 +398,8 @@ void LoadConfig(bool reload = false)
 			//g_EnemyTyp[name] = new Enemy(hitpoints, units, new GameObject(meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD));
 			g_EnemyTyp[name] = new Enemy(hitpoints, units, meshName, transX, transY, transZ, scale, rotX, rotY, rotZ, GameObject::WORLD);
 			g_EnemyTyp[name]->SetSpeed(speed);
-			g_EnemyTyp[name]->AddComponent( new SphereCollider(sphere));
-			//if( effect.size() > 0  && effect.compare("-") != 0)
-			//	g_EnemyTyp[name]->SetDeathEffect(&ParticleEffect::g_ParticleEffects[effect]);
+			g_EnemyTyp[name]->AddComponent( new gcSphereCollider(sphere, "hit"));
+			g_EnemyTyp[name]->AddDeathEffect(effect);
 			g_EnemyTypeNames.push_back(name);
 		}
 		else if(var.compare("Spawn") == 0)
@@ -418,7 +418,7 @@ void LoadConfig(bool reload = false)
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass >> createEffect >> destroyeffect;
 			//g_ProjectileTypes[name] = new ProjectileType(name, radius, textureIndex,speed, mass, cooldown, damage);
 			GameObject* proj = new GameObject(textureIndex, radius, 0,0,0); 
-			proj->AddComponent(new SphereCollider(radius));
+			proj->AddComponent(new gcSphereCollider(radius));
 			if(createEffect.compare("-") == 0)
 				createEffect = "";
 			if(destroyeffect.compare("-") == 0)
@@ -449,18 +449,21 @@ void LoadConfig(bool reload = false)
 			float duration;
 			float offx, offy, offz;
 			stream >> name >> textureIndex >> duration >> scale >> offx >> offy >> offz >> speed >> mass >> x >> y >> z >> count;
-			ParticleSystem* p = new  ParticleSystem(textureIndex, 0, 0, 0, 0, GameObject::WORLD, new GameObject(textureIndex, scale, offx,offy,offz, duration), x,y,z, 1, duration, true);
-			ParticleSystem::g_ParticleSystems[name] = p;
+			GameObject* emitted = new GameObject(textureIndex, scale, offx,offy,offz, duration);
+			if(mass > 0)
+				emitted->AddComponent(new gcMass(mass));
+			ParticleSystem* p = new  ParticleSystem(textureIndex, 0, 0, 0, 0, GameObject::WORLD, emitted, x,y,z, speed, count, 0, duration, true);
 			stream >> var;
 			if(var.compare("{") == 0)
 			{
 				stream >> var;
 				while(var.compare("}") != 0)
 				{
-					//ParticleEffect::g_ParticleEffects[name].SetChildEffect(var);
+					p->AddSubsystem(var);
 					stream >> var;
 				}
 			}
+			ParticleSystem::g_ParticleSystems[name] = p;
 		}
 		// simple error check
 		if(stream.fail() && !stream.eof()) {
@@ -527,7 +530,6 @@ void DeinitApp(){
 		SAFE_DELETE(it->second);
 	}
 	g_EnemyTyp.clear();
-	_CrtCheckMemory();
 	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 		SAFE_DELETE(*it);
 	g_StaticGameObjects.clear();
@@ -538,13 +540,16 @@ void DeinitApp(){
 		SAFE_DELETE(it->second);
 	for(auto it = g_Particles.begin(); it != g_Particles.end(); it++)
 		SAFE_DELETE(*it);
+	for(auto it = ParticleSystem::g_activeParticleSystems.begin(); it != ParticleSystem::g_activeParticleSystems.end(); it++)
+		SAFE_DELETE(*it);
+	ParticleSystem::g_activeParticleSystems.clear();
 	for(auto it = ParticleSystem::g_ParticleSystems.begin(); it != ParticleSystem::g_ParticleSystems.end(); it++)
 		SAFE_DELETE(it->second);
 	ParticleSystem::g_ParticleSystems.clear();
 
 	_CrtCheckMemory();
 	SAFE_DELETE(g_SpriteRenderer);
-
+	SAFE_DELETE(g_Ground);
 	SAFE_DELETE(g_MeshRenderer);
 	SAFE_DELETE(g_SkyboxRenderer);
 	SAFE_DELETE(g_TerrainRenderer);
@@ -802,7 +807,9 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	if(g_UseSkybox){
 		V(g_SkyboxRenderer->CreateResources(pd3dDevice));
 	}
-
+	SAFE_DELETE(g_Ground);
+	g_Ground = new GameObject(0, 0, 0,0,0);
+	g_Ground->AddComponent(new gcSphereCollider(0,"bomb"));
 
 	//7.2.2
 	g_SpriteRenderer->CreateResources(pd3dDevice);
@@ -1281,15 +1288,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		float theight = g_TerrainRenderer->getHeightAtPoint(shoot->GetPosition()->x, shoot->GetPosition()->z);
 		if( theight > shoot->GetPosition()->y)
 		{
-			//todo ground objekt besser machen
-			GameObject* ground = new GameObject(0, 0, shoot->GetPosition()->x, theight, shoot->GetPosition()->z);
-			ground->AddComponent(new SphereCollider(0,"bomb"));
-			shoot->OnHit(ground);
-			SAFE_DELETE(ground);
+			g_Ground->TranslateTo(shoot->GetPosition()->x, theight, shoot->GetPosition()->y);
+			shoot->OnHit(g_Ground);
 
-			//ParticleSystem::g_activeParticleSystems.push_front(ParticleSystem::g_ParticleSystems["bomb"]->Clone());
-			//(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(shoot->GetPosition()->x,theight,shoot->GetPosition()->z);
-			//(*ParticleSystem::g_activeParticleSystems.begin())->StartEmit(fTime);
 			auto shoot_rem = it; 
 			it++;
 			
@@ -1300,12 +1301,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		{
 			del = false;
 			for(list<Enemy*>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
-				//D3DXVECTOR3 d =(shoot->Position-enemy->getCurrentPosition());
-				//float abstand = D3DXVec3Length(&(shoot->Position-enemy->getCurrentPosition()));
-				//float radius =(shoot->Radius +enemy->getObject()->getSphereSize())*(shoot->Radius +enemy->getObject()->getSphereSize());//TODO: richtige Objektgröße Berechnen
 				//if abstand < radius
- 				SphereCollider* enemyCollider = static_cast<SphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
-				SphereCollider* shootCollider = static_cast<SphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)->at(0));
+ 				gcSphereCollider* enemyCollider = static_cast<gcSphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
+				gcSphereCollider* shootCollider = static_cast<gcSphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)->at(0));
 				if(D3DXVec3Length(&(*shoot->GetPosition()-*(*enemy)->GetPosition())) < (shootCollider->GetSphereRadius() +enemyCollider->GetSphereRadius())){
 					del = true;
 					(*enemy)->OnHit(shoot);
@@ -1316,6 +1314,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 					if((*enemy)->IsDead())
 					{
 						g_PlayerPoints += (*enemy)->GetPoints();
+						(*enemy)->DeathEffect(fTime);
 						(*enemy)->OnDestroy();
 						auto enemy_rem = enemy;
 						enemy++;
@@ -1397,7 +1396,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			}
 		}
 	}
-	//Nach Destroy alle Particle zum Rendern übergeben
+	//Nach Destroy alle Objecte zum Rendern übergeben
 	SpriteRenderer::g_SpritesToRender.resize(g_Particles.size()+g_emittedParticles.size());
 	int i = 0;
 	SpriteRenderer::g_SpritesToRender.push_back(*g_SkyboxRenderer->getSun());

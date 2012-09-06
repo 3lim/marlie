@@ -7,7 +7,8 @@ Enemy::Enemy(Enemy* e) : GameObject(e),
 	maxUnits(e->maxUnits),
 	effect(e->effect),
 	SpawnedEnemies(e->SpawnedEnemies),
-	enemyPrefab(e)
+	enemyPrefab(e),
+	deathEffect(e->deathEffect)
 {
 	e->SpawnedEnemies++;
 }
@@ -25,7 +26,8 @@ Enemy::Enemy(int points, int units, std::string& meshName, float& posX, float& p
 	maxUnits(units),
 	takenDamage(0),
 	SpawnedEnemies(0),
-	enemyPrefab(NULL)
+	enemyPrefab(NULL),
+	deathEffect("")
 {
 
 }
@@ -59,6 +61,16 @@ void Enemy::SetMovement(float speed, D3DXVECTOR3& dir)
 void Enemy::OnHit(GameObject* o)
 {
 	takenDamage += ((gcProjectile*)o->GetComponent(GameComponent::tProjectile)->at(0))->GetDamage();
+}
+
+void Enemy::DeathEffect(double gameTime)
+{
+	if(deathEffect.length() == 0)//falls es keinen effect gibt wird einfach aufgehört
+		return;
+	auto p = ParticleSystem::g_ParticleSystems[deathEffect]->Clone();
+	p->TranslateTo(*GetPosition());
+	p->StartEmit(gameTime);
+	ParticleSystem::g_activeParticleSystems.push_back(p);
 }
 
 Enemy* Enemy::Clone()

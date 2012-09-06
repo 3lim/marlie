@@ -1,6 +1,6 @@
 #include "gcProjectile.h"
 #include "ParticleSystem.h"
-#include "SphereCollider.h"
+#include "gcSphereCollider.h"
 
 gcProjectile::gcProjectile(int d, float s, float c, std::string create, std::string death) : dmg(d),
 	speed(s),
@@ -43,11 +43,10 @@ void gcProjectile::OnMove(const void* sender, double time, float elapsedTime)
 
 void gcProjectile::OnHit(const void* sender, const void* gameObject) const
 {
-	GameObject* oponent = (GameObject*)gameObject;
-	SphereCollider* sp = (SphereCollider*)oponent->GetComponent(GameComponent::tSphereCollider)->at(0);
+	gcSphereCollider* sp = (gcSphereCollider*)(*((GameObject*)gameObject)->GetComponent(GameComponent::tSphereCollider))[0];
 	if( sp->GetHitEffect().length() > 0){
 		ParticleSystem::g_activeParticleSystems.push_front(ParticleSystem::g_ParticleSystems[sp->GetHitEffect()]->Clone());
-		(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(*oponent->GetPosition());
+		(*ParticleSystem::g_activeParticleSystems.begin())->TranslateTo(*((GameObject*)sender)->GetPosition());
 		(*ParticleSystem::g_activeParticleSystems.begin())->StartEmit(fTime);
 	}
 }

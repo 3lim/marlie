@@ -10,11 +10,11 @@ public:
 	static std::map<std::string, ParticleSystem*> g_ParticleSystems;
 
 	ParticleSystem(ParticleSystem* toClone);
-	ParticleSystem(int textureIndex, float scale, float posX, float posY, float posZ, PositionType tPos, GameObject* emmits, float dirX, float dirY, float dirZ, size_t count, float tIntervall, float durationOfEmitter, bool emitedInWorldSpace = true);
-	ParticleSystem(std::string& m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType tPos, GameObject* emmits, float dirX, float dirY, float dirZ, size_t count, float tIntervall, float durationOfEmitter, bool emitedInWorldSpace = true);
+	ParticleSystem(int textureIndex, float scale, float posX, float posY, float posZ, PositionType tPos, GameObject* emmits, float dirX, float dirY, float dirZ, float emitSpeed, size_t count, float tIntervall, float durationOfEmitter, bool emitedInWorldSpace = true);
+	ParticleSystem(std::string& m, float& posX, float& posY, float& posZ, float& scale, float& rotX, float& rotY, float& rotZ, PositionType tPos, GameObject* emmits, float dirX, float dirY, float dirZ, float emitSpeed, size_t count, float tIntervall, float durationOfEmitter, bool emitedInWorldSpace = true);
 	virtual ~ParticleSystem(void);
 	void EmitsInWorldSpace() { emitsInWorldSpace = true;}
-	void EmitsInObjectSpace(){ emitsInWorldSpace = false;}
+	void EmitsInObjectSpace() { emitsInWorldSpace = false;}
 	void Emit(double gameTime);
 	void StartEmit(double gameTime);
 	void EndEmit(double gameTime);
@@ -28,7 +28,12 @@ public:
 	int GetEmittedAnimationSize() { return emitedObject->GetSpriteAnimationSize(); }
 	void SetEmittedTextureIndex(int i) { emitedObject->SetTextureIndex(i); }
 	int GetEmittedTextureIndex() { return emitedObject->GetTextureIndex(); }
+	void AddSubsystem(std::string object) { toAddedSystems.push_back(object); }
+	void SetEmitSpeed(float s) { emitSpeed = s; }
+	inline static float  RandomAnlge(float a, float b);
 private:
+	std::vector<std::string> toAddedSystems;
+	std::list<ParticleSystem*> mySubsystems;
 	GameObject::ObjectType emittedType;
 	GameObject* emitedObject;
 	D3DXVECTOR3 emitedDirection;
@@ -42,5 +47,6 @@ private:
 	bool emitsInWorldSpace;
 	std::vector<std::pair<double, GameObject*>> mapLifetimeParticles;
 	std::vector<GameObject*> emittedParticles;
+	float emitSpeed;
 };
 
