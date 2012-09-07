@@ -7,6 +7,8 @@ cbuffer cbChangesEveryFrame
 	float3 g_Down;
 	float3 g_Right;
 	float3 g_Eye;
+	float4 horizontColor;
+	float4 apexColor;
 };
 
 
@@ -79,7 +81,13 @@ void QuadGS(point uint vertex[1] : POINT, inout TriangleStream<QuadVertex> strea
 
 float4 SkyboxPS(in QuadVertex input) : SV_Target0
 {
-	return SkyCubeImage.Sample(samAnisotropic, normalize((g_TopLeft + input.Tex.x * g_Right + input.Tex.y * g_Down) - g_Eye));
+	float3 pixPosition = normalize((g_TopLeft + input.Tex.x * g_Right + input.Tex.y * g_Down) - g_Eye);
+	float height = pixPosition.y;
+	if(height < 0)
+		height = 0;
+	float4 SkyBackColor = lerp(horizontColor, apexColor, height);
+	return SkyBackColor;
+	return SkyCubeImage.Sample(samAnisotropic, pixPosition)+(SkyBackColor.a - 0.3);
 }
 
 technique11 tSkybox

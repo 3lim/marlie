@@ -65,6 +65,7 @@ private:
 	std::vector<ID3D11Texture2D*>          m_spriteTex;
 	std::vector<ID3D11ShaderResourceView*> m_spriteSRV;
 
+
 	// Maximum number of allowed sprites, i.e. size of the vertex buffer.
 	size_t m_spriteCountMax;
 	// Vertex buffer for sprite vertices, and corresponding input layout.

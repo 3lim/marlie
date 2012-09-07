@@ -10,10 +10,10 @@ vector<SpriteVertex> SpriteRenderer::g_GUISprites;
 vector<SpriteVertex> SpriteRenderer::g_SpritesToRender;
 
 SpriteRenderer::SpriteRenderer(const std::vector<std::pair<std::string,int>>& textureFilenames) : m_textureFilenames(textureFilenames), 
-																				m_pEffect(NULL),
-																				m_pInputLayout(NULL),
-																				m_pVertexBuffer(NULL),
-																				m_spriteCountMax(1024)
+	m_pEffect(NULL),
+	m_pInputLayout(NULL),
+	m_pVertexBuffer(NULL),
+	m_spriteCountMax(1024)
 {
 }
 
@@ -186,7 +186,6 @@ void SpriteRenderer::RenderSprites(ID3D11Device* pDevice, const CFirstPersonCame
 	m_pEffect->GetVariableByName("g_CamRight")->AsVector()->SetFloatVector(*camera.GetWorldRight());
 	
 	m_pEffect->GetVariableByName("g_Textures")->AsShaderResource()->SetResourceArray(&m_spriteSRV[0],0,MAXSIZE);
-
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0,dc);
 
 	dc->Draw(g_SpritesToRender.size(),0);

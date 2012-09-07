@@ -28,7 +28,12 @@ m_SkyboxPath(path),
 	m_Eye(NULL),
 	m_SkyboxTechnique(NULL),
 	m_SunDistance(sunDistance),
-	m_SunSpeed(0.4f)
+	m_SunSpeed(0.4f),
+	m_horizontColorEV(NULL),
+	m_apexColorEV(NULL),
+	horizontColor(D3DXCOLOR(0.8,0.4,0.6 ,1)),
+	apexColor(D3DXCOLOR(0.0,0.12,0.8,1))
+
 {
 }
 
@@ -68,7 +73,8 @@ HRESULT Skybox::ReloadShader(ID3D11Device* pDevice)
 	SAFE_GET_VECTOR(m_pEffect, "g_Down", m_Down);
 	SAFE_GET_VECTOR(m_pEffect, "g_Right", m_Right);
 	SAFE_GET_VECTOR(m_pEffect, "g_Eye", m_Eye);
-
+	SAFE_GET_VECTOR(m_pEffect, "horizontColor", m_horizontColorEV);
+	SAFE_GET_VECTOR(m_pEffect, "apexColor", m_apexColorEV);
 	return S_OK;
 }
 
@@ -126,7 +132,8 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	V(m_pEffect->GetVariableByName("g_TopLeft")->AsVector()->SetFloatVector(tL));
 	V(m_pEffect->GetVariableByName("g_Right")->AsVector()->SetFloatVector(right));
 	V(m_pEffect->GetVariableByName("g_Down")->AsVector()->SetFloatVector(down));
-	
+	V(m_horizontColorEV->SetFloatVector(horizontColor));
+	V(m_apexColorEV->SetFloatVector(apexColor));
 	m_Context->IASetInputLayout( NULL ); 
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	m_SkyPass->Apply(0, m_Context); 
