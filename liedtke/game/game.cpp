@@ -580,8 +580,8 @@ void RenderText()
 			<< g_StaticGameObjects[Oindex]->GetPosition()->x << " Y: "
 			<< g_StaticGameObjects[Oindex]->GetPosition()->y << " Z: "
 			<< g_StaticGameObjects[Oindex]->GetPosition()->z << " Scale: " << g_StaticGameObjects[Oindex]->GetScale();
-
 		g_TxtHelper->DrawTextLine(out.str().c_str());
+		g_TxtHelper->DrawTextLine(g_SkyboxRenderer->AktColor().c_str());
 	}
 	wstringstream points;
 	points << "Your Points: " << g_PlayerPoints;
@@ -1071,8 +1071,9 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
 //--------------------------------------------------------------------------------------
 void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserContext )
 {
-	//OnKeyPress
-	if(bKeyDown && useDeveloperFeatures){
+	//OnKeyPress in Mode (F11)
+	if(useDeveloperFeatures)
+	if(bKeyDown){
 		switch(nChar){
 		case 107:
 			Oindex = (++Oindex)%g_StaticGameObjects.size();
@@ -1139,11 +1140,49 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			if(ORotate)
 				g_StaticGameObjects[Oindex]->Rotate( 0,0,1);
 			break;
+		case 97:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(-0.02,0,0);
+			else
+				g_SkyboxRenderer->ApexColor(-0.02,0,0);
+			break;
+		case 98:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(0,-0.02,0);
+			else
+				g_SkyboxRenderer->ApexColor(0,-0.02,0);
+			break;
+		case 99:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(0,0,-0.02);
+			else
+				g_SkyboxRenderer->ApexColor(0,0,-0.02);
+			break;
+		case 100:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(0.02,0,0);
+			else
+				g_SkyboxRenderer->ApexColor(0.02,0,0);
+			break;
+		case 101:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(0,0.02,0);
+			else
+				g_SkyboxRenderer->ApexColor(0,0.02,0);
+			break;
+		case 102:
+			if(bAltDown)
+				g_SkyboxRenderer->HorizontColor(0,0,0.02);
+			else
+				g_SkyboxRenderer->ApexColor(0,0,0.02);
+			break;
+
 		} 
 	}else{ //KeyUp
 		//switch(nChar){
 		//}
 	}
+	//immer aktiv
 	if(bKeyDown)
 	{
 		switch(nChar){

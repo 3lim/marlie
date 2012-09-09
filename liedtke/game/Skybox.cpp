@@ -33,14 +33,23 @@ m_SkyboxPath(path),
 	m_apexColorEV(NULL),
 	horizontColor(D3DXCOLOR(0.8,0.4,0.6 ,1)),
 	apexColor(D3DXCOLOR(0.0,0.12,0.8,1))
-
 {
+	dayColor[0] = pair<D3DXCOLOR, D3DXCOLOR>(D3DXCOLOR(0.9, 0.18, 0.12,1), D3DXCOLOR(0.08, 0.2, 0.1 ,1));
+	dayColor[1] = pair<D3DXCOLOR, D3DXCOLOR>(D3DXCOLOR(0.34, 0.52, 1,1), D3DXCOLOR(0.08, 0.02, 0.8 ,1));
+
 }
 
 
 Skybox::~Skybox(void)
 {
 }
+
+wstring Skybox::AktColor()
+{ 
+	wstringstream result; result << "H: " << horizontColor.r << " " << horizontColor.g << " "<<horizontColor.b << "A: "<< apexColor.r << " "<<apexColor.g <<" " << apexColor.b; 
+	return result.str();
+}
+
 
 HRESULT Skybox::ReloadShader(ID3D11Device* pDevice)
 {
@@ -152,5 +161,7 @@ void Skybox::OnMove(double time, float elapsedTime)
 	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
 	D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
 	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
-
+	float sunHeight = m_Sun.Position.y/m_SunDistance;
+	D3DXColorLerp(&horizontColor, &dayColor[0].first, &dayColor[1].first, sunHeight);
+	D3DXColorLerp(&apexColor, &dayColor[0].second, &dayColor[1].second, sunHeight);
 }

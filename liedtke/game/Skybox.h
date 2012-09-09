@@ -25,11 +25,13 @@ public:
 	void setSunDistance(float p) { m_SunDistance = p; }
 	void HorizontColor(float r, float g, float b) { horizontColor += D3DXCOLOR(r,g,b,0);}
 	void ApexColor(float r, float g, float b) { apexColor += D3DXCOLOR(r,g,b,0);}
+	std::wstring AktColor(); 
 private:
 	std::string m_SkyboxPath;
 	SpriteVertex m_Sun;
 	float m_SunSpeed;
 	float m_SunDistance;
+	std::pair<D3DXCOLOR, D3DXCOLOR> dayColor[2];
 
 	ID3D11Texture2D* m_SkyboxTex;
 	ID3D11ShaderResourceView* m_SkyboxSRV;
