@@ -291,7 +291,8 @@ unsigned long command(std::string cmdline, std::string path)
 	ntxFile.open(newFile, std::ios::in | std::ios::binary);
 	if(ntxFile.is_open())
 		return 1;
-
+	if(path.length() == 0)
+		path.size();
 	STARTUPINFO si;
     PROCESS_INFORMATION pi;
 

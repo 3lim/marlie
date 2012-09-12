@@ -10,10 +10,6 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="skybox.json" />
-    <None Include="skybox_2.json" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{77E95BCC-67FD-4089-9563-27D66A7423E5}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>

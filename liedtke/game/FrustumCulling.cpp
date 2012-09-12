@@ -20,6 +20,7 @@ void FrustumCulling::CalculateFrustum(D3DXMATRIX* viewProj)
 	// D3DXMatrixMultiply(&matrix, view, &matrix);
 	//matrix = static_cast<D3DXMATRIX>(viewProj);
 
+	//FrustumCulling in ViewSpace
 	// Calculate near plane of frustum.
 	frustum[0].a = viewProj->_14 + viewProj->_13;
 	frustum[0].b = viewProj->_24 + viewProj->_23;
@@ -61,7 +62,6 @@ void FrustumCulling::CalculateFrustum(D3DXMATRIX* viewProj)
 	frustum[5].c = viewProj->_34 + viewProj->_32;
 	frustum[5].d = viewProj->_44 + viewProj->_42;
 	D3DXPlaneNormalize(&frustum[5], &frustum[5]);
-
 }
 
 bool FrustumCulling::IsObjectInFrustum(GameObject* o)

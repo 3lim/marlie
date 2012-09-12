@@ -808,7 +808,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	g_TerrainObjects.clear();
 	//Skybox
 	if(g_UseSkybox){
-		V(g_SkyboxRenderer->CreateResources(pd3dDevice));
+		V(g_SkyboxRenderer->CreateResources(pd3dDevice, g_BoundingBoxDiagonal*0.5f,g_BoundingBoxDiagonal*0.2f));
 	}
 	SAFE_DELETE(g_Ground);
 	g_Ground = new GameObject(0, 0, 0,0,0);
@@ -1519,8 +1519,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	proj = g_Camera.GetProjMatrix();
 	g_ViewProj = (*view) * (*proj);
 	g_Frustum.CalculateFrustum(&g_ViewProj);
-
-// Update variables that change once per frame
+	
+	// Update variables that change once per frame
 	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)
 	D3DXMatrixOrthoLH(&lightProjektionMatrix, g_BoundingBoxDiagonal, g_BoundingBoxDiagonal, 0.0001f, g_BoundingBoxDiagonal); //ProjektionMatrix
 	D3DXMatrixLookAtLH(&lightViewMatrix, &vLightDir, &lightAt, &lightUp); //ViewMatrix
@@ -1556,12 +1556,11 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
-				//Skybox render
+
+		//Skybox render
 	if(g_UseSkybox){
 		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera);
 	}
-
-	// Update variables that change once per frame
 
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
 	g_TerrainRenderer->RenderTerrain(pd3dDevice);
