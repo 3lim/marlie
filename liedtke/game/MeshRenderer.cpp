@@ -138,6 +138,7 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, 
 		return;
 	mesh = object->GetMesh();
 	vbs[0] = mesh->GetVertexBuffer();
+	object->CalculateWorldMatrix();
 
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
 

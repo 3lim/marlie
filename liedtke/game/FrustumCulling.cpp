@@ -6,20 +6,15 @@ FrustumCulling::FrustumCulling(void)
 }
 
 
-void FrustumCulling::CalculateFrustum(D3DXMATRIX* viewProj)
+void FrustumCulling::CalculateFrustum(D3DXMATRIX* viewProj, const D3DXMATRIX* View)
 {
-		//matrix = *proj;
-	//// Calculate the minimum Z distance in the frustum.
-	//zMinimum = -proj->_43 / proj->_33;
-	////screendepth
-	//r = (cameraVP.MaxDepth - cameraVP.MinDepth) / (cameraVP.MaxDepth - cameraVP.MinDepth - zMinimum);
-	//matrix._33 = r;
-	//matrix._43 = -r * zMinimum;
-
-	// Create the frustum matrix from the view matrix and updated projection matrix.
-	// D3DXMatrixMultiply(&matrix, view, &matrix);
-	//matrix = static_cast<D3DXMATRIX>(viewProj);
-
+	D3DXVECTOR4 center = D3DXVECTOR4(0,0,0.5,1); //in ProjSpace
+	D3DXVec3Transform(&center, (D3DXVECTOR3*)& center, View);
+	FrustumCenter = D3DXVECTOR3(center);
+	//Diagonale of Frustum in ProjSpace
+	D3DXVECTOR4 diag = D3DXVECTOR4(-2,-2,1,1);
+	D3DXVec3Transform(&diag, (D3DXVECTOR3*)&diag, View);
+	FrustumgSphereRadius = D3DXVec3Length((D3DXVECTOR3*)&diag)/2;
 	//FrustumCulling in ViewSpace
 	// Calculate near plane of frustum.
 	frustum[0].a = viewProj->_14 + viewProj->_13;
@@ -62,6 +57,7 @@ void FrustumCulling::CalculateFrustum(D3DXMATRIX* viewProj)
 	frustum[5].c = viewProj->_34 + viewProj->_32;
 	frustum[5].d = viewProj->_44 + viewProj->_42;
 	D3DXPlaneNormalize(&frustum[5], &frustum[5]);
+
 }
 
 bool FrustumCulling::IsObjectInFrustum(GameObject* o)
@@ -70,13 +66,16 @@ bool FrustumCulling::IsObjectInFrustum(GameObject* o)
 	if(v->size() == 0)
 		return true;
 	float r = static_cast<gcSphereCollider*>((*v)[0])->GetSphereRadius();
-	for(int i=0; i<6; i++) 
-	{
-		if(D3DXPlaneDotCoord(&frustum[i], o->GetPosition()) < -r)
+	//Wenn innerhalb der sphere dann Frustum Test
+	if(D3DXVec3Length(&(FrustumCenter-*o->GetPosition())) < (FrustumgSphereRadius + r))
+		for(int i=0; i<6; i++) 
 		{
-			return false;
+			//Außerhalb des Frustum
+			if(D3DXPlaneDotCoord(&frustum[i], o->GetPosition()) < -r)
+			{
+				return false;
+			}
 		}
-	}
 	return true;
 }
 

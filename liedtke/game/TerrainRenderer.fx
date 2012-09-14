@@ -133,7 +133,19 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	return i * matDiffuse * shadowFactor 
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
 }
+float2 ComputeMoments(float Depth)
+{
+	float2 Moments;
+	Moments.x = Depth;
 
+	float dx = ddx(Depth);
+	float dy = ddy(Depth);
+	Moments.y = Depth*Depth+0.25*(dx*dx+dy*dy);
+	return Moments;
+}
+float2 VSM_DepthPS(PosTex Input) : SV_TARGET0 {
+	return ComputeMoments(length(Input.Pos));
+}
 //--------------------------------------------------------------------------------------
 // Techniques
 //--------------------------------------------------------------------------------------
@@ -144,6 +156,16 @@ technique11 Shadow
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(NULL);
+		
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass VSM
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, VSM_DepthPS()));
 		
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);

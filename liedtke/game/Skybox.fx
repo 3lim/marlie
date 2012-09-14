@@ -47,10 +47,20 @@ RasterizerState rsCullNone {
 //--------------------------------------------------------------------------------------
 DepthStencilState EnableDepth
 {
-	DepthEnable = FALSE;
+	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
 	DepthFunc = LESS_EQUAL;
 };
+DepthStencilState DisableDepth
+{
+    DepthEnable = FALSE;
+    DepthWriteMask = ZERO;
+};
+
+
+//--------------------------------------------------------------------------------------
+// BlendStates
+//--------------------------------------------------------------------------------------
 BlendState NoBlending
 {
 	AlphaToCoverageEnable = FALSE;
@@ -171,7 +181,7 @@ technique11 tSkybox
 		SetPixelShader(CompileShader(ps_4_0, CloudPS()));
 		
 		SetRasterizerState(rsCullNone);
-		SetDepthStencilState(EnableDepth, 0);
+		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(EnableBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
 }

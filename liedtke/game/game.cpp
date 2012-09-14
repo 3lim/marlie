@@ -104,7 +104,16 @@ ID3D11Texture2D*						g_ShadowMap;
 ID3D11ShaderResourceView*				g_ShadowMapSRV;
 ID3D11DepthStencilView*					g_ShadowMapDSV;
 ID3DX11EffectShaderResourceVariable*	g_ShadowMapEV;
+ID3D11Texture2D*						g_SecondShadowMap;
+ID3D11ShaderResourceView*				g_SecondShadoowMapSRV;
+ID3DX11EffectShaderResourceVariable*	g_SecondShadowMapEV;
+ID3D11RenderTargetView*					g_SecondShadowTarget;
 
+
+//Variance Shadow Map
+ID3D11Texture2D*						g_VSM_ShadowMap = NULL;
+ID3D11ShaderResourceView*				g_VSM_ShadowMapSRV = NULL;
+ID3DX11EffectShaderResourceVariable*	g_VSM_ShadowMapEV = NULL;
 
 
 // Background color
@@ -343,55 +352,56 @@ void LoadConfig(bool reload = false)
 			continue;
 		}
 		if(var.compare("Resources_Dir") == 0) stream >> g_ResourcesPath; 
-		else if ( var.compare("Spinning")       ==0 ) stream >> g_TerrainSpinning;
-		else if ( var.compare("SpinSpeed")      ==0 ) stream >> g_TerrainSpinSpeed;
-		else if ( var.compare("BackgroundColor")==0 ) stream >> g_ClearColor.x >> g_ClearColor.y >> g_ClearColor.z >> g_ClearColor.w;
+
+		if ( var.compare("Spinning")       ==0 ) stream >> g_TerrainSpinning;
+		if ( var.compare("SpinSpeed")      ==0 ) stream >> g_TerrainSpinSpeed;
+		if ( var.compare("BackgroundColor")==0 ) stream >> g_ClearColor.x >> g_ClearColor.y >> g_ClearColor.z >> g_ClearColor.w;
 		// Begin: Assignment 3.2.1
 		//liest die erweiterten Angaben aus der game.cfg aus
-		else if ( var.compare("TerrainPath")      ==0 ) stream >> g_TerrainPath;
-		else if ( var.compare("TerrainWidth")      ==0 ) stream >> g_TerrainWidth;
-		else if ( var.compare("TerrainDepth")      ==0 ) stream >> g_TerrainDepth;
-		else if ( var.compare("TerrainHeight")      ==0 ) stream >> g_TerrainHeight;
-		else if ( var.compare("SkyboxTexture")	==0) {
+		if ( var.compare("TerrainPath")      ==0 ) stream >> g_TerrainPath;
+		if ( var.compare("TerrainWidth")      ==0 ) stream >> g_TerrainWidth;
+		if ( var.compare("TerrainDepth")      ==0 ) stream >> g_TerrainDepth;
+		if ( var.compare("TerrainHeight")      ==0 ) stream >> g_TerrainHeight;
+		if ( var.compare("SkyboxTexture")	==0) {
 			stream >> g_SkyboxPath;
 			g_UseSkybox = true;}
-		else if ( var.compare("Sun") == 0){
+		if ( var.compare("Sun") == 0){
 			float x2, y2, z2, r, g, b;
 			stream >> r >> g >> b >>x >> y >> z >> x2 >> y2 >> z2;
 			Skybox::g_LightColor = D3DXCOLOR(r, g, b, 1);
 			Skybox::g_LightDir = D3DXVECTOR4(x-x2, y-y2, z-z2, 0);
 			D3DXVec3Normalize((D3DXVECTOR3*)&Skybox::g_LightDir, (D3DXVECTOR3*)&Skybox::g_LightDir);
 		}
-		else if ( var.compare("CameraPos") == 0){ stream >>x >> offset >> z;
+		if ( var.compare("CameraPos") == 0){ stream >>x >> offset >> z;
 		g_CameraPos = D3DXVECTOR3(x, offset, z);
 		}
-		else if(var.compare("CameraLookAt") == 0){ stream >> x >> y >> z;
+		if(var.compare("CameraLookAt") == 0){ stream >> x >> y >> z;
 		g_CameraLookAt = D3DXVECTOR3(x,y,z);
 		}
 		// END: Assignment 3.2.1
 		//5.1.2
-		else if(var.compare("Mesh") == 0 && !reload){
+		if(var.compare("Mesh") == 0 && !reload){
 			char normal[MAX_PATH] = { '\0'};
 			stream >> name >> T3dPath >> DiffusePath >> SpecularPath >> GlowPath >> normal;
 			MeshRenderer::g_Meshes[name] = new Mesh((g_ResourcesPath + T3dPath).c_str(), (g_ResourcesPath+DiffusePath).c_str(), (g_ResourcesPath+SpecularPath).c_str(), (g_ResourcesPath+GlowPath).c_str(), (g_ResourcesPath+normal).c_str());
 		}
-		else if(var.compare("CameraObject") == 0) {
+		if(var.compare("CameraObject") == 0) {
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ>> transX >> transY >> transZ;
 			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ, 1.f,GameObject::CAMERA));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
-		else if(var.compare("WorldObject") == 0) {
+		if(var.compare("WorldObject") == 0) {
 			bool automaticHeight;
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >>transZ >> automaticHeight;
 			g_StaticGameObjects.push_back(new GameObject(meshName,  transX, transY, transZ, scale,rotX, rotY, rotZ));
 			g_ObjectReferences[meshName] = g_StaticGameObjects.size()-1;
 		}
-		else if(var.compare("TerrainObject") == 0)
+		if(var.compare("TerrainObject") == 0)
 		{
 			stream >> meshName >> scale >> rotX >> rotY >> rotZ >> useNormal >> spacing >> offset >> maxCount;
 			g_TerrainObjects.push_back(new TerrainObject(MeshRenderer::g_Meshes[meshName], 0,0,offset, scale, rotX, rotY, rotZ, spacing, maxCount ));
 		}
-		else if(var.compare("EnemyType") == 0){
+		if(var.compare("EnemyType") == 0){
 
 			stream >> name >> hitpoints >> units >> speed >> meshName >> scale >> rotX >> rotY >> rotZ >> transX >> transY >> transZ >> sphere >> effect;
 			//g_EnemyTyp
@@ -403,17 +413,17 @@ void LoadConfig(bool reload = false)
 			g_EnemyTyp[name]->AddDeathEffect(effect);
 			g_EnemyTypeNames.push_back(name);
 		}
-		else if(var.compare("Spawn") == 0)
+		if(var.compare("Spawn") == 0)
 		{
 			stream>>g_SpawnIntervall >> g_MinHeight >> g_MaxHeight >> g_MinCircle >> g_MaxCircle;
 		}
-		else if ( var.compare("SpriteTexture")	==0 )
+		if ( var.compare("SpriteTexture")	==0 )
 		{
 			pair<string,int> p;
 			stream>>p.first>>p.second;
 			p.first = g_ResourcesPath+p.first;
 			spriteFileNames.push_back(p);
-		} else if(var.compare("Projectile") == 0)
+		} if(var.compare("Projectile") == 0)
 		{
 			string createEffect, destroyeffect = "";
 			stream >> name >> radius >> textureIndex >> damage >> cooldown >> speed >> mass >> createEffect >> destroyeffect;
@@ -429,7 +439,7 @@ void LoadConfig(bool reload = false)
 					proj->AddComponent(new gcMass(mass));
 
 			g_ProjectileTypes[name] = proj;
-		} else if(var.compare("Weapon") == 0)
+		} if(var.compare("Weapon") == 0)
 		{
 			stream >> name >> x >> y >> z;
 			stream >> var;
@@ -444,7 +454,7 @@ void LoadConfig(bool reload = false)
 			}
 			D3DXVECTOR3* p = g_StaticGameObjects[g_ObjectReferences[name]]->GetPosition();
 			g_WeaponTypes.push_back(WeaponType(name, x+p->x,y+p->y,z+p->z, tmp));
-		} else if(var.compare("Explosion") == 0)
+		} if(var.compare("Explosion") == 0)
 		{
 			int count;
 			float duration;
@@ -828,6 +838,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	});
 	//Shadow Map
 
+	//OLD SHADOWING
 	//Create shadow map texture desc
 	D3D11_TEXTURE2D_DESC shadowTex_Desc;
 	shadowTex_Desc.Width = 2048;
@@ -856,11 +867,50 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	shadowSRV_Desc.Texture2D.MipLevels = shadowTex_Desc.MipLevels;
 	shadowSRV_Desc.Texture2D.MostDetailedMip = 0;
 
-
-
 	V(pd3dDevice->CreateTexture2D(&shadowTex_Desc, NULL, &g_ShadowMap));
 	V(pd3dDevice->CreateDepthStencilView(g_ShadowMap, &shadowDSV_Desc, &g_ShadowMapDSV));
 	V(pd3dDevice->CreateShaderResourceView(g_ShadowMap, &shadowSRV_Desc, &g_ShadowMapSRV));
+	
+	//Variance Shader Map
+	D3D11_TEXTURE2D_DESC textureDesc;
+	HRESULT result;
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+
+	// Initialize the render target texture description.
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+
+	// Setup the render target texture description.
+	textureDesc.Width = 2048;
+	textureDesc.Height = 2048;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	// Create the render target texture.
+	V(pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_SecondShadowMap));
+
+	// Setup the description of the render target view.
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+	// Create the render target view.
+	V(pd3dDevice->CreateRenderTargetView(g_SecondShadowMap, &renderTargetViewDesc,&g_SecondShadowTarget));
+
+	// Setup the description of the shader resource view.
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+
+	V(pd3dDevice->CreateShaderResourceView(g_SecondShadowMap, &shaderResourceViewDesc, &g_SecondShadoowMapSRV));
 
 	return S_OK;
 }
@@ -879,7 +929,9 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_RELEASE(g_ShadowMap);
 	SAFE_RELEASE(g_ShadowMapSRV);
 	SAFE_RELEASE(g_ShadowMapDSV);
-
+	SAFE_RELEASE(g_SecondShadowMap);
+	SAFE_RELEASE(g_SecondShadowTarget);
+	SAFE_RELEASE(g_SecondShadoowMapSRV);
 
 	SAFE_DELETE( g_TxtHelper );
 	SAFE_DELETE(g_leftText);
@@ -1506,7 +1558,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	shadowVP.Height = static_cast<float>(shadowMap_desc.Height);
 	shadowVP.MinDepth = 0.f;
 	shadowVP.MaxDepth = 1.f;
-	pd3dImmediateContext->OMSetRenderTargets(0, 0, g_ShadowMapDSV);
+	pd3dImmediateContext->OMSetRenderTargets(1, &g_SecondShadowTarget, g_ShadowMapDSV);
 	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
 	pd3dImmediateContext->ClearDepthStencilView(g_ShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
 
@@ -1518,7 +1570,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	view = g_Camera.GetViewMatrix();
 	proj = g_Camera.GetProjMatrix();
 	g_ViewProj = (*view) * (*proj);
-	g_Frustum.CalculateFrustum(&g_ViewProj);
+	g_Frustum.CalculateFrustum(&g_ViewProj, view);
 	
 	// Update variables that change once per frame
 	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)

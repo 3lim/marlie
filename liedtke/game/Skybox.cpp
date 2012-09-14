@@ -90,127 +90,6 @@ bool Skybox::InitializeSkyPlane(int skyPlaneResolution, float skyPlaneWidth, flo
 	return true;
 }
 
-//bool Skybox::InitializeSkyPlane(int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat)
-//{
-//	float quadSize, radius, constant, textureDelta;
-//	int i,j;
-//	D3DXVECTOR3 position;
-//	D3DXVECTOR2 texCord;
-//
-//
-//	m_VertexCount = (skyPlaneResolution + 1) * (skyPlaneResolution + 1)*6;
-//	// Create the array to hold the sky plane coordinates.
-//	m_skyPlane.resize(m_VertexCount);
-//
-//	// Determine the size of each quad on the sky plane.
-//	quadSize = skyPlaneWidth / (float)skyPlaneResolution;
-//
-//	// Calculate the radius of the sky plane based on the width.
-//	radius = skyPlaneWidth / 2.0f;
-//
-//	// Calculate the height constant to increment by.
-//	constant = (skyPlaneTop - skyPlaneBottom) / (radius * radius);
-//
-//	// Calculate the texture coordinate increment value.
-//	textureDelta = (float)textureRepeat / (float)skyPlaneResolution;
-//	// Loop through the sky plane and build the coordinates based on the increment values given.
-//		for(int index =0; index < m_VertexCount;)
-//		{
-//			i = index%skyPlaneResolution;//spalte
-//			j = index/skyPlaneResolution;//zeile
-//
-//			//index1 = j * (skyPlaneResolution + 1) + i;
-//			// Triangle 1 - Upper Left
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)j * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2(i * textureDelta,j * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//
-//			// Triangle 1 - Upper Right
-//			//index2 = j * (skyPlaneResolution + 1) + (i+1);
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)(i+1) * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)j * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2((i+1) * textureDelta,j * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//
-//			// Triangle 1 - Bottom Left
-//			//index3 = (j+1) * (skyPlaneResolution + 1) + i;
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)(j+1) * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2(i * textureDelta,(j+1) * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//
-//			// Triangle 2 - Bottom Left
-//			//index4 = (j+1) * (skyPlaneResolution + 1) + (i+1);
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)(j+1) * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2(i * textureDelta,(j+1) * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//
-//			// Triangle 2 - Upper Right
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)(i+1) * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)j * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2((i+1) * textureDelta,j * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//
-//			// Triangle 2 - Bottom Right
-//			// Calculate the vertex coordinates.
-//			position.x = (-0.5f * skyPlaneWidth) + ((float)(i+1) * quadSize);
-//			position.z = (-0.5f * skyPlaneWidth) + ((float)(j+1) * quadSize);
-//			position.y = skyPlaneTop - (constant * ((position.x * position.x) + (position.z * position.z)));
-//			// Calculate the texture coordinates.
-//			texCord = D3DXVECTOR2((i+1) * textureDelta,(j+1) * textureDelta);
-//			// Calculate the index into the sky plane array to add this coordinate.
-//			//index = j * (skyPlaneResolution + 1) + i;
-//			// Add the coordinates to the sky plane array.
-//			m_skyPlane[index].Pos = position;
-//			m_skyPlane[index].Tex = texCord;
-//			index++;
-//			}
-//	return true;
-//}
-
-
 Skybox::Skybox(string path, float sunDistance) :
 m_SkyboxPath(path),
 	m_Context(NULL),
@@ -313,7 +192,7 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&m_SkyboxTex);
 	pDevice->CreateShaderResourceView(m_SkyboxTex,NULL,&m_SkyboxSRV);
 
-	V_RETURN(LoadNtxFromFile("resources/clouds_1.ntx", &tex2DDesc, data, textureData, rgb));
+	V_RETURN(LoadNtxFromFile("resources/clouds1.ntx", &tex2DDesc, data, textureData, rgb));
 	pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&cloudTex1);
 	pDevice->CreateShaderResourceView(cloudTex1,NULL,&cloud1SRV);
 
