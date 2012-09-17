@@ -252,6 +252,7 @@ void TerrainRenderer::setEffectVariables()
 	m_TerrainNormalEV->SetResource(m_TerrainNormalSRV);
 	m_TerrainDiffuseEV->SetResource(m_TerrainDiffuseSRV);
 	m_TerrainHeightEV->SetResource(m_TerrainHeightSRV);
+	m_pEffect->GetVariableByName("g_VSMap")->AsShaderResource()->SetResource(g_VarianceShadowMapSRV);
 
 	m_WorldEV->SetMatrix(m_World);
 

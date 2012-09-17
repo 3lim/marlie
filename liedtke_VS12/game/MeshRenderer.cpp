@@ -149,7 +149,7 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, 
 
 	m_LightColorEV->SetFloatVector(*g_LightColor);
 	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
-	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_ShadowMapSRV);
+	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_VarianceShadowMapSRV);
 	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 
 	WorldView = *object->GetWorld();

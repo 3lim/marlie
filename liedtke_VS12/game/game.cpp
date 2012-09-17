@@ -43,6 +43,7 @@
 #include "Macros.h"
 #include "ParticleSystem.h"
 #include "FrustumCulling.h"
+#include "renderSAT.h"
 
 #include "debug.h"
 
@@ -104,16 +105,12 @@ ID3D11Texture2D*						g_ShadowMap;
 ID3D11ShaderResourceView*				g_ShadowMapSRV;
 ID3D11DepthStencilView*					g_ShadowMapDSV;
 ID3DX11EffectShaderResourceVariable*	g_ShadowMapEV;
+//Variance Shadow Map
 ID3D11Texture2D*						g_SecondShadowMap;
-ID3D11ShaderResourceView*				g_SecondShadoowMapSRV;
-ID3DX11EffectShaderResourceVariable*	g_SecondShadowMapEV;
+ID3D11ShaderResourceView*				g_VarianceShadowMapSRV;
+//ID3DX11EffectShaderResourceVariable*	g_SecondShadowMapEV;
 ID3D11RenderTargetView*					g_SecondShadowTarget;
 
-
-//Variance Shadow Map
-ID3D11Texture2D*						g_VSM_ShadowMap = NULL;
-ID3D11ShaderResourceView*				g_VSM_ShadowMapSRV = NULL;
-ID3DX11EffectShaderResourceVariable*	g_VSM_ShadowMapEV = NULL;
 
 
 // Background color
@@ -124,6 +121,8 @@ MeshRenderer*			g_MeshRenderer = NULL;
 SpriteRenderer*			g_SpriteRenderer = NULL;
 Skybox*					g_SkyboxRenderer = NULL;
 FrustumCulling			g_Frustum;
+renderSAT*				g_ShadowSATRenderer = NULL;
+
 map<string, Enemy*> g_EnemyTyp;
 //enthält alle GameObjects, die dauerhaft im Spiel sind
 vector<GameObject*> g_StaticGameObjects;
@@ -500,7 +499,7 @@ void InitApp()
 	g_MeshRenderer = new MeshRenderer(&g_Frustum);
 	g_SkyboxRenderer = new Skybox(g_SkyboxPath, g_BoundingBoxDiagonal*0.7f);
 	g_TerrainRenderer = new TerrainRenderer(g_TerrainPath, g_TerrainWidth, g_TerrainDepth, g_TerrainHeight, g_TerrainSpinning, g_TerrainSpinSpeed);
-
+	g_ShadowSATRenderer = new renderSAT();
 	// Intialize the user interface
 	g_SettingsDlg.Init( &g_DialogResourceManager );
 	g_HUD.Init( &g_DialogResourceManager );
@@ -534,6 +533,7 @@ void DeinitApp(){
 	_CrtCheckMemory();
 	g_MeshRenderer->Deinit();
 	_CrtCheckMemory();
+	SAFE_DELETE(g_ShadowSATRenderer);
 	//als erstes müssen alle instances und erst danach die prefabs löschen
 	for(auto it=g_EnemyInstances.begin(); it!= g_EnemyInstances.end(); it++)
 		SAFE_DELETE(*it);
@@ -894,7 +894,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 
 	// Create the render target texture.
 	V(pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_SecondShadowMap));
-
 	// Setup the description of the render target view.
 	renderTargetViewDesc.Format = textureDesc.Format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -910,7 +909,9 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
 
-	V(pd3dDevice->CreateShaderResourceView(g_SecondShadowMap, &shaderResourceViewDesc, &g_SecondShadoowMapSRV));
+	V(pd3dDevice->CreateShaderResourceView(g_SecondShadowMap, &shaderResourceViewDesc, &g_VarianceShadowMapSRV));
+	// Create SATTExture for the shadow map with the same properties as the renderTarget
+	g_ShadowSATRenderer->CreateResources(pd3dDevice, textureDesc);
 
 	return S_OK;
 }
@@ -931,13 +932,14 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_RELEASE(g_ShadowMapDSV);
 	SAFE_RELEASE(g_SecondShadowMap);
 	SAFE_RELEASE(g_SecondShadowTarget);
-	SAFE_RELEASE(g_SecondShadoowMapSRV);
+	SAFE_RELEASE(g_VarianceShadowMapSRV);
 
 	SAFE_DELETE( g_TxtHelper );
 	SAFE_DELETE(g_leftText);
 	SAFE_DELETE( g_rightText);
 	ReleaseShader();
 
+	g_ShadowSATRenderer->ReleaseResources();
 	g_TerrainRenderer->ReleaseResources();
 	//5.2.8
 	//g_CockpitMesh->ReleaseResources();
@@ -1035,6 +1037,7 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 	g_MeshRenderer->ReloadShader(pd3dDevice);
 	g_SpriteRenderer->ReloadShader(pd3dDevice);
 	g_SkyboxRenderer->ReloadShader(pd3dDevice);
+	g_ShadowSATRenderer->ReloadShader(pd3dDevice);
 	return S_OK;
 }
 
@@ -1074,6 +1077,7 @@ void ReleaseShader()
 	g_MeshRenderer->ReleaseShader();
 	g_SpriteRenderer->ReleaseShader();
 	g_SkyboxRenderer->ReleaseShader();
+	g_ShadowSATRenderer->ReleaseShader();
 }
 
 //--------------------------------------------------------------------------------------
@@ -1601,6 +1605,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects);
 	g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances);
 
+	//Create SAT Texture for rendering
+	
+	ID3D11ShaderResourceView* satShadowMap = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_ShadowMapSRV);
+
 
 	//*****normal Scene Rendering*****//
 
@@ -1638,7 +1646,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
-		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_SecondShadoowMapSRV);
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satShadowMap/*g_VarianceShadowMapSRV*/);
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
 		

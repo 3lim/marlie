@@ -74,6 +74,7 @@
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="FrustumCulling.cpp" />
+    <ClCompile Include="renderSAT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -157,6 +158,7 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="FrustumCulling.h" />
+    <ClInclude Include="renderSAT.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
@@ -175,6 +177,9 @@
       <Filter>Shader</Filter>
     </FX_HLSL>
     <FX_HLSL Include="TerrainRenderer.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="SAT.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
   </ItemGroup>

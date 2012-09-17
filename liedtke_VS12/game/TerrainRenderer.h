@@ -16,6 +16,7 @@ struct PtfHeader{
 };
 
 extern ID3D11ShaderResourceView* g_ShadowMapSRV;
+extern ID3D11ShaderResourceView* g_VarianceShadowMapSRV;
 
 class TerrainRenderer
 {

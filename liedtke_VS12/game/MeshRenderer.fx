@@ -51,6 +51,12 @@ SamplerState samAnisotropic
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
+SamplerState samDepthMap
+{
+	Filter = COMPARISON_MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
 
 SamplerComparisonState depthMap
 {
@@ -85,6 +91,42 @@ BlendState NoBlending
 	BlendEnable[0] = FALSE;
 };
 
+//-------------------------------------------------------------------------------------
+// Functions
+//-------------------------------------------------------------------------------------
+ float linstep(float min, float max, float x)  
+{  
+  return clamp((x - min) / (max - min), 0, 1);  
+}  
+float ReduceLightBleeding(float p_max, float Amount)  
+{  
+  // Remove the [0, Amount] tail and linearly rescale (Amount, 1].  
+   //return linstep(Amount, 1, p_max);  
+	return smoothstep(Amount, 1, p_max);
+}  
+float ChebyshevUpperBound(float2 Moments,float t)
+{
+	float p = (t <= Moments.x);
+	float variance = Moments.y- (Moments.x*Moments.x);
+	variance = max(variance, 0.000010); //MinVariance
+	//upperBound
+	float uB = t - Moments.x;
+	float p_max = variance/(variance + uB*uB);
+	//return max(p, p_max);
+	//reduce LightBleeding
+	float amount = 0.1; //faktor for the lightbleeding 
+	return smoothstep(amount, 1, p_max);(max(p, p_max),0.1);
+}
+float2 ComputeMoments(float Depth)
+{
+	float2 Moments;
+	Moments.x = Depth;
+
+	float dx = ddx(Depth);// Compute partial derivatives of depth.  
+	float dy = ddy(Depth);// Compute partial derivatives of depth.  
+	Moments.y = Depth*Depth+0.25*(dx*dx+dy*dy);
+	return Moments;
+}
 
 
 //--------------------------------------------------------------------------------------
@@ -146,24 +188,34 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 		uint2 dimensions;
 	g_ShadowMap.GetDimensions(dimensions.x,dimensions.y);
 	float2 t = frac( lPos.xy * dimensions.x );
+	float shadowFactor;
 	//float shadowFactor = lerp(lerp(g_ShadowMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z),g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z),t.x),
 	//					lerp(g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y+1.f/dimensions.y),lPos.z),g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x,lPos.y+1.f/dimensions.y),lPos.z),t.x)
 	//					,t.y);
-	float shadowFactor = lerp(
-						lerp(
-							g_ShadowMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z),
-							g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z),
-							t.x),
-						lerp(
-							g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y+1.f/dimensions.y),lPos.z),
-							g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x,lPos.y+1.f/dimensions.y),lPos.z),
-							t.x),
-						t.y);
+	//float shadowFactor = lerp(
+	//					lerp(
+	//						g_ShadowMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z),
+	//						g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z),
+	//						t.x),
+	//					lerp(
+	//						g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y+1.f/dimensions.y),lPos.z),
+	//						g_ShadowMap.SampleCmpLevelZero(depthMap,float2(lPos.x,lPos.y+1.f/dimensions.y),lPos.z),
+	//						t.x),
+	//					t.y);
+
+	//VSM Shading
+	float2 moments = g_ShadowMap.Sample(samDepthMap, lPos.xy).rg;
+	float depth = lPos.z; 
+	shadowFactor = ChebyshevUpperBound(moments, depth);
+
 	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor 
 		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor 
 		+ 0.5 * mGlow + 0.2 * mDiffuse * cLightAmbient) * shadowFactor 
 		+ 0.05 * mDiffuse * cLightAmbient * (1.f-shadowFactor);
 	return output; 
+}
+float2 VSM_DepthPS(T3dVertexPSIn Input) : SV_TARGET {
+	return ComputeMoments(Input.Pos.z);
 }
 
 //--------------------------------------------------------------------------------------
@@ -171,11 +223,12 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 //--------------------------------------------------------------------------------------
 technique11 Shadow
 {
+	//VSM
 	pass Mesh
 	{
 		SetVertexShader(CompileShader(vs_4_0, MeshVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, VSM_DepthPS()));
 		
 		SetRasterizerState(rsCullBack);
 		SetDepthStencilState(EnableDepth, 0);

@@ -355,8 +355,8 @@ void GS_Billboard( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex>
 }
 float4 PS_Billboard( PosTex input ) : SV_TARGET
 {		
-	float r = g_ShadowMap.Sample(samAnisotropic, input.Tex).r;
-	return float4(r, r, r, 1);	
+	float2 r = g_ShadowMap.Sample(samAnisotropic, input.Tex).rg;
+	return float4(r.r, r.g, 1, 1);	
 }
 
 
