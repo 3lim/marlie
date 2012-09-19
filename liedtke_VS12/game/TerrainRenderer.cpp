@@ -289,7 +289,7 @@ void TerrainRenderer::OnMove(double time, float elapsedTime)
 	}
 }
 
-void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice)
+void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, ID3D11RenderTargetView* LightBW)
 {
 	ID3D11DeviceContext* pd3dImmediateContext;
 	pDevice->GetImmediateContext(&pd3dImmediateContext);
@@ -303,6 +303,10 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice)
 	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
 	// Tell the input assembler stage which primitive topology to use
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
+
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1")->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->OMSetRenderTargets(1, &LightBW, NULL);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 	SAFE_RELEASE(pd3dImmediateContext);
 }

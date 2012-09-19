@@ -173,13 +173,16 @@
     <FX_HLSL Include="SpriteRenderer.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
-    <FX_HLSL Include="MeshRenderer.fx">
-      <Filter>Shader</Filter>
-    </FX_HLSL>
     <FX_HLSL Include="TerrainRenderer.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
     <FX_HLSL Include="SAT.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="PostProcessing.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="MeshRenderer.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
   </ItemGroup>

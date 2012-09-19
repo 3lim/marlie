@@ -214,6 +214,9 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 		+ 0.05 * mDiffuse * cLightAmbient * (1.f-shadowFactor);
 	return output; 
 }
+float4 MeshBWPS(T3dVertexPSIn Input) : SV_Target0 { 
+	return float4(0,0,0,1); 
+}
 float2 VSM_DepthPS(T3dVertexPSIn Input) : SV_TARGET {
 	return ComputeMoments(Input.Pos.z);
 }
@@ -242,6 +245,16 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, MeshVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, MeshPS()));
+		
+		SetRasterizerState(rsCullBack);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass MeshBW
+	{
+		SetVertexShader(CompileShader(vs_4_0, MeshVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, MeshBWPS()));
 		
 		SetRasterizerState(rsCullBack);
 		SetDepthStencilState(EnableDepth, 0);

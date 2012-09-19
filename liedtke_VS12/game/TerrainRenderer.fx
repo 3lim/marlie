@@ -108,7 +108,7 @@ float ChebyshevUpperBound(float2 Moments,float t)
 	float p_max = variance/(variance + uB*uB);
 	//return max(p, p_max);
 	//reduce LightBleeding
-	float amount = 0.1; //faktor for the lightbleeding 
+	float amount = 0.2; //faktor for the lightbleeding 
 	return smoothstep(amount, 1, p_max);(max(p, p_max),0.1);
 }
 float2 ComputeMoments(float Depth)
@@ -132,7 +132,7 @@ PosTex TerrainVS(uint VertexID : SV_VertexID)
 
 	uint quadIdx = VertexID / 6;
 	uint inQuadIdx = VertexID % 6;
-
+	float dx = 1.f / g_TerrainRes;
 	int2 coords;
 	coords.x = quadIdx % g_TerrainQuadRes;
 	coords.y = quadIdx / g_TerrainQuadRes;
@@ -141,8 +141,8 @@ PosTex TerrainVS(uint VertexID : SV_VertexID)
 	if(inQuadIdx==2||inQuadIdx==3) coords.y++;
 	if(inQuadIdx==5) {coords.x++;coords.y++;}
 	
-	output.Tex.x = coords.x * 1.f / g_TerrainRes;
-	output.Tex.y = coords.y * 1.f / g_TerrainRes;
+	output.Tex.x = coords.x * dx;
+	output.Tex.y = coords.y *dx;
 
 	float4 pos;
 	pos.x = output.Tex.x;
@@ -185,6 +185,11 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
 	
 }
+
+float4 TerrainBWPS(void) : SV_Target0
+{
+	return float4(0,0,0,1);
+}
 //returns r = depth, g = moment2 of VSM Shading, b = SummendArea information
 float2 VSM_DepthPS(PosTex Input) : SV_TARGET {
 	return ComputeMoments(Input.Pos.z);
@@ -222,6 +227,16 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, TerrainPS()));
+		
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass P1//BW result for Light Scattering
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, TerrainBWPS()));
 		
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);

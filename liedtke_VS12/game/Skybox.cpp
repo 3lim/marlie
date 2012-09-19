@@ -203,14 +203,14 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	m_Sun.Opacity = 1;
 	//nun im onMove
 	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
-	m_Sun.Radius = 100.0f;
+	m_Sun.Radius = 100.f;
 	m_Sun.TextureIndex = 0;
 	m_Sun.AnimationProgress = 0;
 	m_Sun.Color = g_LightColor;
 
 	//SkyPlane
 
-	const D3D11_INPUT_ELEMENT_DESC layout[] =
+	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "SV_POSITION",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -260,7 +260,6 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 
 	V(pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_CloudIB));
 
-
 	return S_OK;
 }
 
@@ -278,7 +277,7 @@ void Skybox::ReleaseResources()
 	//for(int i = 0; i < m_VertexCount; i++)
 	//SAFE_RELEASE(m_skyPlane[i]);
 }
-HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam)
+HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam, ID3D11RenderTargetView* LightBW)
 {
 	HRESULT hr;
 	D3DXMATRIX viewProj = (*cam.GetViewMatrix()) * (*cam.GetProjMatrix());
@@ -293,32 +292,57 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 
 	D3DXVECTOR3 down = bL - tL;
 	D3DXVECTOR3 right = tR - tL;
+	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
+	ID3D11DepthStencilView* pDTV = DXUTGetD3D11DepthStencilView();
 
 	V(m_pEffect->GetVariableByName("SkyCubeImage")->AsShaderResource()->SetResource(m_SkyboxSRV));
 	V(m_pEffect->GetVariableByName("CloudTex1")->AsShaderResource()->SetResource(cloud1SRV));
 	V(m_pEffect->GetVariableByName("CloudTex2")->AsShaderResource()->SetResource(cloud2SRV));
+	V(m_pEffect->GetVariableByName("g_SunRadius")->AsScalar()->SetFloat(m_Sun.Radius));
+	V(m_pEffect->GetVariableByName("g_SunPos")->AsVector()->SetFloatVector(m_Sun.Position));
+	V(m_pEffect->GetVariableByName("SunColor")->AsVector()->SetFloatVector(g_LightColor));
 	V(m_pEffect->GetVariableByName("g_Eye")->AsVector()->SetFloatVector(*cam.GetEyePt()));
 	V(m_pEffect->GetVariableByName("g_TopLeft")->AsVector()->SetFloatVector(tL));
 	V(m_pEffect->GetVariableByName("g_Right")->AsVector()->SetFloatVector(right));
 	V(m_pEffect->GetVariableByName("g_Down")->AsVector()->SetFloatVector(down));
 	V(m_pEffect->GetVariableByName("g_ViewProj")->AsMatrix()->SetMatrix(viewProj));
 	V(m_pEffect->GetVariableByName("cloudTranslation")->AsVector()->SetFloatVectorArray((float*)&textureTranslation[0],0,2));
+	m_pEffect->GetVariableByName("g_CamUp")->AsVector()->SetFloatVector(*cam.GetWorldUp());
+	m_pEffect->GetVariableByName("g_CamRight")->AsVector()->SetFloatVector(*cam.GetWorldRight());
 	V(m_horizontColorEV->SetFloatVector(horizontColor));
 	V(m_apexColorEV->SetFloatVector(apexColor));
 	m_Context->IASetInputLayout( NULL ); 
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	m_SkyPass->Apply(0, m_Context); 
 	m_Context->Draw(1, 0);
+	m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	V(m_SkyboxTechnique->GetPassByName("drawSkyCubeVLS")->Apply(0, m_Context)); 
+	m_Context->Draw(1, 0);
 
-	//Skyplane
+	//Sun
+	//m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
 	const UINT offset = 0;
-	const UINT stride = sizeof(uvVertex);
+	UINT stride; stride= sizeof(SpriteVertex);
+	//V(m_SkyboxTechnique->GetPassByName("sun")->Apply(0, m_Context)); 
+	m_Context->IASetInputLayout( NULL ); 
+	m_Context->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_POINTLIST); 
+	//m_Context->Draw(1, 0);
+	//m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	V(m_SkyboxTechnique->GetPassByName("sunBW")->Apply(0, m_Context)); 
+	m_Context->Draw(1, 0);
+	//Skyplane
+	m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
+	stride = sizeof(uvVertex);
 	V(m_SkyboxTechnique->GetPassByName("Clouds")->Apply(0, m_Context)); 
 	m_Context->IASetVertexBuffers(0,1, &m_CloudVB, &stride, &offset);
 	m_Context->IASetIndexBuffer(m_CloudIB, DXGI_FORMAT_R32_UINT, 0);
 	m_Context->IASetInputLayout( m_SkydomeLayout ); 
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 	m_Context->DrawIndexed(m_IndexCount,0, 0);
+	m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	V(m_SkyboxTechnique->GetPassByName("CloudsBW")->Apply(0, m_Context)); 
+	m_Context->DrawIndexed(m_IndexCount,0, 0);
+	m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
 
 	return S_OK;
 }
@@ -339,7 +363,7 @@ void Skybox::OnMove(double time, float elapsedTime)
 
 	float sunHeight = min(1, max(-1,m_Sun.Position.y/(m_SunDistance*0.7)));
 
-	if(sunHeight > 0)
+	if(sunHeight > 0){
 		if(m_DeltaSun > 0){
 			D3DXColorLerp(&horizontColor, &dayColor[0].first, &dayColor[1].first, sunHeight);
 			D3DXColorLerp(&apexColor, &dayColor[0].second, &dayColor[1].second, sunHeight);
@@ -349,7 +373,11 @@ void Skybox::OnMove(double time, float elapsedTime)
 			D3DXColorLerp(&horizontColor, &dayColor[1].first, &dayColor[2].first, 1-sunHeight);
 			D3DXColorLerp(&apexColor, &dayColor[1].second, &dayColor[2].second, 1-sunHeight);
 		}
+		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &m_Sun.Color, sunHeight);
+	}
 	else
+	{
+		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &D3DXCOLOR(0,0,0,1), sunHeight);
 		if(m_DeltaSun > 0){
 			D3DXColorLerp(&horizontColor, &dayColor[0].first, &dayColor[3].first, sunHeight*-1);
 			D3DXColorLerp(&apexColor, &dayColor[0].second, &dayColor[3].second, sunHeight*-1);
@@ -359,7 +387,7 @@ void Skybox::OnMove(double time, float elapsedTime)
 			D3DXColorLerp(&horizontColor, &dayColor[2].first, &dayColor[3].first, sunHeight*-1);
 			D3DXColorLerp(&apexColor, &dayColor[2].second, &dayColor[3].second, sunHeight*-1);
 		}
-
+	}
 		textureTranslation[0] += translationSpeed[0];
 		textureTranslation[1] += translationSpeed[1];
 

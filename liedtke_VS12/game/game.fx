@@ -356,7 +356,7 @@ void GS_Billboard( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex>
 float4 PS_Billboard( PosTex input ) : SV_TARGET
 {		
 	float2 r = g_ShadowMap.Sample(samAnisotropic, input.Tex).rg;
-	return float4(r.r, r.g, 1, 1);	
+	return float4(r.r, r.g,  g_ShadowMap.Sample(samAnisotropic, input.Tex).b, 1);	
 }
 
 
@@ -422,6 +422,7 @@ technique10 RenderBillboard
         SetGeometryShader( CompileShader( gs_4_0, GS_Billboard() ) );
         SetPixelShader( CompileShader( ps_4_0, PS_Billboard() ) );	
 		SetRasterizerState( rsCullBack );		
+        SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
     }
 }
 

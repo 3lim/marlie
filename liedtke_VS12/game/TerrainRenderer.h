@@ -28,7 +28,7 @@ public:
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
 	void OnMove( double fTime, float fElapsedTime);
-	void RenderTerrain(ID3D11Device* pDevice);
+	void RenderTerrain(ID3D11Device* pDevice, ID3D11RenderTargetView* LightBW);
 	void ShadowTerrain(ID3D11Device* pDevice);
 	void Deinit();
 	static std::vector<unsigned short> g_TerrainHeights;

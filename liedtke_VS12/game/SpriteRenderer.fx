@@ -34,6 +34,32 @@ SamplerState samAnisotropic
     AddressV = Wrap;
 };
 
+BlendState NoBlending
+{
+    AlphaToCoverageEnable = FALSE;
+    BlendEnable[0] = FALSE;
+};
+
+BlendState BSBlendOver 
+{ 
+	BlendEnable[0] = TRUE;
+	SrcBlend[0] = SRC_ALPHA;
+	SrcBlendAlpha[0] = ONE;
+	DestBlend[0] = INV_SRC_ALPHA;
+	DestBlendAlpha[0] = INV_SRC_ALPHA;
+};
+
+DepthStencilState EnableDepth
+{
+    DepthEnable = TRUE;
+    DepthWriteMask = ALL;
+    DepthFunc = LESS_EQUAL;
+};
+
+RasterizerState rsCullNone {
+	CullMode = None; 
+};
+
 SpriteVertex SpriteVS(SpriteVertex Input) 
 {
 	return Input;
@@ -95,32 +121,6 @@ void SpriteGS( point SpriteVertex vertex[1], inout TriangleStream<PSVertex> Stre
 	output.texcoord = float2(1,0);
 	Stream.Append(output);
 }
-
-BlendState NoBlending
-{
-    AlphaToCoverageEnable = FALSE;
-    BlendEnable[0] = FALSE;
-};
-
-BlendState BSBlendOver 
-{ 
-	BlendEnable[0] = TRUE;
-	SrcBlend[0] = SRC_ALPHA;
-	SrcBlendAlpha[0] = ONE;
-	DestBlend[0] = INV_SRC_ALPHA;
-	DestBlendAlpha[0] = INV_SRC_ALPHA;
-};
-
-DepthStencilState EnableDepth
-{
-    DepthEnable = TRUE;
-    DepthWriteMask = ALL;
-    DepthFunc = LESS_EQUAL;
-};
-
-RasterizerState rsCullNone {
-	CullMode = None; 
-};
 
 technique11 Render
 {

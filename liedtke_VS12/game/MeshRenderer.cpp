@@ -54,46 +54,46 @@ void MeshRenderer::setEffectVariables()
 {
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, vector<GameObject*>* o, ID3D11RenderTargetView* LightBW)
 {
 	//stride = sizeof(T3dVertex);
 	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, *object, m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET,LightBW);
 	}
 }
 
- void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
+ void MeshRenderer::ShadowMeshes(ID3D11Device* pDevice, list<Enemy*>* o, ID3D11RenderTargetView* LightBW)
 {
 	//stride = sizeof(T3dVertex);
 	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, *object, m_ShadowET);
+		RenderMesh(pDevice, *object, m_ShadowET,LightBW);
 	}
 }
 
- void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject*>* o)
+ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, vector<GameObject*>* o, ID3D11RenderTargetView* LightBW)
 {
 	//stride = sizeof(T3dVertex);
 	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, *object, m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET,LightBW);
 	}
 }
- void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o)
+ void  MeshRenderer::RenderMeshes(ID3D11Device* pDevice, list<Enemy*>* o, ID3D11RenderTargetView* LightBW)
 {
 	//stride = sizeof(T3dVertex);
 	//setEffectVariables();
 	//UINT offset = 0;
 	for(auto object = o->begin(); object != o->end(); object++)
 	{
-		RenderMesh(pDevice, *object, m_RenderET);
+		RenderMesh(pDevice, *object, m_RenderET,LightBW);
 	}
 }
 //void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technique)
@@ -132,7 +132,7 @@ void MeshRenderer::setEffectVariables()
 //	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 //	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
 //}
-void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technique)
+void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technique, ID3D11RenderTargetView* LightBW)
 {
 	if(!g_Frustum->IsObjectInFrustum(object))
 		return;
@@ -175,6 +175,17 @@ void inline MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, 
 	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
 	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	//Light Scattering
+	if(LightBW != NULL)
+	{
+		pd3DContext->OMSetRenderTargets(1, &LightBW, NULL);
+		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
+		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+
+		ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
+		ID3D11DepthStencilView* pDTV = DXUTGetD3D11DepthStencilView();
+		pd3DContext->OMSetRenderTargets(1, &pRTV, pDTV);
+	}
 }
 
 

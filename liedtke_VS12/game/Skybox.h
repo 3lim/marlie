@@ -17,11 +17,11 @@ public:
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device*, float terrainWidth, float terrainHeight);
 	void ReleaseResources();
-	HRESULT RenderSkybox(ID3D11Device*, const CFirstPersonCamera& camera);
+	HRESULT RenderSkybox(ID3D11Device*, const CFirstPersonCamera& camera, ID3D11RenderTargetView* LightBW);
 	void OnMove(double fTime, float fElapsedTime);
 	static D3DXCOLOR g_LightColor;
 	static D3DXVECTOR4 g_LightDir;
-	SpriteVertex* getSun() { return &m_Sun; }
+	D3DXVECTOR3 GetSunPosition() { return m_Sun.Position; }
 	void setSunDistance(float p) { m_SunDistance = p; }
 	void HorizontColor(float r, float g, float b) { horizontColor += D3DXCOLOR(r,g,b,0);}
 	void ApexColor(float r, float g, float b) { apexColor += D3DXCOLOR(r,g,b,0);}
@@ -51,9 +51,12 @@ private:
 	ID3D11ShaderResourceView *cloud1SRV, *cloud2SRV;
 	D3DXVECTOR2 translationSpeed[2];
 	D3DXVECTOR2 textureTranslation[2];
+	
+	ID3D11Buffer*  m_SunBuffer;
+	ID3D11InputLayout* m_SunLayout;
 
-	ID3D11Texture2D* m_SkyboxTex;
-	ID3D11ShaderResourceView* m_SkyboxSRV;
+	ID3D11Texture2D*				m_SkyboxTex;
+	ID3D11ShaderResourceView*		m_SkyboxSRV;
 
 	ID3D11DeviceContext*			m_Context;
 	ID3DX11Effect*					m_pEffect;

@@ -486,6 +486,7 @@
   <ItemGroup>
     <FX_HLSL Include="game.fx" />
     <FX_HLSL Include="MeshRenderer.fx" />
+    <FX_HLSL Include="PostProcessing.fx" />
     <FX_HLSL Include="SAT.fx" />
     <FX_HLSL Include="Skybox.fx" />
     <FX_HLSL Include="SpriteRenderer.fx" />
