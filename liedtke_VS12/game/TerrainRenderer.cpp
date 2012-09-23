@@ -248,11 +248,9 @@ D3DXMATRIX terrainWorldLightViewProj;
 D3DXMATRIX terrainViewProj;
 void TerrainRenderer::setEffectVariables()
 {
-	m_ShadowMapEV->SetResource(g_ShadowMapSRV);
 	m_TerrainNormalEV->SetResource(m_TerrainNormalSRV);
 	m_TerrainDiffuseEV->SetResource(m_TerrainDiffuseSRV);
 	m_TerrainHeightEV->SetResource(m_TerrainHeightSRV);
-	m_pEffect->GetVariableByName("g_VSMap")->AsShaderResource()->SetResource(g_VarianceShadowMapSRV);
 
 	m_WorldEV->SetMatrix(m_World);
 
@@ -289,10 +287,11 @@ void TerrainRenderer::OnMove(double time, float elapsedTime)
 	}
 }
 
-void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, ID3D11RenderTargetView* LightBW)
+void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* LightBW)
 {
 	ID3D11DeviceContext* pd3dImmediateContext;
 	pDevice->GetImmediateContext(&pd3dImmediateContext);
+	m_ShadowMapEV->SetResource(shadowMap->GetShaderResource());
 
 	setEffectVariables();
 	// Apply the rendering pass in order to submit the necessary render state changes to the device
@@ -303,6 +302,7 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, ID3D11RenderTargetVie
 	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
 	// Tell the input assembler stage which primitive topology to use
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1")->Apply(0, pd3dImmediateContext);

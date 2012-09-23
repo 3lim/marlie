@@ -1,3 +1,5 @@
+#include "Util.fx"
+float    g_VSMMinVariance = 0.000001;         // Minimum variance for VSM
 //--------------------------------------------------------------------------------------
 // Shader resources
 //--------------------------------------------------------------------------------------
@@ -44,6 +46,13 @@ struct T3dVertexVSIn
 //--------------------------------------------------------------------------------------
 // Samplers
 //--------------------------------------------------------------------------------------
+SamplerState samPSVSM
+{
+    AddressU = Clamp;
+    AddressV = Clamp;
+    Filter = ANISOTROPIC;
+    MaxAnisotropy = 16;
+};
 
 SamplerState samAnisotropic
 {
@@ -53,7 +62,7 @@ SamplerState samAnisotropic
 };
 SamplerState samDepthMap
 {
-	Filter = COMPARISON_MIN_MAG_MIP_LINEAR;
+	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -91,42 +100,6 @@ BlendState NoBlending
 	BlendEnable[0] = FALSE;
 };
 
-//-------------------------------------------------------------------------------------
-// Functions
-//-------------------------------------------------------------------------------------
- float linstep(float min, float max, float x)  
-{  
-  return clamp((x - min) / (max - min), 0, 1);  
-}  
-float ReduceLightBleeding(float p_max, float Amount)  
-{  
-  // Remove the [0, Amount] tail and linearly rescale (Amount, 1].  
-   //return linstep(Amount, 1, p_max);  
-	return smoothstep(Amount, 1, p_max);
-}  
-float ChebyshevUpperBound(float2 Moments,float t)
-{
-	float p = (t <= Moments.x);
-	float variance = Moments.y- (Moments.x*Moments.x);
-	variance = max(variance, 0.000010); //MinVariance
-	//upperBound
-	float uB = t - Moments.x;
-	float p_max = variance/(variance + uB*uB);
-	//return max(p, p_max);
-	//reduce LightBleeding
-	float amount = 0.1; //faktor for the lightbleeding 
-	return smoothstep(amount, 1, p_max);(max(p, p_max),0.1);
-}
-float2 ComputeMoments(float Depth)
-{
-	float2 Moments;
-	Moments.x = Depth;
-
-	float dx = ddx(Depth);// Compute partial derivatives of depth.  
-	float dy = ddy(Depth);// Compute partial derivatives of depth.  
-	Moments.y = Depth*Depth+0.25*(dx*dx+dy*dy);
-	return Moments;
-}
 
 
 //--------------------------------------------------------------------------------------
@@ -204,9 +177,10 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 	//					t.y);
 
 	//VSM Shading
-	float2 moments = g_ShadowMap.Sample(samDepthMap, lPos.xy).rg;
+	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy+GetFPBias()).rg;
 	float depth = lPos.z; 
-	shadowFactor = ChebyshevUpperBound(moments, depth);
+	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
 
 	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor 
 		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor 
@@ -218,7 +192,7 @@ float4 MeshBWPS(T3dVertexPSIn Input) : SV_Target0 {
 	return float4(0,0,0,1); 
 }
 float2 VSM_DepthPS(T3dVertexPSIn Input) : SV_TARGET {
-	return ComputeMoments(Input.Pos.z);
+	return ComputeMoments(Input.Pos.z)-GetFPBias();
 }
 
 //--------------------------------------------------------------------------------------

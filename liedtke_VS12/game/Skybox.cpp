@@ -277,7 +277,7 @@ void Skybox::ReleaseResources()
 	//for(int i = 0; i < m_VertexCount; i++)
 	//SAFE_RELEASE(m_skyPlane[i]);
 }
-HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam, ID3D11RenderTargetView* LightBW)
+HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam, RenderableTexture* LightBW)
 {
 	HRESULT hr;
 	D3DXMATRIX viewProj = (*cam.GetViewMatrix()) * (*cam.GetProjMatrix());
@@ -294,6 +294,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	D3DXVECTOR3 right = tR - tL;
 	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
 	ID3D11DepthStencilView* pDTV = DXUTGetD3D11DepthStencilView();
+	ID3D11RenderTargetView* lightTarget = LightBW->GetRenderTarget();
 
 	V(m_pEffect->GetVariableByName("SkyCubeImage")->AsShaderResource()->SetResource(m_SkyboxSRV));
 	V(m_pEffect->GetVariableByName("CloudTex1")->AsShaderResource()->SetResource(cloud1SRV));
@@ -315,7 +316,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	m_SkyPass->Apply(0, m_Context); 
 	m_Context->Draw(1, 0);
-	m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
 	V(m_SkyboxTechnique->GetPassByName("drawSkyCubeVLS")->Apply(0, m_Context)); 
 	m_Context->Draw(1, 0);
 
@@ -327,7 +328,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetInputLayout( NULL ); 
 	m_Context->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	//m_Context->Draw(1, 0);
-	//m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
 	V(m_SkyboxTechnique->GetPassByName("sunBW")->Apply(0, m_Context)); 
 	m_Context->Draw(1, 0);
 	//Skyplane
@@ -339,10 +340,9 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetInputLayout( m_SkydomeLayout ); 
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 	m_Context->DrawIndexed(m_IndexCount,0, 0);
-	m_Context->OMSetRenderTargets(1, &LightBW, NULL);
+	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
 	V(m_SkyboxTechnique->GetPassByName("CloudsBW")->Apply(0, m_Context)); 
 	m_Context->DrawIndexed(m_IndexCount,0, 0);
-	m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
 
 	return S_OK;
 }

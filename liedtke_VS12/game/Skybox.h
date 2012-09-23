@@ -4,7 +4,7 @@
 #include <DXUTcamera.h>
 #include "Effects11/Inc/d3dx11effect.h"
 #include <string>
-
+#include "RenderableTexture.h"
 #include "SpriteRenderer.h"
 
 class Skybox
@@ -17,7 +17,7 @@ public:
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device*, float terrainWidth, float terrainHeight);
 	void ReleaseResources();
-	HRESULT RenderSkybox(ID3D11Device*, const CFirstPersonCamera& camera, ID3D11RenderTargetView* LightBW);
+	HRESULT RenderSkybox(ID3D11Device*, const CFirstPersonCamera& camera, RenderableTexture* LightBW);
 	void OnMove(double fTime, float fElapsedTime);
 	static D3DXCOLOR g_LightColor;
 	static D3DXVECTOR4 g_LightDir;

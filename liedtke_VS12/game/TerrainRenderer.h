@@ -6,6 +6,8 @@
 
 #include <vector>
 #include <string>
+#include "RenderableTexture.h"
+
 
 struct PtfHeader{
 	int16_t magicNumber; 	// Must be 0x00DA
@@ -14,9 +16,6 @@ struct PtfHeader{
 	int32_t colorSize;	    // Color data size
 	int32_t normalSize;	    // Normal data size
 };
-
-extern ID3D11ShaderResourceView* g_ShadowMapSRV;
-extern ID3D11ShaderResourceView* g_VarianceShadowMapSRV;
 
 class TerrainRenderer
 {
@@ -28,7 +27,7 @@ public:
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
 	void OnMove( double fTime, float fElapsedTime);
-	void RenderTerrain(ID3D11Device* pDevice, ID3D11RenderTargetView* LightBW);
+	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* VolumetricLightScattering);
 	void ShadowTerrain(ID3D11Device* pDevice);
 	void Deinit();
 	static std::vector<unsigned short> g_TerrainHeights;

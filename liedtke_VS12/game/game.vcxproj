@@ -432,6 +432,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="renderSAT.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="gcSphereCollider.cpp" />
@@ -469,6 +470,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="RenderableTexture.h" />
     <ClInclude Include="renderSAT.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Skybox.h" />
@@ -491,6 +493,7 @@
     <FX_HLSL Include="Skybox.fx" />
     <FX_HLSL Include="SpriteRenderer.fx" />
     <FX_HLSL Include="TerrainRenderer.fx" />
+    <FX_HLSL Include="Util.fx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DXUT\Optional\DXUTOpt_2010.sln" />

@@ -1,3 +1,4 @@
+#include "Util.fx"
 //--------------------------------------------------------------------------------------
 // Shader resources
 //--------------------------------------------------------------------------------------
@@ -7,10 +8,9 @@ Texture2D g_Normal;
 Texture2D g_Diffuse; // Material albedo for diffuse lighting
 Texture2D g_ShadowMap;
 //use VSMap for VarianceShading
-Texture2D g_VSMap;
 float4 cLightAmbient = float4(1,1,1,1);
 matrix  g_World;
-
+float g_VSMMinVariance = 0.000001;
 //--------------------------------------------------------------------------------------
 // Constant buffers
 //--------------------------------------------------------------------------------------
@@ -46,9 +46,16 @@ SamplerState samAnisotropic
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
+SamplerState samPSVSM
+{
+    AddressU = Clamp;
+    AddressV = Clamp;
+    Filter = ANISOTROPIC;
+    MaxAnisotropy = 16;
+};
 SamplerState samDepthMap
 {
-	Filter = COMPARISON_MIN_MAG_MIP_LINEAR;
+	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -85,42 +92,6 @@ BlendState NoBlending
 	AlphaToCoverageEnable = FALSE;
 	BlendEnable[0] = FALSE;
 };
-//-------------------------------------------------------------------------------------
-// Functions
-//-------------------------------------------------------------------------------------
- float linstep(float min, float max, float x)  
-{  
-  return clamp((x - min) / (max - min), 0, 1);  
-}  
-float ReduceLightBleeding(float p_max, float Amount)  
-{  
-  // Remove the [0, Amount] tail and linearly rescale (Amount, 1].  
-   //return linstep(Amount, 1, p_max);  
-	return smoothstep(Amount, 1, p_max);
-}  
-float ChebyshevUpperBound(float2 Moments,float t)
-{
-	float p = (t <= Moments.x);
-	float variance = Moments.y- (Moments.x*Moments.x);
-	variance = max(variance, 0.000010); //MinVariance
-	//upperBound
-	float uB = t - Moments.x;
-	float p_max = variance/(variance + uB*uB);
-	//return max(p, p_max);
-	//reduce LightBleeding
-	float amount = 0.2; //faktor for the lightbleeding 
-	return smoothstep(amount, 1, p_max);(max(p, p_max),0.1);
-}
-float2 ComputeMoments(float Depth)
-{
-	float2 Moments;
-	Moments.x = Depth;
-
-	float dx = ddx(Depth);// Compute partial derivatives of depth.  
-	float dy = ddy(Depth);// Compute partial derivatives of depth.  
-	Moments.y = Depth*Depth+0.25*(dx*dx+dy*dy);
-	return Moments;
-}
 
 
 //--------------------------------------------------------------------------------------
@@ -177,9 +148,10 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	
 
 	//VSM Shading
-	float2 moments = g_VSMap.Sample(samDepthMap, lPos.xy).rg;
+	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy+GetFPBias()).rg;
 	float depth = lPos.z; 
-	shadowFactor = ChebyshevUpperBound(moments, depth);
+	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
 
 	return i * matDiffuse * shadowFactor 
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
@@ -192,7 +164,8 @@ float4 TerrainBWPS(void) : SV_Target0
 }
 //returns r = depth, g = moment2 of VSM Shading, b = SummendArea information
 float2 VSM_DepthPS(PosTex Input) : SV_TARGET {
-	return ComputeMoments(Input.Pos.z);
+	float bias = 0.3;
+	return ComputeMoments(Input.Pos.z)-GetFPBias();//z value ist kein besonders guter tiefen wert aber muss für den anfang genügen
 }
 //--------------------------------------------------------------------------------------
 // Techniques

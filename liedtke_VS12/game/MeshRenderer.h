@@ -13,9 +13,7 @@
 #include "GameObject.h"
 #include "Enemy.h"
 #include "FrustumCulling.h"
-
-extern ID3D11ShaderResourceView*		g_ShadowMapSRV;
-extern ID3D11ShaderResourceView*		g_VarianceShadowMapSRV;
+#include "RenderableTexture.h"
 
 class MeshRenderer
 {
@@ -27,12 +25,12 @@ public:
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
-	void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
-	void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
-	void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
-	void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
+	//void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
+	//void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
+	//void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
+	//void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
-	void RenderMesh(ID3D11Device* pDevice, GameObject* object, ID3DX11EffectTechnique* technik, ID3D11RenderTargetView* LightBW);
+	void RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);

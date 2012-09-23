@@ -10,17 +10,29 @@ float g_decay = 0.8;
 float g_weight = 1;
 float g_exposure = 1.4;
 int BLURSAMPLES = 16;
+float2 g_BlurDimension;
+int g_BlurSamples;
+Texture2D blurImg;
+
 struct QuadVertex
 {
 	float4 Pos : SV_POSITION;
 	float2 Tex : TEXCOORD;
 };
+
+
 SamplerState samLinear
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = CLAMP;
 	AddressV = CLAMP;
 	BorderColor = float4(0,0,0,1);
+};
+SamplerState samBilinear
+{
+    AddressU = Clamp;
+    AddressV = Clamp;
+    Filter = MIN_MAG_LINEAR_MIP_POINT;
 };
 
 
@@ -47,37 +59,6 @@ DepthStencilState DisableDepth
 	DepthEnable = FALSE;
 	DepthWriteMask = ZERO;
 };
-
-
-//FUNCTION
-half4 Blur(float2 texCoord, int range ,texture2D tex) {
-    float4 c = tex.Sample(samLinear, texCoord);
-	float2  dimensions;
-	tex.GetDimensions(dimensions.x, dimensions.y);
-	float2 d = 1/dimensions;
-    // this loop will be unrolled by compiler and the constants precalculated:
-    for(int i=0; i<range; i++) {
-		float2 offset = -d;
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(0,-d.y);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(d.x,-d.y);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(d.x,0);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(d.x,d.y);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(0,d.y);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(-d.x,d.y);
-    	c += tex.Sample(samLinear, texCoord +offset);
-		offset = float2(-d.x,0);
-    	c += tex.Sample(samLinear, texCoord +offset);
-    }
-    c /= range*9;
-    return c;
-} 
-
 
 
 uint QuadVS(uint id : SV_VERTEXID) : POINT
@@ -128,7 +109,7 @@ float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 
 float4 AdditiveBlendPS(QuadVertex v) : SV_TARGET0
 {
-	float4 color = Blur(v.Tex,1, aux2Buffer);//.Sample(samLinear, v.Tex);
+	float4 color = aux2Buffer.Sample(samLinear, v.Tex);
 		return float4(color.rgb, 1);
 }
 
@@ -153,5 +134,36 @@ technique11 VolumetricLightScattering
 		SetRasterizerState(rsCullNone);
         SetDepthStencilState(DisableDepth, 0);
         SetBlendState(AdditiveBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+}
+
+//Box-Filter for bluring
+float4 BoxBlurPS(QuadVertex In) : SV_TARGET0
+{
+	float2 imgSize;
+	blurImg.GetDimensions(imgSize.x, imgSize.y);
+	float2 deltaSize = 1.f/ imgSize;
+	float blurSize = 1.f/g_BlurSamples;
+	float2 sampleOffset = deltaSize*g_BlurDimension;
+	float2 offset = 0.5f*(g_BlurSamples -1)* sampleOffset;
+	float2 baseTexCoord = In.Tex - offset;
+	float4 result = float4(0,0,0,0);
+	for(int i = 0; i < g_BlurSamples; i++)
+	{
+		result += blurImg.Sample(samBilinear, baseTexCoord + i*sampleOffset);
+	}
+	return result*blurSize;
+}
+technique11 BoxBlur
+{
+	pass P0
+	{
+		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
+		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
+        SetPixelShader(CompileShader(ps_4_0, BoxBlurPS()));
+        
+		SetRasterizerState(rsCullNone);
+        SetDepthStencilState(DisableDepth, 0);
+        SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
 }

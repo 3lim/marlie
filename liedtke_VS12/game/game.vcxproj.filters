@@ -75,6 +75,7 @@
     </ClCompile>
     <ClCompile Include="FrustumCulling.cpp" />
     <ClCompile Include="renderSAT.cpp" />
+    <ClCompile Include="RenderableTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
@@ -159,6 +160,7 @@
     </ClInclude>
     <ClInclude Include="FrustumCulling.h" />
     <ClInclude Include="renderSAT.h" />
+    <ClInclude Include="RenderableTexture.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc" />
@@ -183,6 +185,9 @@
       <Filter>Shader</Filter>
     </FX_HLSL>
     <FX_HLSL Include="MeshRenderer.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
+    <FX_HLSL Include="Util.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
   </ItemGroup>
