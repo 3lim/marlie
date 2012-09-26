@@ -1,17 +1,26 @@
 Texture2D aux1Buffer;
 Texture2D aux2Buffer;
 Texture2D source;
+
+cbuffer cbCommon
+{
 float4 g_LightColor;
 float3 g_LightPosition;
 matrix g_WorldViewProj;
-float g_density = 0.3;
+}
+cbuffer cbVLS
+{
+float g_density = 0.1;
 int NUM_SAMPLES = 80;
-float g_decay = 0.8;
-float g_weight = 1;
-float g_exposure = 1.4;
-int BLURSAMPLES = 16;
+float g_decay = .9;
+float g_weight = 1.5;
+float g_exposure = 1.5;
+}
+cbuffer cbBlur
+{
 float2 g_BlurDimension;
 int g_BlurSamples;
+}
 Texture2D blurImg;
 
 struct QuadVertex
@@ -88,9 +97,10 @@ void QuadGS(point uint vertex[1] : POINT, inout TriangleStream<QuadVertex> strea
 }
 float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 {
-	float4 lightScreenPos = mul(float4(g_LightPosition,0), g_WorldViewProj);
+	float4 lightScreenPos = mul(float4(g_LightPosition.xyz,0), g_WorldViewProj);
 	lightScreenPos.xy /= lightScreenPos.w;
-	lightScreenPos.x += 0.45f;//BUT WHY?
+	lightScreenPos.x += 0.5f;
+	lightScreenPos.y -= 0.5f;
 
 	float2 deltaTexCoord = v.Tex-lightScreenPos.xy;
 		deltaTexCoord  *= 1.f/NUM_SAMPLES*g_density;

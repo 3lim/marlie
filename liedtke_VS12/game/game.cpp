@@ -77,7 +77,7 @@ struct DISPLAYTEXT
 
 // Camera
 struct CAMERAPARAMS {
-	float   m_Fovy; //Sichtfeld?
+	float   m_Fovy;
 	float   m_Aspect;
 	float   m_NearPlane;
 	float   m_FarPlane;
@@ -940,7 +940,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 
 	g_Camera.SetProjParams(g_CameraParams.m_Fovy, g_CameraParams.m_Aspect, g_CameraParams.m_NearPlane, g_CameraParams.m_FarPlane);
 	g_Camera.SetEnablePositionMovement(false);
-	g_Camera.SetRotateButtons(false, false, false, true);
+	g_Camera.SetRotateButtons(false, useDeveloperFeatures, false, !useDeveloperFeatures);
 	g_Camera.SetScalers( g_CameraRotateScaler, g_CameraMoveScaler );
 	g_Camera.SetResetCursorAfterMove(true);
 	g_Camera.SetNumberOfFramesToSmoothMouseData(5);
@@ -1221,6 +1221,7 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			useDeveloperFeatures = !useDeveloperFeatures;
 			ShowCursor(useDeveloperFeatures);
 			g_Camera.SetResetCursorAfterMove(!useDeveloperFeatures);
+			g_Camera.SetRotateButtons(false, useDeveloperFeatures, false, !useDeveloperFeatures);
 			break;
 		} 
 	}else{ //KeyUp
@@ -1588,7 +1589,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 	//TODO
 	//Create SAT Texture for rendering	
-	//RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
+	RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
 
 	//*****normal Scene Rendering*****//
 	//ID3D11RenderTargetView* targets[] = {pRTV,g_LightBWRTV   };
@@ -1617,7 +1618,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
 	//for each(GameObject o in g_StaticGameObjects)
-	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o, &"Render", g_LightBWRTV)
+	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o, &"Render", g_LightBWRTV),wwmwi
 
 	for each (GameObject o in g_StaticGameObjects)
 	{
@@ -1646,7 +1647,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->OMSetRenderTargets(1, &VLSTarget, NULL);
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	g_Effect_VLS->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
-	g_Effect_VLS->GetVariableByName("g_LightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition());
+	g_Effect_VLS->GetVariableByName("g_LightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()*1000);
 	g_Effect_VLS->GetVariableByName("g_WorldViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
@@ -1654,15 +1655,15 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
 	g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
 
-	ID3D11RenderTargetView* BlurTarget = g_VLSMap->GetRenderTarget();
-	pd3dImmediateContext->OMSetRenderTargets(1, &BlurTarget, NULL);
-	g_Effect_VLS->GetVariableByName("blurImg")->AsShaderResource()->SetResource(g_VLSDestMap->GetShaderResource());
-	float dim[] = { 1.4,1.2 };
-	g_Effect_VLS->GetVariableByName("g_BlurDimension")->AsVector()->SetFloatVector(dim);
-	g_Effect_VLS->GetVariableByName("g_BlurSamples")->AsScalar()->SetInt(4);
-	g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(1,0);
-
+	//ID3D11RenderTargetView* BlurTarget = g_VLSMap->GetRenderTarget();
+	//pd3dImmediateContext->OMSetRenderTargets(1, &BlurTarget, NULL);
+	//g_Effect_VLS->GetVariableByName("blurImg")->AsShaderResource()->SetResource(g_VLSDestMap->GetShaderResource());
+	//float dim[] = { 1.4,1.2 };
+	//g_Effect_VLS->GetVariableByName("g_BlurDimension")->AsVector()->SetFloatVector(dim);
+	//g_Effect_VLS->GetVariableByName("g_BlurSamples")->AsScalar()->SetInt(4);
+	//g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
+	//pd3dImmediateContext->Draw(1,0);
+	swap(g_VLSMap, g_VLSDestMap);
 	//VLS Blending
 	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
 	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
@@ -1676,16 +1677,16 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
-		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
 		
-		g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
+		g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 		pd3dImmediateContext->DrawIndexed(1, 0, 0);
 
 		//unbind shadow map as SRV
-		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
-		g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
+		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
+		//g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
 	}
 
 

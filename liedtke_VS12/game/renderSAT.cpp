@@ -10,7 +10,7 @@
 using namespace std;
 
 renderSAT::renderSAT(UINT passes) : satPasses(0,0),
-	satReso(2),
+	satReso(8),
 	m_src(NULL),
 	m_original(NULL),
 	m_dest(NULL),

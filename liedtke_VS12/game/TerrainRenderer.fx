@@ -148,10 +148,10 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	
 
 	//VSM Shading
-	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy+GetFPBias()).rg;
+	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
 	float depth = lPos.z; 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
-	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.14);
 
 	return i * matDiffuse * shadowFactor 
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);

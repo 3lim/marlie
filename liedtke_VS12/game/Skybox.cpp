@@ -100,7 +100,7 @@ m_SkyboxPath(path),
 	m_Eye(NULL),
 	m_SkyboxTechnique(NULL),
 	m_SunDistance(sunDistance),
-	m_SunSpeed(0.4f),
+	m_SunSpeed(20.f),
 	m_horizontColorEV(NULL),
 	m_apexColorEV(NULL),
 	horizontColor(D3DXCOLOR(0.8,0.4,0.6 ,1)),
@@ -295,7 +295,9 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
 	ID3D11DepthStencilView* pDTV = DXUTGetD3D11DepthStencilView();
 	ID3D11RenderTargetView* lightTarget = LightBW->GetRenderTarget();
-
+	D3DXMATRIX world;
+	D3DXMatrixTranslation(&world, cam.GetEyePt()->x, cam.GetEyePt()->y, cam.GetEyePt()->z);
+	world = world*viewProj;//projeziert den himmer immer relativ zur Spieler Position;
 	V(m_pEffect->GetVariableByName("SkyCubeImage")->AsShaderResource()->SetResource(m_SkyboxSRV));
 	V(m_pEffect->GetVariableByName("CloudTex1")->AsShaderResource()->SetResource(cloud1SRV));
 	V(m_pEffect->GetVariableByName("CloudTex2")->AsShaderResource()->SetResource(cloud2SRV));
@@ -306,7 +308,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	V(m_pEffect->GetVariableByName("g_TopLeft")->AsVector()->SetFloatVector(tL));
 	V(m_pEffect->GetVariableByName("g_Right")->AsVector()->SetFloatVector(right));
 	V(m_pEffect->GetVariableByName("g_Down")->AsVector()->SetFloatVector(down));
-	V(m_pEffect->GetVariableByName("g_ViewProj")->AsMatrix()->SetMatrix(viewProj));
+	V(m_pEffect->GetVariableByName("g_ViewProj")->AsMatrix()->SetMatrix(world));
 	V(m_pEffect->GetVariableByName("cloudTranslation")->AsVector()->SetFloatVectorArray((float*)&textureTranslation[0],0,2));
 	m_pEffect->GetVariableByName("g_CamUp")->AsVector()->SetFloatVector(*cam.GetWorldUp());
 	m_pEffect->GetVariableByName("g_CamRight")->AsVector()->SetFloatVector(*cam.GetWorldRight());
@@ -351,13 +353,14 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 void Skybox::OnMove(double time, float elapsedTime)
 {
 	//Sun Simulaions
-	D3DXMATRIX mTmp;
-	D3DXMatrixRotationY(&mTmp,static_cast<float>(DEG2RAD(time)*elapsedTime*0.03*m_SunSpeed));
+	D3DXMATRIX mTmp; 
+	D3DXMatrixRotationYawPitchRoll(&mTmp, static_cast<float>(DEG2RAD(elapsedTime)*0.03*m_SunSpeed), 0, static_cast<float>(std::abs(DEG2RAD(elapsedTime)*0.1f*m_SunSpeed)));
+	//D3DXMatrixRotationY(&mTmp,static_cast<float>(DEG2RAD(time)*elapsedTime*0.03*m_SunSpeed));
+	//D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
+	//D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
+	//D3DXMatrixRotationZ(&mTmp,static_cast<float>(std::abs(DEG2RAD(time)*elapsedTime*0.1f*m_SunSpeed)));
+	//D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
 	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
-	D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
-	D3DXMatrixRotationZ(&mTmp,static_cast<float>(std::abs(DEG2RAD(time)*elapsedTime*0.1f*m_SunSpeed)));
-	D3DXVec4Transform(&g_LightDir, &g_LightDir,&mTmp);
-	D3DXVec3Normalize((D3DXVECTOR3*)&g_LightDir, (D3DXVECTOR3*)&g_LightDir); // Normalize the light direction for constant light Speed
 	m_DeltaSun = ((D3DXVECTOR3)(g_LightDir)*m_SunDistance).y -m_Sun.Position.y;
 	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
 
@@ -373,11 +376,11 @@ void Skybox::OnMove(double time, float elapsedTime)
 			D3DXColorLerp(&horizontColor, &dayColor[1].first, &dayColor[2].first, 1-sunHeight);
 			D3DXColorLerp(&apexColor, &dayColor[1].second, &dayColor[2].second, 1-sunHeight);
 		}
-		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &m_Sun.Color, sunHeight);
+		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &m_Sun.Color, sunHeight*1.25);
 	}
 	else
 	{
-		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &D3DXCOLOR(0,0,0,1), sunHeight);
+		D3DXColorLerp(&g_LightColor, &D3DXCOLOR(1,0.8,0,1), &D3DXCOLOR(0,0,0,1), sunHeight*-1.4);
 		if(m_DeltaSun > 0){
 			D3DXColorLerp(&horizontColor, &dayColor[0].first, &dayColor[3].first, sunHeight*-1);
 			D3DXColorLerp(&apexColor, &dayColor[0].second, &dayColor[3].second, sunHeight*-1);

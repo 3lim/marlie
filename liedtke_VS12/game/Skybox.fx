@@ -3,7 +3,7 @@ TextureCube SkyCubeImage;
 Texture2D CloudTex1;
 Texture2D CloudTex2;
 float cloudBrightness = 0.85;
-int SUNSIZEFACTOR = 9;
+int SUNSIZEFACTOR = 6;
 
 cbuffer cbChangesEveryFrame
 {
@@ -199,7 +199,7 @@ float4 SunBWPS(SunVertex Input) : SV_Target0
 	float dist = length (Input.tex - float2 (0.5f, 0.5f)); //get the distance form the center of the point-sprite
 	float alpha = saturate(sign (0.5f - dist*SUNSIZEFACTOR));
 	float4 glow = SunColor;
-		glow.a = saturate((0.5f - dist)*0.3);
+		glow.a = saturate((0.5f - dist))*saturate((0.5f - dist)*0.36);
 	return float4(SunColor.rgb*1.1,alpha)+glow;
 }
 

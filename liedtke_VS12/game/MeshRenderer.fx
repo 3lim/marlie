@@ -177,13 +177,13 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 	//					t.y);
 
 	//VSM Shading
-	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy+GetFPBias()).rg;
+	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
 	float depth = lPos.z; 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
-	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.7);
 
-	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor 
-		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor 
+	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor *shadowFactor
+		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor *shadowFactor
 		+ 0.5 * mGlow + 0.2 * mDiffuse * cLightAmbient) * shadowFactor 
 		+ 0.05 * mDiffuse * cLightAmbient * (1.f-shadowFactor);
 	return output; 

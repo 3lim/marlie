@@ -1,3 +1,4 @@
+#include "Util.fx"
 //--------------------------------------------------------------------------------------
 // Shader resources
 //--------------------------------------------------------------------------------------
@@ -355,8 +356,19 @@ void GS_Billboard( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex>
 }
 float4 PS_Billboard( PosTex input ) : SV_TARGET
 {		
-	float2 r = g_ShadowMap.Sample(samAnisotropic, input.Tex).rg;
-	return float4(r.r, r.g,  g_ShadowMap.Sample(samAnisotropic, input.Tex).b, 1);	
+	return g_ShadowMap.Sample(samAnisotropic, input.Tex);	
+}
+float4 SATPS_Billboard( PosTex input ) : SV_TARGET
+{		
+
+	float2 size = float2(2,2);
+	float2 dim;
+	g_ShadowMap.GetDimensions(dim.x, dim.y);
+	size = size/dim;
+	float4 SatCoord = float4(input.Tex.x-size.x,input.Tex.y-size.y,input.Tex.x+size.x,input.Tex.y+size.y);
+	//float4 SatCoord = input.Tex.xyxy + float4(0, 0, size.xy);
+	//return float4(sampleSAT(g_ShadowMap, SatCoord, dim).r,0,1);
+	return float4( samSAT(g_ShadowMap, input.Tex, float2(2,2)).xy,1,1);
 }
 
 
@@ -421,6 +433,15 @@ technique10 RenderBillboard
         SetVertexShader( CompileShader( vs_4_0, VS_Billboard() ) );
         SetGeometryShader( CompileShader( gs_4_0, GS_Billboard() ) );
         SetPixelShader( CompileShader( ps_4_0, PS_Billboard() ) );	
+		SetRasterizerState( rsCullBack );		
+        SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+    }
+	//sample SAT with size 1 to display
+    pass P1
+    {
+        SetVertexShader( CompileShader( vs_4_0, VS_Billboard() ) );
+        SetGeometryShader( CompileShader( gs_4_0, GS_Billboard() ) );
+        SetPixelShader( CompileShader( ps_4_0, SATPS_Billboard() ) );	
 		SetRasterizerState( rsCullBack );		
         SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
     }
