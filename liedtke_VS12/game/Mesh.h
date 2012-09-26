@@ -3,6 +3,7 @@
 #include <DXUT.h>
 #include <vector>
 #include <cstdint>
+#include "T3d.h"
 
 //This class ecapsulates the D3D11 resources needed for a mesh
 class Mesh
@@ -40,12 +41,14 @@ public:
 	ID3D11ShaderResourceView*   GetGlowSRV()      {return m_GlowSRV;            }
 	ID3D11Texture2D*	        GetNormalTex()    {return m_NormalTex;          }
 	ID3D11ShaderResourceView*   GetNormalSRV()    {return m_NormalSRV;          }
+	D3DXVECTOR3*				GetOriginPoint()  {return &m_centerVertex;      }
+	float						GetMeshRadius()	  {return m_sphereRadius;		}
 
 private:
 	//Reads the complete file given by "path" byte-wise into "data".
 	// (this function is similar to the one from PtfGenerator)
 	static HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data);
-	
+	std::vector<D3DXVECTOR3> readVerticesFromStream(std::vector<T3dVertex>* in);
 private:
 	//Filenames
 	std::string					m_FilenameT3d;
@@ -58,6 +61,8 @@ private:
 	ID3D11Buffer*               m_VertexBuffer;
 	ID3D11Buffer*               m_IndexBuffer;
 	int                         m_IndexCount; //number of single indices in m_IndexBuffer (needed for DrawIndexed())
+	D3DXVECTOR3					m_centerVertex;
+	float						m_sphereRadius;
 
 	//Mesh textures and corresponding shader resource views
 	ID3D11Texture2D*            m_DiffuseTex;

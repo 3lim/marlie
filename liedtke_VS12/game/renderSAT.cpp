@@ -84,6 +84,8 @@ void renderSAT::ReleaseShader()
 RenderableTexture* renderSAT::createSAT(ID3D11DeviceContext* pd3dContext, RenderableTexture* Input)
 {
 
+	pd3dContext->ClearRenderTargetView(m_dest->GetRenderTarget(), D3DXCOLOR(0,0,1,1));
+
 	shaderEffect->GetVariableByName("Samples")->AsScalar()->SetInt(SATRenderSamples);
 	pd3dContext->RSSetViewports(1, &m_Viewport);
 	m_original = Input;

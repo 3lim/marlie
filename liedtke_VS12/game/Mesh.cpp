@@ -47,10 +47,13 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	//Read mesh
 	std::vector<T3dVertex> vertexBufferData;
 	std::vector<uint32_t> indexBufferData;
+	std::vector<D3DXVECTOR3> vertecies;
 	//TODO: Use T3d::ReadFromFile() to read the contents of the t3d file "m_FilenameT3d"
 	//      To obtain a char*, use the c_str() method of std::string.
 	T3d::ReadFromFile(m_FilenameT3d.c_str(), vertexBufferData, indexBufferData);
 	m_IndexCount = indexBufferData.size();
+	vertecies = readVerticesFromStream(&vertexBufferData);
+	V(D3DXComputeBoundingSphere(&vertecies[0], vertecies.size(), 0, &m_centerVertex, &m_sphereRadius));
 
 	//TODO: Set appropriate values in "id" and "bd" and
 	//      use V_RETURN( pd3dDevice->CreateBuffer(...) ) to create "m_VertexBuffer"
@@ -125,6 +128,16 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	V_RETURN(pd3dDevice->CreateShaderResourceView(m_NormalTex, NULL, &m_NormalSRV));
 	}
 	return S_OK;
+}
+
+std::vector<D3DXVECTOR3> Mesh::readVerticesFromStream(std::vector<T3dVertex>* input)
+{
+	std::vector<D3DXVECTOR3> result;
+	result.resize(input->size());
+	for(int i = 0; i < input->size(); i++)
+		result[i] = (*input)[i].position;
+	return result;
+
 }
 
 void Mesh::ReleaseResources()

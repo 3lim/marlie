@@ -11,6 +11,7 @@ Texture2D g_Specular;
 Texture2D g_Glow;
 TextureCube g_SkyBoxTex;
 Texture2D g_ShadowMap;
+Texture2D g_ShadowMapVSM;
 
 //--------------------------------------------------------------------------------------
 // Constant buffers
@@ -346,12 +347,12 @@ void GS_Billboard( point float4 s[1] : SV_POSITION, inout TriangleStream<PosTex>
 	p.Tex = float2(0,0);
 	triStream.Append(p);
 
-	p.Pos = float4(-0.50,-1,0,1);
-	p.Tex = float2(1,1);
+	p.Pos = float4(-0.00,-1,0,1);
+	p.Tex = float2(2,1);
 	triStream.Append(p);
 
-	p.Pos = float4(-0.50,-0.5,0,1);
-	p.Tex = float2(1,0);
+	p.Pos = float4(-0.00,-0.5,0,1);
+	p.Tex = float2(2,0);
 	triStream.Append(p);
 }
 float4 PS_Billboard( PosTex input ) : SV_TARGET
@@ -368,7 +369,9 @@ float4 SATPS_Billboard( PosTex input ) : SV_TARGET
 	float4 SatCoord = float4(input.Tex.x-size.x,input.Tex.y-size.y,input.Tex.x+size.x,input.Tex.y+size.y);
 	//float4 SatCoord = input.Tex.xyxy + float4(0, 0, size.xy);
 	//return float4(sampleSAT(g_ShadowMap, SatCoord, dim).r,0,1);
-	return float4( samSAT(g_ShadowMap, input.Tex, float2(2,2)).xy,1,1);
+	int texID = (input.Tex.x > 1.f);
+	return float4( (1-texID)*(samSAT(g_ShadowMap, input.Tex, float2(2,2)).xxx+GetFPBias().xxx)+
+		 (g_ShadowMapVSM.Sample(samAnisotropic, input.Tex).xxx+GetFPBias().xxx)*texID,1);
 }
 
 

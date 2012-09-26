@@ -1,8 +1,60 @@
 SamplerState samPoint {
 	Filter = MIN_MAG_MIP_POINT;
-	AddressU = WRAP;
-	AddressV = Wrap;
+	AddressU = Clamp;
+	AddressV = Clamp;
 };
+
+// Compute the filter size in pixels
+float2 GetFilterSize(float2 dx, float2 dy, float2 TexSize)
+{
+    return 2 * (abs(dx) + abs(dy)) * TexSize;
+}
+// Compute the upper left and size of the filter tile
+// MinFilterWidth, MaxSizeDerivatives and TexSize given in texels
+// Rest of the parameters and returns are in normalized coordinates
+// NOTE: Can provide an upper bound for the size (in texels) computed via derivatives.
+// This is necessary since GPU's finite differencing screws up in some cases,
+// returning rediculous sizes here. For operations that loop on the filter area
+// this is a big problem...
+float2 GetFilterTile(float2 tc, float2 dx, float2 dy, float2 TexSize,
+                     float2 MinFilterWidth, float2 MaxSizeDerivatives,
+                     out float2 Size)
+{
+    float2 TexelSize = 1 / TexSize;
+
+    // Compute the filter size based on derivatives
+    float2 SizeDerivatives = min(GetFilterSize(dx, dy, TexSize),
+                                 MaxSizeDerivatives);
+    
+    // Force an integer tile size (in pixels) so that bilinear weights are consistent
+    Size = round(max(SizeDerivatives, MinFilterWidth)) * TexelSize;
+    
+    // Compute upper left corner of the tile
+    return (tc - 0.5 * (Size - TexelSize));
+}
+
+// Returns coordinates for the four pixels surround a given fragment.
+// Given and returned Coords are normalized
+// These are given by (in Fetch4 order) - where "R" is the returned value:
+//   - R + (1, 0)
+//   - R + (0, 1)
+//   - R + (1, 1)
+//   - R
+// Also returns bilinear weights in the output parameter.
+float2 GetBilCoordsAndWeights(float2 Coords, float2 TexSize, out float4 Weights)
+{
+    float2 TexelSize = 1 / TexSize;
+    float2 TexelCoords = Coords * TexSize;
+    
+    // Compute weights
+    Weights.xy = frac(TexelCoords + 0.5);
+    Weights.zw = 1 - Weights.xy;
+    Weights = Weights.xzxz * Weights.wyyw;
+    
+    // Compute upper-left pixel coordinates
+    // NOTE: D3D texel alignment...
+    return (floor(TexelCoords - 0.5) + 0.5) * TexelSize;
+}
 
 float2 GetFPBias()
 {
@@ -33,6 +85,8 @@ float ChebyshevUpperBound(float2 Moments,float mean, float minVariance)
 	//reduce LightBleeding
 	return max(p, p_max);
 }
+
+
 
 float2 ComputeMoments(float Depth)
 {
@@ -68,6 +122,9 @@ float4 sampleSAT(Texture2D satTex, float4 coords, float2 size)
 
 float4 samSAT(Texture2D satTex, float2 coords, float2 kernelSize)
 {
+	float2 dim;
+	satTex.GetDimensions(dim.x, dim.y);
+	kernelSize = kernelSize/dim;
 	float4 result = satTex.Sample(samPoint, coords +0.5*kernelSize); //rechts unten
 	result -= satTex.Sample(samPoint, coords + float2(0.5, -0.5)*kernelSize); // rechts Oben
 	result -= satTex.Sample(samPoint, coords + float2(-0.5, 0.5)*kernelSize); //links unten

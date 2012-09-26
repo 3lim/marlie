@@ -1,4 +1,5 @@
 #include "Util.fx"
+#include "Filter.fx"
 //--------------------------------------------------------------------------------------
 // Shader resources
 //--------------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ cbuffer cbChangesEveryFrame
 	matrix  g_ViewProjection;
 	float4 g_LightDir;
 	matrix g_LightViewProjMatrix;
+	float2 g_ShadowTexSize;
 };
 
 
@@ -147,9 +149,29 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	//
 	
 
-	//VSM Shading
+	//VSM Shading + BilinearFiltering
+	//float2 dtdx = ddx(lPos);
+	//float2 dtdy = ddy(lPos);
 	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
-	float depth = lPos.z; 
+	float depth = lPos.z; //distant to Lightsource
+
+ //   float2 TexelSize = 1 / g_ShadowTexSize;
+ //   float2 MinFilterWidth = float2(4,4);
+	//float2 MaxFilterWidth = float2(32,32);
+ //   // Compute the filter tile information
+ //   // Don't clamp the filter area since we have constant-time filtering!
+ //   float2 Size;
+ //   float2 CoordsUL = GetFilterTile(tc, dx, dy, g_ShadowTexSize,
+ //                                   MinFilterWidth, MaxFilterWidth, Size);
+
+ //   // Compute bilinear weights and coordinates
+ //   float4 BilWeights;
+ //   float2 BilCoordsUL = GetBilCoordsAndWeights(CoordsUL, g_ShadowTexSize, BilWeights);
+ //   float4 Tile = BilCoordsUL.xyxy + float4(0, 0, Size.xy);
+ //   
+ //   // Read the moments and compute a Chebyshev upper bound
+ //   float ShadowContrib = BilinearChebyshev(Tile, BilWeights, Distance, g_VSMMinVariance);
+
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
 	shadowFactor = ReduceLightBleeding(shadowFactor, 0.14);
 

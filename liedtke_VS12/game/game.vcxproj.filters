@@ -190,6 +190,9 @@
     <FX_HLSL Include="Util.fx">
       <Filter>Shader</Filter>
     </FX_HLSL>
+    <FX_HLSL Include="Filter.fx">
+      <Filter>Shader</Filter>
+    </FX_HLSL>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DXUT">

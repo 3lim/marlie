@@ -486,6 +486,7 @@
     <Manifest Include="DXUT\Core\dpiaware.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <FX_HLSL Include="Filter.fx" />
     <FX_HLSL Include="game.fx" />
     <FX_HLSL Include="MeshRenderer.fx" />
     <FX_HLSL Include="PostProcessing.fx" />
