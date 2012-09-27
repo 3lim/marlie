@@ -141,7 +141,8 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	float i = saturate(dot(g_LightDir.xyz, n));
 	float shadowFactor;
 	float4 matDiffuse = g_Diffuse.Sample(samAnisotropic, Input.Tex);
-	//OLD Shading
+
+		//OLD Shading
 	//g_VSMap.GetDimensions(dimensions.x,dimensions.y);
 	//float2 t = frac( lPos.xy * dimensions.x );
 	//float shadowFactor = lerp(lerp(g_VSMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z-0.01f),g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z-0.01f),t.x),
@@ -152,7 +153,9 @@ float4 TerrainPS(PosTex Input) : SV_Target0 {
 	//VSM Shading + BilinearFiltering
 	//float2 dtdx = ddx(lPos);
 	//float2 dtdy = ddy(lPos);
-	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
+	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
+	//VSM Shading + PCF
+	//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
 	float depth = lPos.z; //distant to Lightsource
 
  //   float2 TexelSize = 1 / g_ShadowTexSize;

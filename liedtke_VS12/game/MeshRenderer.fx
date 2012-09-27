@@ -1,4 +1,5 @@
 #include "Util.fx"
+#include "Filter.fx"
 float    g_VSMMinVariance = 0.000001;         // Minimum variance for VSM
 //--------------------------------------------------------------------------------------
 // Shader resources
@@ -176,8 +177,9 @@ float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 {
 	//						t.x),
 	//					t.y);
 
-	//VSM Shading
-	float2 moments = g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
+	//VSM Shading + PCF
+	//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
+	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
 	float depth = lPos.z; 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
 	shadowFactor = ReduceLightBleeding(shadowFactor, 0.7);

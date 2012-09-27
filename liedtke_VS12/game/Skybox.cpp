@@ -100,7 +100,7 @@ m_SkyboxPath(path),
 	m_Eye(NULL),
 	m_SkyboxTechnique(NULL),
 	m_SunDistance(sunDistance),
-	m_SunSpeed(20.f),
+	m_SunSpeed(7.f),
 	m_horizontColorEV(NULL),
 	m_apexColorEV(NULL),
 	horizontColor(D3DXCOLOR(0.8,0.4,0.6 ,1)),
@@ -222,7 +222,7 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 
 	// Set the sky plane parameters.
 	size_t skyPlaneResolution = 5;
-	float skyPlaneTop = 0.0f;
+	float skyPlaneTop = 5.0f;
 	float skyPlaneBottom = skyPlaneHeight*0.4;
 	size_t textureRepeat = 2;
 
