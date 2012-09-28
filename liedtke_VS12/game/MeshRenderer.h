@@ -55,9 +55,9 @@ private:
 	ID3D11InputLayout* m_MeshInputLayout;
 
 	ID3D11DeviceContext* pd3DContext;
-	ID3D11Buffer* vbs[1];
-	UINT offset;
-	UINT stride;
+	ID3D11Buffer* vbs[2];
+	UINT offset[2];
+	UINT stride[2];
 	Mesh* mesh;
 	D3DXMATRIX WorldViewProjektion;
 	D3DXMATRIX WorldViewNormals;

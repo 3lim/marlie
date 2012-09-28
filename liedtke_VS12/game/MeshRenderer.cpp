@@ -35,14 +35,9 @@ m_pEffect(NULL),
 	g_LightViewProjMatrix(NULL),
 	g_View(NULL),
 	g_Proj(NULL),
-	g_ViewProj(NULL),
-	//stride(0),
-	offset(0)
+	g_ViewProj(NULL)
 {
-	//stride = sizeof(T3dVertex);
-	vbs[1] = NULL;
 	g_Frustum = f;
-	stride = sizeof(T3dVertex);
 
 }
 
@@ -140,6 +135,12 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
 	mesh = object->GetMesh();
 	vbs[0] = mesh->GetVertexBuffer();
+	vbs[1] = mesh->GetInstanceBuffer();
+	offset[0] = 0;
+	offset[1] = 1;
+	stride[0] = sizeof(T3dVertex);
+	stride[1] = sizeof(MeshInstanceType);
+
 	object->CalculateWorldMatrix();
 
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
@@ -174,17 +175,17 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
 	m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
-	pd3DContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
 	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
 	//Light Scattering
 	if(vlsMap != NULL)
 	{
 		ID3D11RenderTargetView* vlsTarget = vlsMap->GetRenderTarget();
 		pd3DContext->OMSetRenderTargets(1, &vlsTarget, NULL);
 		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
-		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+		pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
 	}
 }
 
@@ -195,7 +196,7 @@ HRESULT MeshRenderer::CreateResources(ID3D11Device* pDevice)
 		it->second->CreateResources(pDevice);
 
 	pDevice->GetImmediateContext(&pd3DContext);
-	T3d::CreateT3dInputLayout(pDevice, m_Pass1_Mesh, &m_MeshInputLayout);
+	Mesh::CreateInstanceLayout(pDevice, m_Pass1_Mesh, &m_MeshInputLayout);
 	return S_OK;
 }
 

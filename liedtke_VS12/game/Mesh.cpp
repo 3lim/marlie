@@ -14,17 +14,44 @@ Mesh::Mesh(const char* filename_t3d,
 	m_FilenameNtxGlow    (filename_ntx_glow),
 	m_FilenameNtxNormal  (filename_ntx_normal),
 	//Default values for all other member variables
-    m_VertexBuffer(NULL), m_IndexBuffer(NULL),
+    m_VertexBuffer(NULL), m_InstanceBuffer(NULL),
 	m_IndexCount(0),
 	m_DiffuseTex(NULL), m_DiffuseSRV(NULL),
 	m_SpecularTex(NULL), m_SpecularSRV(NULL),
 	m_GlowTex(NULL), m_GlowSRV(NULL),
-	m_NormalTex(NULL), m_NormalSRV(NULL)
+	m_NormalTex(NULL), m_NormalSRV(NULL),
+	m_pMeshInstanceList(NULL)
 {
+	m_MeshInstanceMatrices[MAX_MESH_INSTANCES];
 }
 
 Mesh::~Mesh(void)
 {
+}
+
+HRESULT Mesh::CreateInstanceLayout(ID3D11Device* pd3dDevice, 
+	ID3DX11EffectPass* pass, ID3D11InputLayout** t3dInputLayout)
+								{
+	HRESULT hr;
+
+	// Define the input layout
+	const D3D11_INPUT_ELEMENT_DESC layout[] = // http://msdn.microsoft.com/en-us/library/bb205117%28v=vs.85%29.aspx
+	{
+		{ "POSITION",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",     0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
+	};
+	UINT numElements = sizeof( layout ) / sizeof( layout[0] );
+
+	// Create the input layout
+	D3DX11_PASS_DESC pd;
+	V_RETURN(pass->GetDesc(&pd));
+	V_RETURN( pd3dDevice->CreateInputLayout( layout, numElements, pd.pIAInputSignature,
+			  pd.IAInputSignatureSize, t3dInputLayout ) );
+
+	return S_OK;
 }
 
 HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
@@ -34,10 +61,8 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	// BEGIN: Assignment 5.2.3
 
 	//Some variables that we will need
-	D3D11_SUBRESOURCE_DATA idV;
-	D3D11_BUFFER_DESC bdV;
-	D3D11_SUBRESOURCE_DATA idI;
-	D3D11_BUFFER_DESC bdI;
+	D3D11_SUBRESOURCE_DATA VertexSubData, IndexSubData, InstanceSubData;
+	D3D11_BUFFER_DESC VertexBufferDesc, IndexBufferDesc, InstanceBufferDesc;
 	D3D11_TEXTURE2D_DESC tex2DDesc;
 	std::vector<uint8_t> ntxFileContents;
 	std::vector<std::vector<uint8_t>> textureData;
@@ -47,49 +72,53 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	//Read mesh
 	std::vector<T3dVertex> vertexBufferData;
 	std::vector<uint32_t> indexBufferData;
+	MeshInstanceType* instances;
 	std::vector<D3DXVECTOR3> vertecies;
-	//TODO: Use T3d::ReadFromFile() to read the contents of the t3d file "m_FilenameT3d"
-	//      To obtain a char*, use the c_str() method of std::string.
+
 	T3d::ReadFromFile(m_FilenameT3d.c_str(), vertexBufferData, indexBufferData);
 	m_IndexCount = indexBufferData.size();
+	m_VertexCount = vertexBufferData.size();
 	vertecies = readVerticesFromStream(&vertexBufferData);
 	V(D3DXComputeBoundingSphere(&vertecies[0], vertecies.size(), 0, &m_centerVertex, &m_sphereRadius));
 
-	//TODO: Set appropriate values in "id" and "bd" and
-	//      use V_RETURN( pd3dDevice->CreateBuffer(...) ) to create "m_VertexBuffer"
-	//      from "vertexBufferData"
-	//HINT: recall the creation of the terrain vertex buffer in assignment 3
-		//D3D11_SUBRESOURCE_DATA id;
-	idV.pSysMem = &vertexBufferData[0];
-	idV.SysMemPitch = sizeof(T3dVertex); // Stride
-	idV.SysMemSlicePitch = 0;
+	VertexSubData.pSysMem = &vertexBufferData[0];
+	VertexSubData.SysMemPitch = sizeof(T3dVertex); // Stride
+	VertexSubData.SysMemSlicePitch = 0;
 
 	//D3D11_BUFFER_DESC bd;
-	bdV.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bdV.ByteWidth = sizeof(T3dVertex)*vertexBufferData.size();
-	bdV.CPUAccessFlags = 0;
-	bdV.MiscFlags = 0;
-	bdV.Usage = D3D11_USAGE_DEFAULT;
-	V_RETURN(pd3dDevice->CreateBuffer(&bdV, &idV, &m_VertexBuffer)); 
-	//Set Buffer
+	VertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	VertexBufferDesc.ByteWidth = sizeof(T3dVertex)*vertexBufferData.size();
+	VertexBufferDesc.CPUAccessFlags = 0;
+	VertexBufferDesc.MiscFlags = 0;
+	VertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	V_RETURN(pd3dDevice->CreateBuffer(&VertexBufferDesc, &VertexSubData, &m_VertexBuffer)); 
 
-
-	//TODO: Set appropriate values in "id" and "bd" and
-	//      use V_RETURN( pd3dDevice->CreateBuffer(...) ) to create "m_IndexBuffer"
-	//      from "indexBufferData". Also set "m_IndexCount" to the size of 
-	//      "indexBufferData".
-	//HINT: Recall the creation of the terrain index buffer in assignment 3.
-	//D3D11_SUBRESOURCE_DATA initD;
-	idI.pSysMem = &indexBufferData[0];
-	idI.SysMemPitch = sizeof(&indexBufferData[0]);
+	//Instance buffer
+	instances = new MeshInstanceType[1];
+	instances[0].position = D3DXVECTOR3(0,0,0);
+	InstanceSubData.pSysMem = instances;
+	InstanceSubData.SysMemPitch = sizeof(MeshInstanceType);
 
 	//D3D11_BUFFER_DESC bufferDesc;
-	bdI.Usage           = D3D11_USAGE_DEFAULT;
-	bdI.ByteWidth       = indexBufferData.size()*idI.SysMemPitch; //== numInd *sizeof(unsigned int)
-	bdI.BindFlags       = D3D11_BIND_INDEX_BUFFER;
-	bdI.CPUAccessFlags  = 0;
-	bdI.MiscFlags       = 0;
-	V_RETURN(pd3dDevice->CreateBuffer(&bdI, &idI, &m_IndexBuffer));
+	InstanceBufferDesc.Usage           = D3D11_USAGE_DEFAULT;
+	InstanceBufferDesc.ByteWidth       = 1*InstanceSubData.SysMemPitch; //== numInd *sizeof(unsigned int)
+	InstanceBufferDesc.BindFlags       = D3D11_BIND_VERTEX_BUFFER;
+	InstanceBufferDesc.CPUAccessFlags  = 0;
+	InstanceBufferDesc.MiscFlags       = 0;
+	V_RETURN(pd3dDevice->CreateBuffer(&InstanceBufferDesc, &InstanceSubData, &m_InstanceBuffer));
+	delete[] instances;
+	instances = 0;
+
+	IndexSubData.pSysMem = &indexBufferData[0];
+	IndexSubData.SysMemPitch = sizeof(uint32_t);
+
+	//D3D11_BUFFER_DESC bufferDesc;
+	IndexBufferDesc.Usage           = D3D11_USAGE_DEFAULT;
+	IndexBufferDesc.ByteWidth       = m_IndexCount*IndexSubData.SysMemPitch; //== numInd *sizeof(unsigned int)
+	IndexBufferDesc.BindFlags       = D3D11_BIND_VERTEX_BUFFER;
+	IndexBufferDesc.CPUAccessFlags  = 0;
+	IndexBufferDesc.MiscFlags       = 0;
+	V_RETURN(pd3dDevice->CreateBuffer(&IndexBufferDesc, &IndexSubData, &m_IndexBuffer));
 	//set Buffer
 	
 
@@ -154,7 +183,7 @@ void Mesh::ReleaseResources()
 	SAFE_RELEASE(m_NormalTex);
 	SAFE_RELEASE(m_NormalSRV);
 	SAFE_RELEASE(m_VertexBuffer);
-	SAFE_RELEASE(m_IndexBuffer);
+	SAFE_RELEASE(m_InstanceBuffer);
 	// END: Assignment 5.2.4
 }
 

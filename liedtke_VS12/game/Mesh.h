@@ -4,8 +4,13 @@
 #include <vector>
 #include <cstdint>
 #include "T3d.h"
-
+#define MAX_MESH_INSTANCES 50
 //This class ecapsulates the D3D11 resources needed for a mesh
+
+struct MeshInstanceType
+{
+	D3DXVECTOR3 position;
+};
 class Mesh
 {
 public:
@@ -31,8 +36,10 @@ public:
 	//Simple getters for all resources
 	ID3D11Buffer*               GetVertexBuffer() {return m_VertexBuffer;       }
 	ID3D11Buffer*               GetIndexBuffer()  {return m_IndexBuffer;        }
+	ID3D11Buffer*               GetInstanceBuffer()  {return m_InstanceBuffer;        }
 	DXGI_FORMAT                 GetIndexFormat()  {return DXGI_FORMAT_R32_UINT; }
 	int                         GetIndexCount()   {return m_IndexCount;         }
+	int                         GetVertexCount()  {return m_VertexCount;         }
 	ID3D11Texture2D*            GetDiffuseTex()   {return m_DiffuseTex;         }
 	ID3D11ShaderResourceView*   GetDiffuseSRV()   {return m_DiffuseSRV;         }
 	ID3D11ShaderResourceView*   GetSpecularSRV()  {return m_SpecularSRV;        }
@@ -43,6 +50,9 @@ public:
 	ID3D11ShaderResourceView*   GetNormalSRV()    {return m_NormalSRV;          }
 	D3DXVECTOR3*				GetOriginPoint()  {return &m_centerVertex;      }
 	float						GetMeshRadius()	  {return m_sphereRadius;		}
+	int							GetInstanceCount(){return m_InstanceCount;		}
+	static HRESULT				CreateInstanceLayout(ID3D11Device* pd3dDevice, 
+	ID3DX11EffectPass* pass, ID3D11InputLayout** t3dInputLayout);
 
 private:
 	//Reads the complete file given by "path" byte-wise into "data".
@@ -50,6 +60,9 @@ private:
 	static HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data);
 	std::vector<D3DXVECTOR3> readVerticesFromStream(std::vector<T3dVertex>* in);
 private:
+	D3DXMATRIX*					m_pMeshInstanceList;
+	D3DXMATRIX					m_MeshInstanceMatrices;
+
 	//Filenames
 	std::string					m_FilenameT3d;
 	std::string					m_FilenameNtxDiffuse;
@@ -60,7 +73,10 @@ private:
 	//Mesh geometry information
 	ID3D11Buffer*               m_VertexBuffer;
 	ID3D11Buffer*               m_IndexBuffer;
+	ID3D11Buffer*               m_InstanceBuffer;
 	int                         m_IndexCount; //number of single indices in m_IndexBuffer (needed for DrawIndexed())
+	int							m_InstanceCount;
+	int							m_VertexCount;
 	D3DXVECTOR3					m_centerVertex;
 	float						m_sphereRadius;
 

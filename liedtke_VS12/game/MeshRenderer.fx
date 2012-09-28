@@ -42,6 +42,7 @@ struct T3dVertexVSIn
 	float2 Tex : TEXCOORD; //Texture coordinate 
 	float3 Nor : NORMAL; //Normal in object space 
 	float3 Tan : TANGENT; //Tangent in object space (not used in Ass. 5) 
+    float3 InstancePosition: POSITION1;
 }; 
 
 //--------------------------------------------------------------------------------------
@@ -122,7 +123,7 @@ T3dVertexPSIn MeshVS(T3dVertexVSIn Input)
 { 
 	T3dVertexPSIn output = (T3dVertexPSIn) 0; 
 
-	output.Pos = mul(float4(Input.Pos,1), WorldViewProjection);
+	output.Pos = mul(float4(Input.Pos+Input.InstancePosition,1), WorldViewProjection);
 	output.Tex = Input.Tex;
 	output.PosView = mul(float4(Input.Pos,1), WorldView).xyz;
 	output.NorView = normalize(mul(float4(Input.Nor,0), WorldViewNormals).xyz);
