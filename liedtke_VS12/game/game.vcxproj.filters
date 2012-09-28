@@ -204,14 +204,14 @@
     <Filter Include="DXUT\Optional">
       <UniqueIdentifier>{3b052faf-3892-4e65-9d1f-18189bc766f0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader">
-      <UniqueIdentifier>{7d920030-3466-426e-b8f4-7c8e1509fd01}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{69597981-2dd8-4786-9bd6-5e777aaeebc1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Components">
       <UniqueIdentifier>{e4df98f3-a406-4984-aeec-75203d3fad52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{7d920030-3466-426e-b8f4-7c8e1509fd01}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

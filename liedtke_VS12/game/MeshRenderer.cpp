@@ -23,7 +23,6 @@ MeshRenderer::MeshRenderer(FrustumCulling* f) :
 m_pEffect(NULL),
 	m_RenderET(NULL),
 	m_MeshInputLayout(NULL),
-	m_pVertexBuffer(NULL),
 	m_Pass1_Mesh(NULL),
 	m_ShadowMesh(NULL),
 	m_DiffuseEV(NULL),
@@ -178,14 +177,81 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
 	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
+	//pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
+	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
 	//Light Scattering
 	if(vlsMap != NULL)
 	{
 		ID3D11RenderTargetView* vlsTarget = vlsMap->GetRenderTarget();
 		pd3DContext->OMSetRenderTargets(1, &vlsTarget, NULL);
 		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
-		pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
+		//pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
+		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	}
+}
+
+void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
+{
+	for(auto mesh = g_Meshes.begin(); mesh != g_Meshes.end(); mesh++)
+	{
+
+	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
+	vbs[0] = mesh->second->GetVertexBuffer();
+	vbs[1] = mesh->second->GetInstanceBuffer();
+	offset[0] = 0;
+	offset[1] = 1;
+	stride[0] = sizeof(T3dVertex);
+	stride[1] = sizeof(MeshInstanceType);
+
+	//object->CalculateWorldMatrix();
+
+	pd3DContext->IASetInputLayout(m_MeshInputLayout);
+
+	m_DiffuseEV->SetResource(mesh->second->GetDiffuseSRV());
+	m_SpecularEV->SetResource(mesh->second->GetSpecularSRV());
+	m_GlowEV->SetResource(mesh->second->GetGlowSRV());
+	m_NormalEV->SetResource(mesh->second->GetNormalSRV());
+
+	m_LightColorEV->SetFloatVector(*g_LightColor);
+	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
+	if(shadowMap != NULL)
+	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(shadowMap->GetShaderResource());
+	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
+
+	WorldView = D3DXMATRIX(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+	//WorldView = *object->GetWorld();
+	WorldViewProjektion = WorldView;
+	//WorldLightViewProjMatrix = object->g_World*(*g_LightViewProjMatrix);
+	//if(object->GetRelativePosition() == GameObject::CAMERA){
+	//	//WorldViewProjektion = object->g_World *(*g_Proj);
+	//	WorldView *= *g_invView;
+	//} else {
+		WorldViewProjektion *= *g_View;
+	//}
+	WorldViewProjektion *= *g_Proj;
+	D3DXMatrixInverse(&WorldViewNormals,0,&WorldView);
+	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
+
+	WorldLightViewProjMatrix = WorldView* *g_LightViewProjMatrix;
+	m_WorldViewEV->SetMatrix(WorldView);
+	m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
+	m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
+	m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
+	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
+	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
+	pd3DContext->IASetIndexBuffer(mesh->second->GetIndexBuffer(), mesh->second->GetIndexFormat(), 0);
+	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pd3DContext->DrawIndexedInstanced(mesh->second->GetIndexCount(), mesh->second->GetInstanceCount(),0, 0,0);
+	//pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	//Light Scattering
+	if(vlsMap != NULL)
+	{
+		ID3D11RenderTargetView* vlsTarget = vlsMap->GetRenderTarget();
+		pd3DContext->OMSetRenderTargets(1, &vlsTarget, NULL);
+		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
+		pd3DContext->DrawIndexedInstanced(mesh->second->GetIndexCount(), mesh->second->GetInstanceCount(),0, 0,0);
+		//pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+	}
 	}
 }
 

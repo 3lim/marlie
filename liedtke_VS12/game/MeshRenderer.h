@@ -31,6 +31,7 @@ public:
 	//void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
+	void RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);
@@ -51,7 +52,6 @@ private:
 	ID3DX11EffectTechnique* m_RenderET;
 	ID3DX11EffectTechnique* m_ShadowET;
 
-	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11InputLayout* m_MeshInputLayout;
 
 	ID3D11DeviceContext* pd3DContext;

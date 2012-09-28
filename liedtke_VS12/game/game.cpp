@@ -1575,21 +1575,21 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->g_Proj = (D3DXMATRIX*)&lightProjektionMatrix;
 	g_MeshRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
 
-	for each (GameObject o in g_StaticGameObjects)
-	{
-		g_MeshRenderer->RenderMesh(pd3dDevice, &o); //Render Shadow
-	}
-	for each(GameObject o in g_EnemyInstances)
-	{
-		g_MeshRenderer->RenderMesh(pd3dDevice, &o); //Render Shadow
-	}
-	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects, NULL);
+	//for each (GameObject o in g_StaticGameObjects)
+	//{
+	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o); //Render Shadow
+	//}
+	//for each(GameObject o in g_EnemyInstances)
+	//{
+	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o); //Render Shadow
+	//}
+	////g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects, NULL);
 	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances, NULL);
 
 
 	//TODO
 	//Create SAT Texture for rendering	
-	RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
+	//RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
 
 	//*****normal Scene Rendering*****//
 	//ID3D11RenderTargetView* targets[] = {pRTV,g_LightBWRTV   };
@@ -1620,20 +1620,20 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//for each(GameObject o in g_StaticGameObjects)
 	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o, &"Render", g_LightBWRTV),wwmwi
 
-	for each (GameObject o in g_StaticGameObjects)
-	{
-			pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
-	g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
-	}
-	for each(GameObject o in g_EnemyInstances)
-	{
-		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
-		g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
-	}
+	//for each (GameObject o in g_StaticGameObjects)
+	//{
+	//		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
+	//g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
+	//}
+	//for each(GameObject o in g_EnemyInstances)
+	//{
+	//	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
+	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
+	//}
 	//g_MeshRenderer->RenderMesh(pd3dDevice, &g_StaticGameObjects, g_LightBWRTV);
-	//g_MeshRenderer->RenderMeshes(pd3dDevice, &g_EnemyInstances, g_LightBWRTV);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, g_VarianceShadowMap, g_VLSMap, false);
 
-		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
+	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
 	if(SpriteRenderer::g_SpritesToRender.size() >0)
 		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
 	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
@@ -1670,6 +1670,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
 
+		//avoids warning
+	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
 	//Display only the first target
 	ID3D11RenderTargetView* rTargets[2] = { pRTV, NULL };
 	pd3dImmediateContext->OMSetRenderTargets( 2, rTargets, pDSV );
@@ -1677,7 +1680,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
-		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
+		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 

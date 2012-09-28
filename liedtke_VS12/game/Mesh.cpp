@@ -15,7 +15,7 @@ Mesh::Mesh(const char* filename_t3d,
 	m_FilenameNtxNormal  (filename_ntx_normal),
 	//Default values for all other member variables
     m_VertexBuffer(NULL), m_InstanceBuffer(NULL),
-	m_IndexCount(0),
+	m_IndexCount(0), m_InstanceCount(1),
 	m_DiffuseTex(NULL), m_DiffuseSRV(NULL),
 	m_SpecularTex(NULL), m_SpecularSRV(NULL),
 	m_GlowTex(NULL), m_GlowSRV(NULL),
@@ -57,8 +57,6 @@ HRESULT Mesh::CreateInstanceLayout(ID3D11Device* pd3dDevice,
 HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 {	
 	HRESULT hr;
-
-	// BEGIN: Assignment 5.2.3
 
 	//Some variables that we will need
 	D3D11_SUBRESOURCE_DATA VertexSubData, IndexSubData, InstanceSubData;
@@ -171,9 +169,6 @@ std::vector<D3DXVECTOR3> Mesh::readVerticesFromStream(std::vector<T3dVertex>* in
 
 void Mesh::ReleaseResources()
 {
-	// BEGIN: Assignment 5.2.4
-
-	//TODO: use the SAFE_RELEASE macro to realease all D3D11 resources that are created in CreateResources()
 	SAFE_RELEASE(m_DiffuseTex);
 	SAFE_RELEASE(m_DiffuseSRV);
 	SAFE_RELEASE(m_SpecularTex);
@@ -184,7 +179,7 @@ void Mesh::ReleaseResources()
 	SAFE_RELEASE(m_NormalSRV);
 	SAFE_RELEASE(m_VertexBuffer);
 	SAFE_RELEASE(m_InstanceBuffer);
-	// END: Assignment 5.2.4
+	SAFE_RELEASE(m_IndexBuffer);
 }
 
 HRESULT Mesh::LoadFile(const char * filename, std::vector<uint8_t>& data)
