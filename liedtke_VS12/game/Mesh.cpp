@@ -15,18 +15,21 @@ Mesh::Mesh(const char* filename_t3d,
 	m_FilenameNtxNormal  (filename_ntx_normal),
 	//Default values for all other member variables
     m_VertexBuffer(NULL), m_InstanceBuffer(NULL),
-	m_IndexCount(0), m_InstanceCount(1),
+	m_IndexCount(0), m_InstanceCount(0),
 	m_DiffuseTex(NULL), m_DiffuseSRV(NULL),
 	m_SpecularTex(NULL), m_SpecularSRV(NULL),
 	m_GlowTex(NULL), m_GlowSRV(NULL),
 	m_NormalTex(NULL), m_NormalSRV(NULL),
 	m_pMeshInstanceList(NULL)
 {
-	m_MeshInstanceMatrices[MAX_MESH_INSTANCES];
+	MeshInstanceType i = { D3DXMATRIX(10,0,0,0,0,10,0,0,0,0,10,0,0,0,0,1) };
+	m_MeshInstanceMatrices.resize(MAX_MESH_INSTANCES, i);// = new D3DXMATRIX[MAX_MESH_INSTANCES];
 }
 
 Mesh::~Mesh(void)
 {
+	//delete[](m_MeshInstanceMatrices);
+	//m_MeshInstanceMatrices = 0;
 }
 
 HRESULT Mesh::CreateInstanceLayout(ID3D11Device* pd3dDevice, 
@@ -41,7 +44,10 @@ HRESULT Mesh::CreateInstanceLayout(ID3D11Device* pd3dDevice,
 		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TANGENT",     0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "POSITION", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
+        { "POSITION", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        { "POSITION", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        { "POSITION", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        { "POSITION", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
 	};
 	UINT numElements = sizeof( layout ) / sizeof( layout[0] );
 
@@ -52,6 +58,20 @@ HRESULT Mesh::CreateInstanceLayout(ID3D11Device* pd3dDevice,
 			  pd.IAInputSignatureSize, t3dInputLayout ) );
 
 	return S_OK;
+}
+
+//instanziert eine neue Instanz des Meshes und liefert die ID zurück welche zum löschen enventuell benötigt wird
+int Mesh::AddInstance(D3DXMATRIX* m)
+{
+	int instanceID = m_InstanceCount;
+	D3DXMatrixTranspose(&m_MeshInstanceMatrices[instanceID].Transformation, m);
+	m_InstanceCount++;
+	return instanceID;
+}
+
+void Mesh::ResetInstances()
+{
+	m_InstanceCount = 0;
 }
 
 HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
@@ -92,20 +112,19 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	V_RETURN(pd3dDevice->CreateBuffer(&VertexBufferDesc, &VertexSubData, &m_VertexBuffer)); 
 
 	//Instance buffer
-	instances = new MeshInstanceType[1];
-	instances[0].position = D3DXVECTOR3(0,0,0);
-	InstanceSubData.pSysMem = instances;
+	//instances = new MeshInstanceType[MAX_MESH_INSTANCES];
+	InstanceSubData.pSysMem = &m_MeshInstanceMatrices[0];
 	InstanceSubData.SysMemPitch = sizeof(MeshInstanceType);
 
 	//D3D11_BUFFER_DESC bufferDesc;
 	InstanceBufferDesc.Usage           = D3D11_USAGE_DEFAULT;
-	InstanceBufferDesc.ByteWidth       = 1*InstanceSubData.SysMemPitch; //== numInd *sizeof(unsigned int)
+	InstanceBufferDesc.ByteWidth       = m_MeshInstanceMatrices.size()*InstanceSubData.SysMemPitch; //== numInd *sizeof(unsigned int)
 	InstanceBufferDesc.BindFlags       = D3D11_BIND_VERTEX_BUFFER;
 	InstanceBufferDesc.CPUAccessFlags  = 0;
 	InstanceBufferDesc.MiscFlags       = 0;
 	V_RETURN(pd3dDevice->CreateBuffer(&InstanceBufferDesc, &InstanceSubData, &m_InstanceBuffer));
-	delete[] instances;
-	instances = 0;
+	//delete[] instances;
+	//instances = 0;
 
 	IndexSubData.pSysMem = &indexBufferData[0];
 	IndexSubData.SysMemPitch = sizeof(uint32_t);
@@ -113,7 +132,7 @@ HRESULT Mesh::CreateResources(ID3D11Device* pd3dDevice)
 	//D3D11_BUFFER_DESC bufferDesc;
 	IndexBufferDesc.Usage           = D3D11_USAGE_DEFAULT;
 	IndexBufferDesc.ByteWidth       = m_IndexCount*IndexSubData.SysMemPitch; //== numInd *sizeof(unsigned int)
-	IndexBufferDesc.BindFlags       = D3D11_BIND_VERTEX_BUFFER;
+	IndexBufferDesc.BindFlags       = D3D11_BIND_INDEX_BUFFER;
 	IndexBufferDesc.CPUAccessFlags  = 0;
 	IndexBufferDesc.MiscFlags       = 0;
 	V_RETURN(pd3dDevice->CreateBuffer(&IndexBufferDesc, &IndexSubData, &m_IndexBuffer));

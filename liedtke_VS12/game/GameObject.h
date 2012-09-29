@@ -57,7 +57,7 @@ class GameObject
 	void AddForce(float power, float& directionX, float& directionY, float& directionZ);
 	//Fügt eine auf das GO wirkende Kraft hinzu, NormDir muss normalisiert sein!
 	void AddForce(float power, D3DXVECTOR3& NormDir);
-	void CalculateWorldMatrix(); //should calculate one time the Worldmatrix (per Frame) to improve Performace
+	void CalculateWorldMatrix(D3DXMATRIX* inversView); //should calculate one time the Worldmatrix (per Frame) to improve Performace
 	D3DXVECTOR3* GetPosition() { return tObject==MESH ? &myMesh.Position : &myVertex.Position; }
 	D3DXMATRIX* GetWorld() { return &worldMatrix; }
 	float GetScale() { return tObject == MESH ? myMesh.Scale.x : myVertex.Radius; }

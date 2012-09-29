@@ -234,11 +234,13 @@ inline void GameObject::calcTranslation()
 
 }
 
-void GameObject::CalculateWorldMatrix()
+void GameObject::CalculateWorldMatrix(D3DXMATRIX* inversView)
 {
 	worldMatrix = mScale*mMeshOirentation*mRotate*mTranslation;
+	if(this->tPosition == CAMERA && inversView != NULL)
+		worldMatrix *= *inversView;
 	for each(auto it in children)
-		it->CalculateWorldMatrix();
+		it->CalculateWorldMatrix(inversView);
 }
 
 void GameObject::OnCreate(double gameTime)

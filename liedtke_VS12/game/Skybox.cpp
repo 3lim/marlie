@@ -322,6 +322,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	V(m_SkyboxTechnique->GetPassByName("drawSkyCubeVLS")->Apply(0, m_Context)); 
 	m_Context->Draw(1, 0);
 
+
 	//Sun
 	//m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
 	const UINT offset = 0;

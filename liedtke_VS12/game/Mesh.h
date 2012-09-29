@@ -9,7 +9,7 @@
 
 struct MeshInstanceType
 {
-	D3DXVECTOR3 position;
+	D3DXMATRIX Transformation;
 };
 class Mesh
 {
@@ -53,7 +53,9 @@ public:
 	int							GetInstanceCount(){return m_InstanceCount;		}
 	static HRESULT				CreateInstanceLayout(ID3D11Device* pd3dDevice, 
 	ID3DX11EffectPass* pass, ID3D11InputLayout** t3dInputLayout);
-
+	int							AddInstance(D3DXMATRIX* tranformation);
+	void						ResetInstances();
+	std::vector<MeshInstanceType> GetInstancesMatrix() {return std::vector<MeshInstanceType>(m_MeshInstanceMatrices.begin(),m_MeshInstanceMatrices.begin()+m_InstanceCount);}
 private:
 	//Reads the complete file given by "path" byte-wise into "data".
 	// (this function is similar to the one from PtfGenerator)
@@ -61,7 +63,8 @@ private:
 	std::vector<D3DXVECTOR3> readVerticesFromStream(std::vector<T3dVertex>* in);
 private:
 	D3DXMATRIX*					m_pMeshInstanceList;
-	D3DXMATRIX					m_MeshInstanceMatrices;
+	//D3DXMATRIX					m_MeshInstanceMatrices;
+	std::vector<MeshInstanceType>		m_MeshInstanceMatrices;
 
 	//Filenames
 	std::string					m_FilenameT3d;

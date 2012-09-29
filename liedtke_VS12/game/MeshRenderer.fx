@@ -24,10 +24,11 @@ cbuffer cbConstant
 
 cbuffer cbChangesEveryMesh
 {
-	matrix WorldLightViewProj;
-	matrix WorldViewProjection;
-	matrix WorldView;
-	matrix WorldViewNormals;
+	//matrix world has to be replaced with InstanceWorld
+	matrix mLightViewProj;
+	matrix mViewProj;
+	matrix mView;
+	matrix mNormals;
 };
 
 cbuffer cbChangesEveryFrame
@@ -42,7 +43,7 @@ struct T3dVertexVSIn
 	float2 Tex : TEXCOORD; //Texture coordinate 
 	float3 Nor : NORMAL; //Normal in object space 
 	float3 Tan : TANGENT; //Tangent in object space (not used in Ass. 5) 
-    float3 InstancePosition: POSITION1;
+    matrix InstanceWorld : POSITION1; //Instance Data
 }; 
 
 //--------------------------------------------------------------------------------------
@@ -123,14 +124,21 @@ T3dVertexPSIn MeshVS(T3dVertexVSIn Input)
 { 
 	T3dVertexPSIn output = (T3dVertexPSIn) 0; 
 
-	output.Pos = mul(float4(Input.Pos+Input.InstancePosition,1), WorldViewProjection);
+	//matrix WorldViewProjection = mViewProj*Input.InstanceWorld;
+	matrix WorldViewNormals = Input.InstanceWorld*mView*mNormals;
+	//matrix(Input.InstanceWorld[0][0],0,0,Input.InstanceWorld[0][0],0,Input.InstanceWorld[2][2],0,0,0,0,Input.InstanceWorld[3][3],0,Input.InstanceWorld[0][3],Input.InstanceWorld[1][3],Input.InstanceWorld[2][3],1)
+	float4 worldPos = mul(float4(Input.Pos,1),Input.InstanceWorld);
+
+	output.Pos = mul(worldPos, mViewProj);
 	output.Tex = Input.Tex;
-	output.PosView = mul(float4(Input.Pos,1), WorldView).xyz;
-	output.NorView = normalize(mul(float4(Input.Nor,0), WorldViewNormals).xyz);
-	output.TanView = normalize(mul(float4(Input.Tan,0), WorldViewNormals).xyz);
+	//output.PosView = mul(float4(Input.Pos,1), WorldView).xyz;
+	output.PosView = mul(worldPos, mView).xyz;
+	//output.NorView = normalize(mul(float4(Input.Nor,0), WorldViewNormals).xyz);
+	output.NorView = normalize(mul(mul(float4(Input.Nor,0), mView), mNormals).xyz);
+	output.TanView = normalize(mul(mul(float4(Input.Tan,0), mView), mNormals).xyz);
 	//output.lightPos = mul(float4(Input.Pos,1), mul(WorldView, g_LightViewProjMatrix));
 	//output.lightPos = mul(float4(output.PosView,1), g_LightViewProjMatrix);
-	output.lightPos = mul(float4(Input.Pos,1), WorldLightViewProj);
+	output.lightPos = mul(worldPos, mLightViewProj);
 	return output; 
 }
 

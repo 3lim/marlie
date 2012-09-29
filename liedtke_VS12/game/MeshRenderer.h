@@ -25,13 +25,14 @@ public:
 	void ReleaseShader();
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
+	void AddToRenderPass(GameObject* object);
 	//void RenderMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
 	//void RenderMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
 	//void ShadowMeshes(ID3D11Device* pDevice, std::vector<GameObject*>* object, ID3D11RenderTargetView* LightBW);
 	//void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
-	void RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
+	void RenderMeshes(ID3D11Device* pDevice, ID3D11RenderTargetView* viewRTV, ID3D11DepthStencilView* viewDSV, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);
@@ -45,6 +46,7 @@ public:
 	D3DXMATRIX* g_View;
 	D3DXMATRIX* g_ViewProj;
 	D3DXMATRIX* g_invView;
+	void ResetInstances();
 private:
 	inline void setEffectVariables(void);
 	FrustumCulling* g_Frustum;
@@ -74,12 +76,11 @@ private:
 	ID3DX11EffectShaderResourceVariable*	m_NormalEV;
 
 	ID3DX11EffectVectorVariable*			m_LightColorEV;
-	ID3DX11EffectMatrixVariable*			m_WorldViewProjektionEV;
+	ID3DX11EffectMatrixVariable*			m_ViewProjEV;
 	ID3DX11EffectMatrixVariable*			m_LightViewProjMatrixEV;
-	ID3DX11EffectMatrixVariable*			m_WorldLightViewProjMatrixEV;
-	ID3DX11EffectMatrixVariable*			m_WorldViewEV;
+	ID3DX11EffectMatrixVariable*			m_ViewEV;
 	ID3DX11EffectVectorVariable*			m_LightDirViewEV;
-	ID3DX11EffectMatrixVariable*			m_WorldViewNormalsEV;
+	ID3DX11EffectMatrixVariable*			m_NormalsEV;
 
 };
 

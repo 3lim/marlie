@@ -1415,7 +1415,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			SAFE_DELETE(*ei_rem);
 			g_EnemyInstances.erase(ei_rem);
 		} else {
-			(*ei)->CalculateWorldMatrix();
+			//(*ei)->CalculateWorldMatrix();
 			ei++;
 		}
 	}
@@ -1521,7 +1521,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pDSV = DXUTGetD3D11DepthStencilView();
 	pRTV = DXUTGetD3D11RenderTargetView();
 
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
+	//pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
 
@@ -1535,10 +1535,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	shadowVP.MinDepth = 0.f;
 	shadowVP.MaxDepth = 1.f;
 	pd3dImmediateContext->ClearRenderTargetView(g_VarianceShadowMap->GetRenderTarget(), D3DXCOLOR(1,1,1,1));
-	ID3D11RenderTargetView* shadowTarget = g_VarianceShadowMap->GetRenderTarget();
-	pd3dImmediateContext->OMSetRenderTargets(1, &shadowTarget, g_ShadowMapDSV);
-	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
 	pd3dImmediateContext->ClearDepthStencilView(g_ShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
+	ID3D11RenderTargetView* shadowTarget[1] = {g_VarianceShadowMap->GetRenderTarget()};
+	pd3dImmediateContext->OMSetRenderTargets(1, shadowTarget, g_ShadowMapDSV);
+	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
 
 
 
@@ -1566,8 +1566,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_TerrainRenderer->g_LightDir = &Skybox::g_LightDir;
 	g_TerrainRenderer->g_ViewProj = &lightViewProjMatrix;
 	g_TerrainRenderer->g_LightViewProjMatrix = &lightViewProjMatrix;
-
 	g_TerrainRenderer->ShadowTerrain(pd3dDevice);
+
 	//****Shadowmap of Meshes*****///
 	g_MeshRenderer->g_LightDirView = &lightDirView;
 	g_MeshRenderer->g_LightColor = &Skybox::g_LightColor;
@@ -1585,7 +1585,17 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//}
 	////g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects, NULL);
 	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances, NULL);
-
+	for each (GameObject o in g_StaticGameObjects)
+	{
+		if(g_Frustum.IsObjectInFrustum(&o))
+			g_MeshRenderer->AddToRenderPass(&o);
+	}
+	for each(GameObject o in g_EnemyInstances)
+	{
+		if(g_Frustum.IsObjectInFrustum(&o))
+			g_MeshRenderer->AddToRenderPass(&o);
+	}
+	g_MeshRenderer->RenderMeshes(pd3dDevice, pRTV, pDSV);
 
 	//TODO
 	//Create SAT Texture for rendering	
@@ -1600,7 +1610,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, D3DXCOLOR(0,1,0,1));
 	pd3dImmediateContext->ClearRenderTargetView( g_VLSMap->GetRenderTarget(), D3DXCOLOR(1.0,0.0,0.,1));
 
-		//Skybox render
+	//Skybox render
 	if(g_UseSkybox){
 		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera, g_VLSMap);
 	}
@@ -1608,7 +1618,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
 	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap,  g_VLSMap->GetRenderTarget());
-		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
+	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 
 
 	g_MeshRenderer->g_View = (D3DXMATRIX*)view;
@@ -1622,16 +1632,18 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 	//for each (GameObject o in g_StaticGameObjects)
 	//{
-	//		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
-	//g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
+	//	if(g_Frustum.IsObjectInFrustum(&o))
+	//		g_MeshRenderer->AddToRenderPass(&o);
+
 	//}
 	//for each(GameObject o in g_EnemyInstances)
 	//{
-	//	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
-	//	g_MeshRenderer->RenderMesh(pd3dDevice, &o, g_VarianceShadowMap, g_VLSMap, false); //Render Mesh
+	//	if(g_Frustum.IsObjectInFrustum(&o))
+	//		g_MeshRenderer->AddToRenderPass(&o);
 	//}
 	//g_MeshRenderer->RenderMesh(pd3dDevice, &g_StaticGameObjects, g_LightBWRTV);
-	g_MeshRenderer->RenderMeshes(pd3dDevice, g_VarianceShadowMap, g_VLSMap, false);
+	g_MeshRenderer->RenderMeshes(pd3dDevice,pRTV, pDSV, g_VarianceShadowMap, g_VLSMap, false);
+	g_MeshRenderer->ResetInstances();
 
 	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
 	if(SpriteRenderer::g_SpritesToRender.size() >0)
@@ -1672,15 +1684,16 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 		//avoids warning
 	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(0);
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
 	//Display only the first target
-	ID3D11RenderTargetView* rTargets[2] = { pRTV, NULL };
-	pd3dImmediateContext->OMSetRenderTargets( 2, rTargets, pDSV );
+	ID3D11RenderTargetView* rTargets[1] = { pRTV };
+	pd3dImmediateContext->OMSetRenderTargets( 1, rTargets, pDSV );
 	//render shadow map billboard
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
-		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(/*satImg*/g_VarianceShadowMap->GetShaderResource());
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
@@ -1689,9 +1702,12 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		pd3dImmediateContext->DrawIndexed(1, 0, 0);
 
 		//unbind shadow map as SRV
-		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
-		//g_BillboardTechnique->GetPassByIndex(0)->Apply( 0, pd3dImmediateContext );
+		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
+		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(0);
+		g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 	}
+	//pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+	//	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 
 
 	DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"HUD / Stats" );
@@ -1732,7 +1748,7 @@ void AutomaticPositioning()
 	{
 		if((*it)->GetRelativePosition() == GameObject::TERRAIN)
 			(*it)->TranslateTo((*it)->GetPosition()->x, g_TerrainRenderer->getHeightAtPoint((*it)->GetPosition()->x, (*it)->GetPosition()->z)+ (*it)->GetPosition()->y, (*it)->GetPosition()->z);
-		(*it)->CalculateWorldMatrix();
+		//(*it)->CalculateWorldMatrix();
 	}
 }
 

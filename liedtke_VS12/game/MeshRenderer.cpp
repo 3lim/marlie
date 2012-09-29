@@ -140,7 +140,7 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	stride[0] = sizeof(T3dVertex);
 	stride[1] = sizeof(MeshInstanceType);
 
-	object->CalculateWorldMatrix();
+	object->CalculateWorldMatrix(g_invView);
 
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
 
@@ -169,10 +169,10 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
 
 	WorldLightViewProjMatrix = WorldView* *g_LightViewProjMatrix;
-	m_WorldViewEV->SetMatrix(WorldView);
-	m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
-	m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
-	m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
+	//m_WorldViewEV->SetMatrix(WorldView);
+	//m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
+	//m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
+	//m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
@@ -190,16 +190,25 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	}
 }
 
-void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
+void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, ID3D11RenderTargetView* viewRTV, ID3D11DepthStencilView* viewDSV, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
 {
+	HRESULT hr;
+	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
+	D3DXMATRIX viewProj = *g_View * *g_Proj;
 	for(auto mesh = g_Meshes.begin(); mesh != g_Meshes.end(); mesh++)
 	{
+		if(mesh->second->GetInstanceCount() == 0)
+			continue;
+		pd3DContext->OMSetRenderTargets(1, &viewRTV,viewDSV);
 
-	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
+		ID3D11Buffer* instanceBuffer = mesh->second->GetInstanceBuffer();
+		D3D11_BOX box = {0,0,0,mesh->second->GetInstanceCount()*sizeof(MeshInstanceType),1,1};
+		pd3DContext->UpdateSubresource(instanceBuffer,0,&box, &mesh->second->GetInstancesMatrix()[0],sizeof(MeshInstanceType),0);
+
 	vbs[0] = mesh->second->GetVertexBuffer();
-	vbs[1] = mesh->second->GetInstanceBuffer();
+	vbs[1] = instanceBuffer;
 	offset[0] = 0;
-	offset[1] = 1;
+	offset[1] = 0;
 	stride[0] = sizeof(T3dVertex);
 	stride[1] = sizeof(MeshInstanceType);
 
@@ -231,12 +240,11 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 	WorldViewProjektion *= *g_Proj;
 	D3DXMatrixInverse(&WorldViewNormals,0,&WorldView);
 	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
-
-	WorldLightViewProjMatrix = WorldView* *g_LightViewProjMatrix;
-	m_WorldViewEV->SetMatrix(WorldView);
-	m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
-	m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
-	m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
+	
+	V(m_ViewEV->SetMatrix(*g_View));
+	V(m_ViewProjEV->SetMatrix(viewProj));
+	V(m_NormalsEV->SetMatrix(WorldViewNormals));
+	V(m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix));
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 	pd3DContext->IASetIndexBuffer(mesh->second->GetIndexBuffer(), mesh->second->GetIndexFormat(), 0);
@@ -244,6 +252,8 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 	pd3DContext->DrawIndexedInstanced(mesh->second->GetIndexCount(), mesh->second->GetInstanceCount(),0, 0,0);
 	//pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
 	//Light Scattering
+	//pd3DContext->OMSetRenderTargets(0, NULL, NULL);
+	//technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	if(vlsMap != NULL)
 	{
 		ID3D11RenderTargetView* vlsTarget = vlsMap->GetRenderTarget();
@@ -251,8 +261,26 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
 		pd3DContext->DrawIndexedInstanced(mesh->second->GetIndexCount(), mesh->second->GetInstanceCount(),0, 0,0);
 		//pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
+
+		//pd3DContext->OMSetRenderTargets(0, NULL, NULL);
+		//technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
 	}
 	}
+		//m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
+		//technique->GetPassByName("MeshBW")->Apply( 0, pd3DContext );
+
+}
+
+void MeshRenderer::AddToRenderPass(GameObject* object)
+{
+	object->CalculateWorldMatrix(g_invView);
+	object->GetMesh()->AddInstance(object->GetWorld());
+}
+
+void MeshRenderer::ResetInstances()
+{
+	for(auto m = g_Meshes.begin(); m != g_Meshes.end(); m++)
+		m->second->ResetInstances();
 }
 
 
@@ -303,10 +331,10 @@ HRESULT MeshRenderer::ReloadShader(ID3D11Device* pDevice)
 	SAFE_GET_RESOURCE(m_pEffect, "Glow", m_GlowEV);
 	//SAFE_GET_RESOURCE(m_pEffect, "g_ShadowMap", m_ShadowMapEV);
 
-	SAFE_GET_MATRIX(m_pEffect, "WorldView", m_WorldViewEV);
-	SAFE_GET_MATRIX(m_pEffect, "WorldViewProjection", m_WorldViewProjektionEV);
-	SAFE_GET_MATRIX(m_pEffect, "WorldViewNormals", m_WorldViewNormalsEV);
-	SAFE_GET_MATRIX(m_pEffect, "WorldLightViewProj", m_WorldLightViewProjMatrixEV);
+	SAFE_GET_MATRIX(m_pEffect, "mView", m_ViewEV);
+	SAFE_GET_MATRIX(m_pEffect, "mViewProj", m_ViewProjEV);
+	SAFE_GET_MATRIX(m_pEffect, "mNormals", m_NormalsEV);
+	SAFE_GET_MATRIX(m_pEffect, "mLightViewProj", m_LightViewProjMatrixEV);
 	SAFE_GET_MATRIX(m_pEffect, "g_LightViewProjMatrix", m_LightViewProjMatrixEV);
 	SAFE_GET_VECTOR(m_pEffect, "g_LightColor", m_LightColorEV);
 	SAFE_GET_VECTOR(m_pEffect, "g_LightDirView", m_LightDirViewEV);
