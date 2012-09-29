@@ -67,7 +67,7 @@ bool FrustumCulling::IsObjectInFrustum(GameObject* o)
 		return true;
 	float r = static_cast<gcSphereCollider*>((*v)[0])->GetSphereRadius();
 	//Wenn innerhalb der sphere dann Frustum Test
-	if(D3DXVec3Length(&(FrustumCenter-*o->GetPosition())) < (FrustumgSphereRadius + r))
+	if(D3DXVec3Length(&(FrustumCenter-*o->GetPosition())) > (FrustumgSphereRadius + r))
 		for(int i=0; i<6; i++) 
 		{
 			//Außerhalb des Frustum
