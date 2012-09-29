@@ -1595,11 +1595,11 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		if(g_Frustum.IsObjectInFrustum(&o))
 			g_MeshRenderer->AddToRenderPass(&o);
 	}
-	g_MeshRenderer->RenderMeshes(pd3dDevice, pRTV, pDSV);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, shadowTarget[0], g_ShadowMapDSV);
 
 	//TODO
 	//Create SAT Texture for rendering	
-	//RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
+	RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
 
 	//*****normal Scene Rendering*****//
 	//ID3D11RenderTargetView* targets[] = {pRTV,g_LightBWRTV   };
