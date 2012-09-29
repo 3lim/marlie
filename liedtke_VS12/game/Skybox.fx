@@ -98,6 +98,11 @@ BlendState EnableBlending
 	SrcBlendAlpha[0] = ONE;
 	DestBlend[0] = INV_SRC_ALPHA;
 	DestBlendAlpha[0] = INV_SRC_ALPHA;
+	BlendEnable[1] = TRUE;
+	SrcBlend[1] = SRC_ALPHA;
+	SrcBlendAlpha[1] = ONE;
+	DestBlend[1] = INV_SRC_ALPHA;
+	DestBlendAlpha[1] = INV_SRC_ALPHA;
 };
 BlendState SubtractBlending
 {
@@ -160,18 +165,21 @@ void SunGS( point uint vertex[1] : POINT, inout TriangleStream<SunVertex> Stream
 	Stream.Append(output);
 }
 
-float4 SkyboxPS(in QuadVertex input) : SV_Target0
+float4 SkyboxPS(in QuadVertex input/*, out float4 finalColor : SV_TARGET0*/, out float4  vlsColor : SV_TARGET1) : SV_TARGET0
 {
 	float3 pixPosition = normalize((g_TopLeft + input.Tex.x * g_Right + input.Tex.y * g_Down) - g_Eye);
 	float height = pixPosition.y;
 	height*=2;
 	height = abs(height);
+	float4 finalColor;
 	//float4 SkyBackColor = lerp(horizontColor, apexColor, height);
 	//float4 Cloud1 = CloudTex1.Sample(samAnisotropic, pixPosition);
 	//float4 Cloud2 = CloudTex2.Sample(samAnisotropic, pixPosition.xy+cloudTranslation[1])*0;
 	//return float4(SkyBackColor.rgb+Cloud2.rgb*Cloud2.a*cloudBrightness+Cloud1.rgb*Cloud1.a*cloudBrightness,1);
 	//return SkyCubeImage.Sample(samAnisotropic, pixPosition)+(SkyBackColor.a - 0.3);
-	return lerp(horizontColor, apexColor, height);
+	finalColor = lerp(horizontColor, apexColor, height);
+	vlsColor = finalColor*0.02;
+	return finalColor;
 }
 float4 SkyboxVLSPS(in QuadVertex input) : SV_Target0
 {
@@ -187,14 +195,17 @@ float4 SkyboxVLSPS(in QuadVertex input) : SV_Target0
 	return lerp(horizontColor, apexColor, height)*0.02;
 }
 
-float4 SunPS(SunVertex Input) : SV_Target0 
+float4 SunPS(SunVertex Input, out float4 vlsColor : SV_TARGET1) : SV_Target0 
 {
 	float dist = length (Input.tex - float2 (0.5f, 0.5f)); //get the distance form the center of the point-sprite
 	float alpha = saturate(sign (0.5f - dist*SUNSIZEFACTOR));
-	return float4(SunColor.rgb,alpha);
+	float4 glow = SunColor;
+		glow.a = saturate((0.5f - dist))*saturate((0.5f - dist)*0.36);
+	vlsColor = float4(SunColor.rgb*1.1,alpha)+glow;
+	return float4(0,0,0,0);//wird vom Light Scattering übernommen
 }
 
-float4 SunBWPS(SunVertex Input) : SV_Target0 
+float4 SunBWPS(SunVertex Input) : SV_Target1 
 {
 	float dist = length (Input.tex - float2 (0.5f, 0.5f)); //get the distance form the center of the point-sprite
 	float alpha = saturate(sign (0.5f - dist*SUNSIZEFACTOR));
@@ -220,11 +231,10 @@ void SkydomeGS(point QuadVertex vertex[1], inout TriangleStream<QuadVertex> stre
 }
 
 
-float4 CloudPS(QuadVertex input) : SV_Target0
+void CloudPS(QuadVertex input, out float4 finalColor : SV_TARGET0, out float4 vlsColor : SV_TARGET1)
 {
 	float4 textureColor1;
 	float4 textureColor2;
-	float4 finalColor;
     textureColor1 = CloudTex1.Sample(samAnisotropic, input.Tex + cloudTranslation[0]);
     textureColor2 = CloudTex2.Sample(samAnisotropic, input.Tex + cloudTranslation[1]);
 	finalColor = lerp(textureColor1, textureColor2, 0.5f);
@@ -237,7 +247,9 @@ float4 CloudPS(QuadVertex input) : SV_Target0
 	fadeY = 1-fadeY;
 	float fade = saturate(1-fadeX*fadeY*10);
 	//return float4(fade,fade,fade,1);
-	return lerp(finalColor, float4(0,0,0,0), fade);//Fade out horizont
+	
+	finalColor = lerp(finalColor, float4(0,0,0,0), fade);//Fade out horizont
+	vlsColor = float4(0,0,0,clamp(finalColor.a*2,0,0.96));
 }
 float4 CloudBWPS(QuadVertex input) : SV_Target0
 {

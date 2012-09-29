@@ -873,8 +873,25 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	g_ShadowSATRenderer->CreateResources(pd3dDevice, SHADOWMAPSIZE, SHADOWMAPSIZE, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	
 	//Volometric Light Scattering
-	g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, NULL);
-	g_VLSDestMap  = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1,DXGI_FORMAT_R32G32B32A32_FLOAT,NULL);
+	ID3D11Texture2D* view;
+	//D3D11_TEXTURE2D_DESC desc;
+ //   ID3D11Texture2D* pBackBuffer;
+	//IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
+ //   hr = pSwapChain->GetBuffer( 0, __uuidof( *pBackBuffer ), ( LPVOID* )&pBackBuffer );
+	////pd3dDevice->->GetResource(&view);
+	//((ID3D11Texture2D*)pBackBuffer)->GetDesc(&desc);
+	//g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);
+	//g_VLSDestMap  = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);
+	//g_VLSMap = new RenderableTexture(pd3dDevice, &desc);
+	//g_VLSDestMap  = new RenderableTexture(pd3dDevice,&desc);
+	g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);
+	g_VLSDestMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);
+	DXUT_SetDebugName(g_VLSMap->GetRenderTarget(), "vls");
+	DXUT_SetDebugName(g_VLSMap->GetShaderResource(), "vls");
+	DXUT_SetDebugName(g_VLSMap->GetTexture(), "vls");
+	DXUT_SetDebugName(g_VLSDestMap->GetRenderTarget(), "vlsD");
+	DXUT_SetDebugName(g_VLSDestMap->GetShaderResource(), "vlsD");
+	DXUT_SetDebugName(g_VLSDestMap->GetTexture(), "vlsD");
 	return S_OK;
 }
 
@@ -1168,42 +1185,7 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 			if(ORotate)
 				g_StaticGameObjects[Oindex]->Rotate( 0,0,1);
 			break;
-		case 97:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(-0.02,0,0);
-			else
-				g_SkyboxRenderer->ApexColor(-0.02,0,0);
-			break;
-		case 98:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(0,-0.02,0);
-			else
-				g_SkyboxRenderer->ApexColor(0,-0.02,0);
-			break;
-		case 99:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(0,0,-0.02);
-			else
-				g_SkyboxRenderer->ApexColor(0,0,-0.02);
-			break;
-		case 100:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(0.02,0,0);
-			else
-				g_SkyboxRenderer->ApexColor(0.02,0,0);
-			break;
-		case 101:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(0,0.02,0);
-			else
-				g_SkyboxRenderer->ApexColor(0,0.02,0);
-			break;
-		case 102:
-			if(bAltDown)
-				g_SkyboxRenderer->HorizontColor(0,0,0.02);
-			else
-				g_SkyboxRenderer->ApexColor(0,0,0.02);
-			break;
+
 
 		} 
 	}else{ //KeyUp
@@ -1595,30 +1577,28 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		if(g_Frustum.IsObjectInFrustum(&o))
 			g_MeshRenderer->AddToRenderPass(&o);
 	}
-	g_MeshRenderer->RenderMeshes(pd3dDevice, shadowTarget[0], g_ShadowMapDSV);
+	//g_MeshRenderer->RenderMeshes(pd3dDevice);
 
 	//TODO
 	//Create SAT Texture for rendering	
-	RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
+	//RenderableTexture* satImg = g_ShadowSATRenderer->createSAT(pd3dImmediateContext, g_VarianceShadowMap);
 
 	//*****normal Scene Rendering*****//
-	//ID3D11RenderTargetView* targets[] = {pRTV,g_LightBWRTV   };
-	// Clear the depth stencil
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
-	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, D3DXCOLOR(0,1,0,1));
 	pd3dImmediateContext->ClearRenderTargetView( g_VLSMap->GetRenderTarget(), D3DXCOLOR(1.0,0.0,0.,1));
+	ID3D11RenderTargetView* targets[] = {pRTV,g_VLSMap->GetRenderTarget() };
+	// Clear the depth stencil
+	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);	//
+	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 
 	//Skybox render
 	if(g_UseSkybox){
-		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera, g_VLSMap);
+		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera);
 	}
 
-		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
-	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap,  g_VLSMap->GetRenderTarget());
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
+	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap/*,  g_VLSMap->GetRenderTarget()*/);
 
 
 	g_MeshRenderer->g_View = (D3DXMATRIX*)view;
@@ -1642,10 +1622,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//		g_MeshRenderer->AddToRenderPass(&o);
 	//}
 	//g_MeshRenderer->RenderMesh(pd3dDevice, &g_StaticGameObjects, g_LightBWRTV);
-	g_MeshRenderer->RenderMeshes(pd3dDevice,pRTV, pDSV, g_VarianceShadowMap, g_VLSMap, false);
+	g_MeshRenderer->RenderMeshes(pd3dDevice, g_VarianceShadowMap, NULL, false);
 	g_MeshRenderer->ResetInstances();
 
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
 	if(SpriteRenderer::g_SpritesToRender.size() >0)
 		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
 	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
@@ -1663,21 +1642,13 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_Effect_VLS->GetVariableByName("g_WorldViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
-	
-	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
-	g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
 
-	//ID3D11RenderTargetView* BlurTarget = g_VLSMap->GetRenderTarget();
-	//pd3dImmediateContext->OMSetRenderTargets(1, &BlurTarget, NULL);
-	//g_Effect_VLS->GetVariableByName("blurImg")->AsShaderResource()->SetResource(g_VLSDestMap->GetShaderResource());
-	//float dim[] = { 1.4,1.2 };
-	//g_Effect_VLS->GetVariableByName("g_BlurDimension")->AsVector()->SetFloatVector(dim);
-	//g_Effect_VLS->GetVariableByName("g_BlurSamples")->AsScalar()->SetInt(4);
-	//g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
-	//pd3dImmediateContext->Draw(1,0);
+	//damit das ergebnis aus der destMap nun in der VLSMap aufrufbar ist
 	swap(g_VLSMap, g_VLSDestMap);
+
+	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
 	//VLS Blending
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
+	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, NULL);
 	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
@@ -1685,15 +1656,16 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		//avoids warning
 	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
 	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(0);
+	g_Effect_VLS->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(0);
 	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
-	//Display only the first target
-	ID3D11RenderTargetView* rTargets[1] = { pRTV };
-	pd3dImmediateContext->OMSetRenderTargets( 1, rTargets, pDSV );
+	pd3dImmediateContext->OMSetRenderTargets( 1, &pRTV, NULL );
+	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
+
 	//render shadow map billboard
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
-		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(/*satImg*/g_VarianceShadowMap->GetShaderResource());
+		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(/*satImg*/g_VLSMap->GetShaderResource());
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
@@ -1704,10 +1676,13 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		//unbind shadow map as SRV
 		g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource( 0 );
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(0);
+		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(0);
 		g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 	}
 	//pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
 	//	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
+	//ID3D11RenderTargetView* displaytargets[2] =  {NULL, NULL};
+	//pd3dImmediateContext->OMSetRenderTargets( 2, displaytargets, NULL );
 
 
 	DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"HUD / Stats" );

@@ -190,7 +190,7 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 	}
 }
 
-void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, ID3D11RenderTargetView* viewRTV, ID3D11DepthStencilView* viewDSV, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
+void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
 {
 	HRESULT hr;
 	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
@@ -199,7 +199,6 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, ID3D11RenderTargetView* v
 	{
 		if(mesh->second->GetInstanceCount() == 0)
 			continue;
-		pd3DContext->OMSetRenderTargets(1, &viewRTV,viewDSV);
 
 		ID3D11Buffer* instanceBuffer = mesh->second->GetInstanceBuffer();
 		D3D11_BOX box = {0,0,0,mesh->second->GetInstanceCount()*sizeof(MeshInstanceType),1,1};

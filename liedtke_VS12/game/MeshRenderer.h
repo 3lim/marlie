@@ -32,7 +32,7 @@ public:
 	//void ShadowMeshes(ID3D11Device* pDevice, std::list<Enemy*>* object, ID3D11RenderTargetView* LightBW);
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
-	void RenderMeshes(ID3D11Device* pDevice, ID3D11RenderTargetView* viewRTV, ID3D11DepthStencilView* viewDSV, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
+	void RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);

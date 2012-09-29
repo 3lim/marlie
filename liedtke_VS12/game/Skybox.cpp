@@ -277,7 +277,7 @@ void Skybox::ReleaseResources()
 	//for(int i = 0; i < m_VertexCount; i++)
 	//SAFE_RELEASE(m_skyPlane[i]);
 }
-HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam, RenderableTexture* LightBW)
+HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& cam/*, ID3D11RenderTargetView* viewRTV, ID3D11DepthStencilView* viewDSV, RenderableTexture* LightBW*/)
 {
 	HRESULT hr;
 	D3DXMATRIX viewProj = (*cam.GetViewMatrix()) * (*cam.GetProjMatrix());
@@ -292,9 +292,11 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 
 	D3DXVECTOR3 down = bL - tL;
 	D3DXVECTOR3 right = tR - tL;
-	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
-	ID3D11DepthStencilView* pDTV = DXUTGetD3D11DepthStencilView();
-	ID3D11RenderTargetView* lightTarget = LightBW->GetRenderTarget();
+	//ID3D11RenderTargetView* pRTV[2] = { viewRTV, LightBW->GetRenderTarget()};
+	//ID3D11DepthStencilView* pDTV = viewDSV;
+	//m_Context->OMSetRenderTargets(2, pRTV, pDTV);
+
+	//ID3D11RenderTargetView* lightTarget = LightBW->GetRenderTarget();
 	D3DXMATRIX world;
 	D3DXMatrixTranslation(&world, cam.GetEyePt()->x, cam.GetEyePt()->y, cam.GetEyePt()->z);
 	world = world*viewProj;//projeziert den himmer immer relativ zur Spieler Position;
@@ -318,10 +320,9 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	m_SkyPass->Apply(0, m_Context); 
 	m_Context->Draw(1, 0);
-	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
-	V(m_SkyboxTechnique->GetPassByName("drawSkyCubeVLS")->Apply(0, m_Context)); 
-	m_Context->Draw(1, 0);
-
+	//m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
+	//V(m_SkyboxTechnique->GetPassByName("drawSkyCubeVLS")->Apply(0, m_Context)); 
+	//m_Context->Draw(1, 0);
 
 	//Sun
 	//m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
@@ -331,11 +332,13 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetInputLayout( NULL ); 
 	m_Context->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_POINTLIST); 
 	//m_Context->Draw(1, 0);
-	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
-	V(m_SkyboxTechnique->GetPassByName("sunBW")->Apply(0, m_Context)); 
+	//m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
+	V(m_SkyboxTechnique->GetPassByName("sun")->Apply(0, m_Context)); 
 	m_Context->Draw(1, 0);
+
+
 	//Skyplane
-	m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
+	//m_Context->OMSetRenderTargets(1, &pRTV , pDTV);
 	stride = sizeof(uvVertex);
 	V(m_SkyboxTechnique->GetPassByName("Clouds")->Apply(0, m_Context)); 
 	m_Context->IASetVertexBuffers(0,1, &m_CloudVB, &stride, &offset);
@@ -343,9 +346,9 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	m_Context->IASetInputLayout( m_SkydomeLayout ); 
 	m_Context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 	m_Context->DrawIndexed(m_IndexCount,0, 0);
-	m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
-	V(m_SkyboxTechnique->GetPassByName("CloudsBW")->Apply(0, m_Context)); 
-	m_Context->DrawIndexed(m_IndexCount,0, 0);
+	//m_Context->OMSetRenderTargets(1, &lightTarget, NULL);
+	//V(m_SkyboxTechnique->GetPassByName("CloudsBW")->Apply(0, m_Context)); 
+	//m_Context->DrawIndexed(m_IndexCount,0, 0);
 
 	return S_OK;
 }

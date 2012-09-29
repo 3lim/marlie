@@ -142,9 +142,9 @@ T3dVertexPSIn MeshVS(T3dVertexVSIn Input)
 	return output; 
 }
 
-float4 MeshPS(T3dVertexPSIn Input) : SV_Target0 { 
+float4 MeshPS(T3dVertexPSIn Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 { 
 	float4 output = (float4)0; //output color 
-	
+	vlsMap = 0;
 	float4 mDiffuse = Diffuse.Sample(samAnisotropic, Input.Tex);
 	float4 mSpecular = Specular.Sample(samAnisotropic, Input.Tex);
 	float4 mGlow = Glow.Sample(samAnisotropic, Input.Tex);	

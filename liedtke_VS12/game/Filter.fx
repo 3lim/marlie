@@ -64,6 +64,25 @@ float4 TexturePCF(Texture2D texShadow,float2 tc,
     result /= float(size.x * size.y);
     return result;
 }
+float4 TexturePCF(Texture2DMS<float4,4> texShadow,float2 tc,
+                       int2 size)
+{
+	float3 texSize;
+	texShadow.GetDimensions(texSize.x, texSize.y, texSize.z);
+	float2 texelSize = 1.f/texSize;
+	float2 blurSize = size*texelSize;
+	float2 coordsUL = tc + blurSize*-0.5;
+	float4 result = 0;
+	for (int y = 0; y < size.y; ++y) {
+        for (int x = 0; x < size.x; ++x) {
+            float2 TexCoord = coordsUL + float2(x, y) * texelSize;
+            
+            result += texShadow.Load(int2(tc*texSize.xy),0);
+        }
+    }
+    result /= float(size.x * size.y);
+    return result;
+}
 //float4 TexturePCF(Texture2D texShadow,float2 tc,
 //                       float2 dx,
 //                       float2 dy,

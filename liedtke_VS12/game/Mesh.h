@@ -80,8 +80,8 @@ private:
 	int                         m_IndexCount; //number of single indices in m_IndexBuffer (needed for DrawIndexed())
 	int							m_InstanceCount;
 	int							m_VertexCount;
-	D3DXVECTOR3					m_centerVertex;
 	float						m_sphereRadius;
+	D3DXVECTOR3					m_centerVertex;
 
 	//Mesh textures and corresponding shader resource views
 	ID3D11Texture2D*            m_DiffuseTex;

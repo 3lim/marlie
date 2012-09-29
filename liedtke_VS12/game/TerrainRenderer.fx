@@ -129,8 +129,9 @@ PosTex TerrainVS(uint VertexID : SV_VertexID)
 
 	return output;
 }
-float4 TerrainPS(PosTex Input) : SV_Target0 {
+float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 	float3 n;
+	vlsMap = 0;
 	n.xy = g_Normal.Sample(samAnisotropic, Input.Tex).xy*2-1;
 	n.z = sqrt(saturate(1 - n.x*n.x - n.y*n.y));
 

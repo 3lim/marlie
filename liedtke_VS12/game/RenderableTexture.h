@@ -10,7 +10,7 @@ public:
 	RenderableTexture(ID3D11Device* d3dDevice, unsigned int width, unsigned int height, unsigned int mipLevels, DXGI_FORMAT format, const DXGI_SAMPLE_DESC* sampleDesc = 0);
 	 RenderableTexture(ID3D11Device* d3dDevice, ID3D11Texture2D* textureArray,
                       unsigned int index);
-
+	 RenderableTexture(ID3D11Device* d3dDevice, unsigned int Width, unsigned int Height, DXGI_FORMAT Format);
 	~RenderableTexture(void);
 
   unsigned int GetWidth() const { return m_Width; }
