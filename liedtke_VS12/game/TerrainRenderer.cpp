@@ -160,6 +160,34 @@ HRESULT TerrainRenderer::CreateResources(ID3D11Device* pDevice)
 		return hr;
 	V(pDevice->CreateShaderResourceView(m_TerrainDiffuseTex, NULL, &m_TerrainDiffuseSRV));  
 
+	D3D11_TEXTURE2D_DESC heightDesc;
+	vector<vector<float>> heightData;
+	heightData.resize(1);
+	heightData[0].resize(m_TerrainResolution*m_TerrainResolution);
+	for(int i=0;i<m_TerrainResolution*m_TerrainResolution;i++)
+	{
+		heightData[0][i] = g_TerrainHeights[i]/(float)UINT16_MAX;
+	}
+	vector<D3D11_SUBRESOURCE_DATA> heightSubres;
+	heightSubres.resize(1);
+	heightSubres[0].pSysMem = &heightData[0][0];
+	heightSubres[0].SysMemPitch = sizeof(float) * m_TerrainResolution;
+
+	heightDesc.ArraySize=1;
+	heightDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	heightDesc.CPUAccessFlags = 0;
+	heightDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	heightDesc.Height = m_TerrainResolution;
+	heightDesc.MipLevels = 1;
+	heightDesc.MiscFlags = 0;
+	heightDesc.SampleDesc.Count = 1;
+	heightDesc.SampleDesc.Quality = 0;
+	heightDesc.Usage = D3D11_USAGE_DEFAULT;
+	heightDesc.Width = m_TerrainResolution;
+	pDevice->CreateTexture2D(&heightDesc,&heightSubres[0],&heightTex);
+	pDevice->CreateShaderResourceView(heightTex,NULL,&heightSRV);
+
+
 	// END: Assignment 3.2.5
 	// BEGIN: Assigment 4.2.7
 	D3D11_TEXTURE2D_DESC normal2DDesc;
@@ -185,6 +213,8 @@ void TerrainRenderer::ReleaseResources()
 	SAFE_RELEASE(m_TerrainNormalSRV);
 	SAFE_RELEASE(m_TerrainHeightBuf);
 	SAFE_RELEASE(m_TerrainHeightSRV);
+	SAFE_RELEASE(heightTex);
+	SAFE_RELEASE(heightSRV);
 }
 
 HRESULT TerrainRenderer::ReloadShader(ID3D11Device* pDevice)
@@ -287,7 +317,7 @@ void TerrainRenderer::OnMove(double time, float elapsedTime)
 	}
 }
 
-void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* LightBW)
+void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* LightBW, ID3D11DepthStencilView* dsv, ID3D11RenderTargetView* reflectionRTV)
 {
 	ID3D11DeviceContext* pd3dImmediateContext;
 	pDevice->GetImmediateContext(&pd3dImmediateContext);
@@ -304,14 +334,31 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-	m_ShadowMapEV->SetResource(0);
-	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	if(LightBW != NULL)
 	{
+
+
+
+	pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
+
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->OMSetRenderTargets(1, &LightBW, NULL);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 	}
+	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
+	/*
+	D3DXPLANE reflectP = D3DXPLANE(0,1,0,1);
+	D3DXMatrixReflect(&reflectM,&reflectP);*/
+	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
+	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
+
+	m_ShadowMapEV->SetResource(0);
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+
 	SAFE_RELEASE(pd3dImmediateContext);
 }
 void TerrainRenderer::ShadowTerrain(ID3D11Device* pDevice)

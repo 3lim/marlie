@@ -27,14 +27,15 @@ public:
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
 	void OnMove( double fTime, float fElapsedTime);
-	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* VolumetricLightScattering = NULL);
+	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* VolumetricLightScattering, ID3D11DepthStencilView* dsv, ID3D11RenderTargetView* reflectionRTV);
 	void ShadowTerrain(ID3D11Device* pDevice);
 	void Deinit();
 	static std::vector<unsigned short> g_TerrainHeights;
 	float* getDepth() { return &m_TerrainDepth; }
 	float* getWidth() { return &m_TerrainWidth; }
 	float* getHeight() { return &m_TerrainHeight; }
-
+	ID3D11ShaderResourceView* getTerrainNormalSRV() {return m_TerrainNormalSRV;}
+	ID3D11ShaderResourceView* getTerrainHeightSRV() {return m_TerrainHeightSRV;}
 	//liest Höhe des Terrains in bezug auf die länge des Terrains im Spiel
 	float getHeightAtPoint(float x, float y);
 	//liest Hohe des Terrains direkt aus dem HeightField
@@ -45,11 +46,14 @@ public:
 	D3DXMATRIX* g_ViewProj;
 	D3DXVECTOR4* g_LightDir;
 	D3DXMATRIX* g_LightViewProjMatrix;
+	
+	ID3D11ShaderResourceView* heightSRV;
+	ID3D11Texture2D* heightTex;
+	int				m_TerrainResolution;
 private:
 	inline void setEffectVariables(void);
 	// Terrain meta information
 	PtfHeader		m_TerrainHeader; 
-	int				m_TerrainResolution;
 	int				m_TerrainNumVertices;
 	int				m_TerrainNumTriangles;
 	float			m_TerrainWidth;

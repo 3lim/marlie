@@ -239,4 +239,14 @@ technique11 Render
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
+	pass P2
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(NULL);
+		
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
 }

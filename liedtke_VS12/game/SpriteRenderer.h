@@ -71,4 +71,6 @@ private:
 	// Vertex buffer for sprite vertices, and corresponding input layout.
 	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11InputLayout* m_pInputLayout;
+
+	bool resourcesCreated;
 };

@@ -15,6 +15,7 @@ SpriteRenderer::SpriteRenderer(const std::vector<std::pair<std::string,int>>& te
 	m_pVertexBuffer(NULL),
 	m_spriteCountMax(1024)
 {
+	resourcesCreated = false;
 }
 
 SpriteRenderer::~SpriteRenderer()
@@ -49,7 +50,6 @@ void SpriteRenderer::ReleaseShader()
 HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice)
 {
 	HRESULT hr;
-	hr = S_OK;
 
 	D3D11_BUFFER_DESC bd;
 
@@ -142,6 +142,7 @@ HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice)
 			m_textureOffsets[it.second.second[i]] = textureCount - it.second.first[i].first.ArraySize;
 		}
 		
+
 		maxMipmap.ArraySize = count;
 		maxMipmap.MipLevels = 1;
 
@@ -149,6 +150,8 @@ HRESULT SpriteRenderer::CreateResources(ID3D11Device* pDevice)
 		V_RETURN(pDevice->CreateShaderResourceView(m_spriteTex[resCount-1],NULL,&m_spriteSRV[resCount-1]));
 
 	}
+	hr = (resourcesCreated) ? S_FALSE : S_OK;
+	resourcesCreated = true;
 	return hr;
 }
 
