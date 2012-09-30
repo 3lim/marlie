@@ -890,12 +890,12 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
  //   hr = pSwapChain->GetBuffer( 0, __uuidof( *pBackBuffer ), ( LPVOID* )&pBackBuffer );
 	////pd3dDevice->->GetResource(&view);
 	//((ID3D11Texture2D*)pBackBuffer)->GetDesc(&desc);
-	//g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);
-	//g_VLSDestMap  = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);
+	g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);//Funktioniert auf dem Laptop(Sven)
+	g_VLSDestMap  = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);//same
 	//g_VLSMap = new RenderableTexture(pd3dDevice, &desc);
 	//g_VLSDestMap  = new RenderableTexture(pd3dDevice,&desc);
-	g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);
-	g_VLSDestMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);
+	//g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);//funktioniert auf dem PC(SVEN)
+	//g_VLSDestMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);//funktioniert auf dem PC(SVEN)
 	DXUT_SetDebugName(g_VLSMap->GetRenderTarget(), "vls");
 	DXUT_SetDebugName(g_VLSMap->GetShaderResource(), "vls");
 	DXUT_SetDebugName(g_VLSMap->GetTexture(), "vls");
