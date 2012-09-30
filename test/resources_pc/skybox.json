@@ -1,0 +1,8 @@
+{
+	"+X" : "../../external/art/04-Skybox/skybox_vertical_cube_01_3.png",
+	"+Y" : "../../external/art/04-Skybox/skybox_vertical_cube_01_0.png",
+	"+Z" : "../../external/art/04-Skybox/skybox_vertical_cube_01_2.png",
+	"-X" : "../../external/art/04-Skybox/skybox_vertical_cube_01_1.png",
+	"-Y" : "../../external/art/04-Skybox/skybox_vertical_cube_01_4.png",
+	"-Z" : "../../external/art/04-Skybox/skybox_vertical_cube_01_5.png"
+}
