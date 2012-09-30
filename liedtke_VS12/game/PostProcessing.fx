@@ -3,7 +3,7 @@
 Texture2DMS<float4,4> aux1Buffer;
 Texture2DMS<float4,4> aux2Buffer;
 Texture2D source;
-int VLSBlurSize = 10;
+int VLSBlurSize = 20;
 
 cbuffer cbCommon
 {
@@ -105,7 +105,7 @@ float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 	float4 lightScreenPos = mul(float4(g_LightPosition.xyz,0), g_WorldViewProj);
 	lightScreenPos.xy /= lightScreenPos.w;
 	lightScreenPos.x += 0.5f;
-	lightScreenPos.y -= 0.5f;
+	lightScreenPos.y *= -1;//0.5f;
 
 	float2 deltaTexCoord = v.Tex-lightScreenPos.xy;
 		deltaTexCoord  *= 1.f/NUM_SAMPLES*g_density;
@@ -122,9 +122,11 @@ float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 	return float4(result * g_exposure,result.r * g_exposure);
 }
 
-float4 AdditiveBlendPS(uniform int blurSize, QuadVertex v) : SV_TARGET0
+float4 AdditiveBlendBlurPS(QuadVertex v) : SV_TARGET0
 {
-	float4 color = TexturePCF(aux2Buffer, v.Tex, int2(blurSize, blurSize)); // aux2Buffer.Sample(samLinear, v.Tex);
+	float3 dim;
+	aux1Buffer.GetDimensions(dim.x, dim.y, dim.z);
+	float4 color = aux2Buffer.Load(int3(v.Tex*dim.xy,0),0); // aux2Buffer.Sample(samLinear, v.Tex);
 	return float4(color.rgb, 1);
 }
 
@@ -144,7 +146,7 @@ technique11 VolumetricLightScattering
 	{
 		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
 		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
-        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendPS(VLSBlurSize)));
+        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendBlurPS()));
         
 		SetRasterizerState(rsCullNone);
         SetDepthStencilState(DisableDepth, 0);

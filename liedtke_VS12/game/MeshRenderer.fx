@@ -27,7 +27,11 @@ cbuffer cbChangesEveryMesh
 	//matrix world has to be replaced with InstanceWorld
 	matrix mLightViewProj;
 	matrix mViewProj;
+	matrix mProj;
 	matrix mView;
+	matrix mViewInv;
+	matrix mViewProjInv;
+	matrix mProjInv;
 	matrix mNormals;
 };
 
@@ -44,6 +48,7 @@ struct T3dVertexVSIn
 	float3 Nor : NORMAL; //Normal in object space 
 	float3 Tan : TANGENT; //Tangent in object space (not used in Ass. 5) 
     matrix InstanceWorld : POSITION1; //Instance Data
+    matrix InstanceWorldInv : INVPOSITION; //Instance Data
 }; 
 
 //--------------------------------------------------------------------------------------
@@ -125,7 +130,7 @@ T3dVertexPSIn MeshVS(T3dVertexVSIn Input)
 	T3dVertexPSIn output = (T3dVertexPSIn) 0; 
 
 	//matrix WorldViewProjection = mViewProj*Input.InstanceWorld;
-	matrix WorldViewNormals = Input.InstanceWorld*mView*mNormals;
+	matrix WorldViewNormals = Input.InstanceWorldInv*mNormals;
 	//matrix(Input.InstanceWorld[0][0],0,0,Input.InstanceWorld[0][0],0,Input.InstanceWorld[2][2],0,0,0,0,Input.InstanceWorld[3][3],0,Input.InstanceWorld[0][3],Input.InstanceWorld[1][3],Input.InstanceWorld[2][3],1)
 	float4 worldPos = mul(float4(Input.Pos,1),Input.InstanceWorld);
 
@@ -134,11 +139,11 @@ T3dVertexPSIn MeshVS(T3dVertexVSIn Input)
 	//output.PosView = mul(float4(Input.Pos,1), WorldView).xyz;
 	output.PosView = mul(worldPos, mView).xyz;
 	//output.NorView = normalize(mul(float4(Input.Nor,0), WorldViewNormals).xyz);
-	output.NorView = normalize(mul(mul(float4(Input.Nor,0), mView), mNormals).xyz);
-	output.TanView = normalize(mul(mul(float4(Input.Tan,0), mView), mNormals).xyz);
+	output.NorView = normalize(mul(mul(float4(Input.Nor,0),  Input.InstanceWorld), mProjInv).xyz);
+	output.TanView = normalize(mul(mul(float4(Input.Tan,0),  Input.InstanceWorld), mProjInv).xyz);
 	//output.lightPos = mul(float4(Input.Pos,1), mul(WorldView, g_LightViewProjMatrix));
 	//output.lightPos = mul(float4(output.PosView,1), g_LightViewProjMatrix);
-	output.lightPos = mul(worldPos, mLightViewProj);
+	output.lightPos =mul(float4(worldPos.xyz,1), g_LightViewProjMatrix);
 	return output; 
 }
 
@@ -152,7 +157,7 @@ float4 MeshPS(T3dVertexPSIn Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 
 	nT.xy = Normal.Sample(samAnisotropic, Input.Tex).xy*2-1;
 	nT.z = sqrt(saturate(1 - nT.x*nT.x - nT.y*nT.y));
 	//float4 cLight = float4(1,1,1,1);
-	float3 N = normalize(Input.NorView);
+	float3 N = Input.NorView;
 	float3 T = normalize(Input.TanView - N * dot(N,Input.TanView));
 	//float3 T = Input.TanView;
 	float3 B = cross(T,N);
@@ -167,7 +172,7 @@ float4 MeshPS(T3dVertexPSIn Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 
 	float3 lPos = Input.lightPos.xyz/Input.lightPos.w;
 	lPos.y = -lPos.y;
 	lPos.xy = lPos.xy/2.f+0.5f;
-	lPos.z += -0.0001;
+//	lPos.z += -0.0001;
 		uint2 dimensions;
 	g_ShadowMap.GetDimensions(dimensions.x,dimensions.y);
 	float2 t = frac( lPos.xy * dimensions.x );
@@ -188,13 +193,13 @@ float4 MeshPS(T3dVertexPSIn Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 
 
 	//VSM Shading + PCF
 	//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
-	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
+	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(5,5)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
 	float depth = lPos.z; 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
-	shadowFactor = ReduceLightBleeding(shadowFactor, 0.7);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
 
-	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor *shadowFactor
-		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor *shadowFactor
+	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor
+		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor
 		+ 0.5 * mGlow + 0.2 * mDiffuse * cLightAmbient) * shadowFactor 
 		+ 0.05 * mDiffuse * cLightAmbient * (1.f-shadowFactor);
 	return output; 

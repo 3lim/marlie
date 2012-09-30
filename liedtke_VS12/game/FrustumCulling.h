@@ -6,8 +6,10 @@ class FrustumCulling
 {
 public:
 	FrustumCulling(void);
-	void CalculateFrustum(D3DXMATRIX* viewProj, const D3DXMATRIX* View);
+	void CalculateFrustum(D3D11_VIEWPORT vp, CFirstPersonCamera* cam);
 	bool IsObjectInFrustum(GameObject* object);
+	bool FrustumCulling::IsObjectInFrustum(D3DXVECTOR3* pos, int maxCount);
+	bool FrustumCulling::IsObjectInFrustum(D3DXVECTOR3* pos);
 	~FrustumCulling(void);
 private:
 	D3DXPLANE frustum[6];

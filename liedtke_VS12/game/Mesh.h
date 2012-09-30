@@ -10,6 +10,7 @@
 struct MeshInstanceType
 {
 	D3DXMATRIX Transformation;
+	D3DXMATRIX InvTransformation;
 };
 class Mesh
 {

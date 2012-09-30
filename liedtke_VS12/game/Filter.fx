@@ -77,7 +77,7 @@ float4 TexturePCF(Texture2DMS<float4,4> texShadow,float2 tc,
         for (int x = 0; x < size.x; ++x) {
             float2 TexCoord = coordsUL + float2(x, y) * texelSize;
             
-            result += texShadow.Load(int2(tc*texSize.xy),0);
+            result += texShadow.Load(int2(tc.x*texSize.x, tc.y*texSize.y),0);
         }
     }
     result /= float(size.x * size.y);

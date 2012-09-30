@@ -129,8 +129,8 @@ void MeshRenderer::setEffectVariables()
 
 void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
 {
-	if(!g_Frustum->IsObjectInFrustum(object))
-		return;
+	//if(!g_Frustum->IsObjectInFrustum(object,))
+	//	return;
 	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
 	mesh = object->GetMesh();
 	vbs[0] = mesh->GetVertexBuffer();
@@ -215,13 +215,13 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
 
-	m_DiffuseEV->SetResource(mesh->second->GetDiffuseSRV());
-	m_SpecularEV->SetResource(mesh->second->GetSpecularSRV());
-	m_GlowEV->SetResource(mesh->second->GetGlowSRV());
-	m_NormalEV->SetResource(mesh->second->GetNormalSRV());
+	V(m_DiffuseEV->SetResource(mesh->second->GetDiffuseSRV()));
+	V(m_SpecularEV->SetResource(mesh->second->GetSpecularSRV()));
+	V(m_GlowEV->SetResource(mesh->second->GetGlowSRV()));
+	V(m_NormalEV->SetResource(mesh->second->GetNormalSRV()));
 
 	m_LightColorEV->SetFloatVector(*g_LightColor);
-	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
+	m_LightDirViewEV->SetFloatVector(*g_LightDirView);
 	if(shadowMap != NULL)
 	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(shadowMap->GetShaderResource());
 	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
@@ -237,12 +237,20 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 		WorldViewProjektion *= *g_View;
 	//}
 	WorldViewProjektion *= *g_Proj;
-	D3DXMatrixInverse(&WorldViewNormals,0,&WorldView);
-	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
-	
+	D3DXMATRIX invView;
+	D3DXMATRIX invProj;
+	D3DXMATRIX invViewProj;
+	D3DXMatrixInverse(&invProj,0,g_Proj);
+	D3DXMatrixInverse(&invView,0,g_View);
+	D3DXMatrixInverse(&invViewProj,0,g_ViewProj);
+	D3DXMatrixTranspose(&WorldViewNormals,g_ViewProj);
 	V(m_ViewEV->SetMatrix(*g_View));
 	V(m_ViewProjEV->SetMatrix(viewProj));
 	V(m_NormalsEV->SetMatrix(WorldViewNormals));
+	V(m_pEffect->GetVariableByName("mProj")->AsMatrix()->SetMatrix(*g_Proj));
+	V(m_pEffect->GetVariableByName("mProjInv")->AsMatrix()->SetMatrix(*g_Proj));
+	V(m_pEffect->GetVariableByName("mViewInv")->AsMatrix()->SetMatrix(invView));
+	V(m_pEffect->GetVariableByName("mViewProjInv")->AsMatrix()->SetMatrix(invViewProj));
 	V(m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix));
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);

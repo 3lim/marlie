@@ -1530,7 +1530,11 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	view = g_Camera.GetViewMatrix();
 	proj = g_Camera.GetProjMatrix();
 	g_ViewProj = (*view) * (*proj);
-	g_Frustum.CalculateFrustum(&g_ViewProj, view);
+	D3DXMATRIX invViewProj;
+	D3DXMatrixInverse(&invViewProj, NULL, &g_ViewProj);
+	D3DXMATRIX invProj;
+	D3DXMatrixInverse(&invProj, NULL, proj);
+	g_Frustum.CalculateFrustum(cameraVP, &g_Camera);
 	
 	// Update variables that change once per frame
 	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)
@@ -1577,7 +1581,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		if(g_Frustum.IsObjectInFrustum(&o))
 			g_MeshRenderer->AddToRenderPass(&o);
 	}
-	//g_MeshRenderer->RenderMeshes(pd3dDevice);
+	g_MeshRenderer->RenderMeshes(pd3dDevice);
 
 	//TODO
 	//Create SAT Texture for rendering	

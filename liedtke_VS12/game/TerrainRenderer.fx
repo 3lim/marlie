@@ -7,8 +7,7 @@
 Buffer<float> g_Height;
 Texture2D g_Normal;
 Texture2D g_Diffuse; // Material albedo for diffuse lighting
-Texture2D g_ShadowMap;
-//use VSMap for VarianceShading
+Texture2D g_ShadowMap;//use VSMap for VarianceShading
 float4 cLightAmbient = float4(1,1,1,1);
 matrix  g_World;
 float g_VSMMinVariance = 0.000001;
@@ -178,7 +177,6 @@ float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
 	shadowFactor = ReduceLightBleeding(shadowFactor, 0.14);
-
 	return i * matDiffuse * shadowFactor 
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
 	
