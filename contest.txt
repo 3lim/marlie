@@ -1,0 +1,27 @@
+Content Informations
+-----Hotkey------
+Mouse Left = Fire
+Mouse Right = alt Fire
+Mouse Movve = Look
+
+----Assigments---
+*All Bonus Assigments are implmenentated
+
+----Specials----
+*Day/Night Cyles
+*Volemetric Light Scattering as PostProcesss
+*Mesh are drawed per Instances
+*Every Object is a GameObject -> see UML_diag.*
+	-GameObjects have Components for:
+		Physik
+		Colision
+		Projectile
+		LifePoints
+		...What you like
+	-GameObjects can be parented to Object Groups
+	-ParticleSystem can Spawn GameObject (Sprites and Meshes)
+*A BuildTool compiles all resources to .ntx
+*Water is coming, so learn to swim
+*Water reflection and fraction
+*FrustumCulling for Moving Objects
+*Automatic height positioning and/or random placeing of Objects
