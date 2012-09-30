@@ -25,3 +25,4 @@ Mouse Movve = Look
 *Water reflection and fraction
 *FrustumCulling for Moving Objects
 *Automatic height positioning and/or random placeing of Objects
+*SpriteRender can render unlimted size of texture with automatic indexing
