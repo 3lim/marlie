@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include "T3d.h"
-#define MAX_MESH_INSTANCES 50
+#define MAX_MESH_INSTANCES 300
 //This class ecapsulates the D3D11 resources needed for a mesh
 
 struct MeshInstanceType

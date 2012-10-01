@@ -1126,8 +1126,10 @@ HRESULT ReLoadConfig(ID3D11Device* pd3dDevice)
 
 	AutomaticPositioning();
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
+	{
 		placeTerrainObject(*o);
-
+		SAFE_DELETE(*o);
+	}
 	return S_OK;
 }
 
