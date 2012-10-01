@@ -242,15 +242,15 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 	D3DXMATRIX invViewProj;
 	D3DXMatrixInverse(&invProj,0,g_Proj);
 	D3DXMatrixInverse(&invView,0,g_View);
-	D3DXMatrixInverse(&invViewProj,0,g_ViewProj);
-	D3DXMatrixTranspose(&WorldViewNormals,g_ViewProj);
+	//D3DXMatrixInverse(&invViewProj,0,g_ViewProj);
+	//D3DXMatrixTranspose(&WorldViewNormals,g_ViewProj);
 	V(m_ViewEV->SetMatrix(*g_View));
 	V(m_ViewProjEV->SetMatrix(viewProj));
 	V(m_NormalsEV->SetMatrix(WorldViewNormals));
 	V(m_pEffect->GetVariableByName("mProj")->AsMatrix()->SetMatrix(*g_Proj));
 	V(m_pEffect->GetVariableByName("mProjInv")->AsMatrix()->SetMatrix(*g_Proj));
 	V(m_pEffect->GetVariableByName("mViewInv")->AsMatrix()->SetMatrix(invView));
-	V(m_pEffect->GetVariableByName("mViewProjInv")->AsMatrix()->SetMatrix(invViewProj));
+	//V(m_pEffect->GetVariableByName("mViewProjInv")->AsMatrix()->SetMatrix(invViewProj));
 	V(m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix));
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);

@@ -35,8 +35,8 @@ struct QuadVertex
 SamplerState samLinear
 {
 	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
+	AddressU = Mirror;
+	AddressV = Mirror;
 	BorderColor = float4(0,0,0,1);
 };
 SamplerState samBilinear
