@@ -207,8 +207,8 @@ float3 foamExistence = {0.55f, 0.6f, 0.5f};
 float sunScale = 100.0f;
 float4x4 matReflection =
 {
-	{-0.5f, 0.0f, 0.0f, 0.0f},
-	{0.0f, -0.5f, 0.0f, 0.0f},
+	{-0.4f, 0.0f, 0.0f, 0.0f},
+	{0.0f, -0.4f, 0.0f, 0.0f},
 	{0.0f, 0.0f, 1.f, 0.0f},
 	{0.0f, 0.0f, 0.0f, 1.f}
 };
