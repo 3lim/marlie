@@ -334,19 +334,11 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-	if(LightBW != NULL)
-	{
-
-
 
 	pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
-	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P1")->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->OMSetRenderTargets(1, &LightBW, NULL);
-	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-	}
 	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
 	/*
 	D3DXPLANE reflectP = D3DXPLANE(0,1,0,1);

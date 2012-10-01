@@ -912,8 +912,8 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	screenTex_Desc.MipLevels = 1;
 	screenTex_Desc.ArraySize = 1;
 	screenTex_Desc.Format = DXGI_FORMAT_R32_TYPELESS;
-	screenTex_Desc.SampleDesc.Count = 1;
-	screenTex_Desc.SampleDesc.Quality = 0;
+	screenTex_Desc.SampleDesc.Count = 4;
+	screenTex_Desc.SampleDesc.Quality = 1;
 	screenTex_Desc.Usage = D3D11_USAGE_DEFAULT;
 	screenTex_Desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	screenTex_Desc.CPUAccessFlags = 0;
@@ -924,11 +924,11 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	screenSRV_Desc.Format = DXGI_FORMAT_R32_FLOAT;
 	screenSRV_Desc.Texture2D.MipLevels = 1;
 	screenSRV_Desc.Texture2D.MostDetailedMip = 0;
-	screenSRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	screenSRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	pd3dDevice->CreateShaderResourceView(screenTex,&screenSRV_Desc,&screenSRV);
 
 	screenDSV_Desc.Format = DXGI_FORMAT_D32_FLOAT;
-	screenDSV_Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	screenDSV_Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 	screenDSV_Desc.Texture2D.MipSlice = 0;
 	screenDSV_Desc.Flags = 0;
 	V(pd3dDevice->CreateDepthStencilView(screenTex,&screenDSV_Desc,&screenDSV)); 
@@ -1579,7 +1579,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		
 //	pDSV = DXUTGetD3D11DepthStencilView();
 //	pRTV = DXUTGetD3D11RenderTargetView();//sven merge
-	pDSV = DXUTGetD3D11DepthStencilView();//screenDSV;
+		pDSV = screenDSV;//screenDSV;
 	pRTV = screenRTV->GetRenderTarget();//DXUTGetD3D11RenderTargetView();
 
 	//pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
@@ -1686,8 +1686,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	}
 
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
-	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap,  g_VLSMap->GetRenderTarget(),screenDSV,screenRT_RTV);
-		pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
+	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap, NULL,NULL,screenRT_RTV);
+	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);	//
 
 
 	g_MeshRenderer->g_View = (D3DXMATRIX*)view;
@@ -1744,7 +1744,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 	
 	ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
-	pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, pDSV);
+	pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, NULL);
 	g_Effect_VLS->GetVariableByName("depthMap")->AsShaderResource()->SetResource(screenSRV);
 	g_Effect_VLS->GetVariableByName("normalMap")->AsShaderResource()->SetResource(g_TerrainRenderer->getTerrainNormalSRV());
 	g_Effect_VLS->GetVariableByName("heightMap")->AsShaderResource()->SetResource(g_TerrainRenderer->heightSRV);

@@ -157,7 +157,7 @@ technique11 VolumetricLightScattering
 // Water pixel shader
 // Copyright (C) Wojciech Toman 2009
 Texture2D heightMap;
-Texture2D depthMap;
+Texture2DMS<float4,4> depthMap;
 Texture2DMS<float4,4> screen;
 Texture2D normalMap;
 Texture2D foamMap;
@@ -254,7 +254,9 @@ float2 wind = {-0.3f, 0.7f};
 
 float3 PositionFromDepth(float2 vTexCoord)
 {
-    float z = depthMap.Sample(samLinear,vTexCoord).r;  
+	uint3 dim;
+	depthMap.GetDimensions(dim.x, dim.y,dim.z);
+    float z = depthMap.Load(vTexCoord*dim.xy,0).r;  
     float x = vTexCoord.x * 2 - 1;
     float y = (1 - vTexCoord.y) * 2 - 1;
     float4 vProjectedPos = float4(x, y, z, 1.0f);
