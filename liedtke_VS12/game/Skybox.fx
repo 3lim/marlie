@@ -2,7 +2,7 @@ Texture2D g_Sun;
 TextureCube SkyCubeImage;
 Texture2D CloudTex1;
 Texture2D CloudTex2;
-float cloudBrightness = 0.85;
+float cloudBrightness = 1.8;
 int SUNSIZEFACTOR = 6;
 
 cbuffer cbChangesEveryFrame
@@ -17,7 +17,7 @@ cbuffer cbChangesEveryFrame
 	float3 g_Eye;
 	float4 horizontColor;
 	float4 apexColor;
-	float2 cloudTranslation[2];
+	float2 cloudTranslation[3];
 	float3 g_CamUp;
 	float3 g_CamRight;
 };
@@ -97,24 +97,16 @@ BlendState EnableBlending
 	SrcBlend[0] = SRC_ALPHA;
 	SrcBlendAlpha[0] = ONE;
 	DestBlend[0] = INV_SRC_ALPHA;
-	DestBlendAlpha[0] = INV_SRC_ALPHA;
+	DestBlendAlpha[0] = ONE;
+	BlendOp[0] = ADD;
+	BlendOpAlpha[0] = ADD;
+
 	BlendEnable[1] = TRUE;
 	SrcBlend[1] = SRC_ALPHA;
 	SrcBlendAlpha[1] = ONE;
 	DestBlend[1] = INV_SRC_ALPHA;
 	DestBlendAlpha[1] = INV_SRC_ALPHA;
 };
-BlendState SubtractBlending
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend[0] = ONE;
-	SrcBlendAlpha[0] = ONE;
-	DestBlend[0] = ONE;
-	DestBlendAlpha[0] = ONE;
-	BlendOp = ADD;
-	BlendOpAlpha = ADD;
-};
-	
 
 uint QuadVS(uint id : SV_VERTEXID) : POINT
 {
@@ -238,16 +230,18 @@ void CloudPS(QuadVertex input, out float4 finalColor : SV_TARGET0, out float4 vl
     textureColor1 = CloudTex1.Sample(samAnisotropic, input.Tex + cloudTranslation[0]);
     textureColor2 = CloudTex2.Sample(samAnisotropic, input.Tex + cloudTranslation[1]);
 	finalColor = lerp(textureColor1, textureColor2, 0.5f);
-	finalColor = finalColor * cloudBrightness;
-	float fadeX = input.Plane.x*2-1;//;
-	fadeX = fadeX*fadeX;
-	fadeX = 1-fadeX;
-	float fadeY = ((input.Plane.y*2-1));//*(input.Plane.y*2-1));//;
-	fadeY = fadeY*fadeY;
-	fadeY = 1-fadeY;
-	float fade = saturate(1-fadeX*fadeY*10);
-	//return float4(fade,fade,fade,1);
-	
+	finalColor.a *=CloudTex1.Sample(samAnisotropic, (float2(1,1) - input.Tex)*0.7 + cloudTranslation[2]).a*cloudBrightness+0.4;
+	finalColor.rgb = 1;
+	////SquareFade
+	//float fadeX = input.Plane.x*2-1;//;
+	//fadeX = fadeX*fadeX;
+	//fadeX = 1-fadeX;
+	//float fadeY = ((input.Plane.y*2-1));//*(input.Plane.y*2-1));//;
+	//fadeY = fadeY*fadeY;
+	//fadeY = 1-fadeY;
+	//float fade = saturate(1-fadeX*fadeY*10);
+	//CirccleFade
+	float fade = saturate(length(float2(input.Plane.x*2-1, input.Plane.y*2-1)*0.7));
 	finalColor = lerp(finalColor, float4(0,0,0,0), fade);//Fade out horizont
 	vlsColor = float4(0,0,0,clamp(finalColor.a*2,0,0.96));
 }

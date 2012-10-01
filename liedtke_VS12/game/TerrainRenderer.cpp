@@ -346,7 +346,7 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
 	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
+	//pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
 	m_ShadowMapEV->SetResource(0);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);

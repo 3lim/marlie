@@ -49,8 +49,8 @@ private:
 	std::pair<D3DXCOLOR, D3DXCOLOR> dayColor[4];
 	ID3D11Texture2D *cloudTex1, *cloudTex2;
 	ID3D11ShaderResourceView *cloud1SRV, *cloud2SRV;
-	D3DXVECTOR2 translationSpeed[2];
-	D3DXVECTOR2 textureTranslation[2];
+	D3DXVECTOR2 translationSpeed[3];
+	D3DXVECTOR2 textureTranslation[3];
 	
 	ID3D11Buffer*  m_SunBuffer;
 	ID3D11InputLayout* m_SunLayout;

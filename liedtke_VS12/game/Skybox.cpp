@@ -119,10 +119,12 @@ m_SkyboxPath(path),
 	dayColor[3] = pair<D3DXCOLOR, D3DXCOLOR>(D3DXCOLOR(0.02, 0.02, 0.04,1), D3DXCOLOR(0.01, 0.01, 0.025 ,1));//Nacht
 
 	// Setup the cloud translation speed increments.
-	translationSpeed[0] = D3DXVECTOR2(0.0001f, 0.0f);   // First texture
+	translationSpeed[0] = D3DXVECTOR2(0.0001f, 0.00f);   // First texture
 	translationSpeed[1] = D3DXVECTOR2(0.000035f,0.0f);  // Second texture
+	translationSpeed[2] = D3DXVECTOR2(-0.000035f,0.0001f);  // Second texture
 	textureTranslation[0] = D3DXVECTOR2(0,0);
 	textureTranslation[1] = D3DXVECTOR2(0,0);
+	textureTranslation[2] = D3DXVECTOR2(0,0);
 }
 
 
@@ -226,7 +228,7 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	float skyPlaneBottom = skyPlaneHeight*0.4;
 	size_t textureRepeat = 2;
 
-	InitializeSkyPlane(skyPlaneResolution, skyPlaneWidth*2, skyPlaneHeight+skyPlaneTop, skyPlaneBottom, textureRepeat);
+	InitializeSkyPlane(skyPlaneResolution, skyPlaneWidth*3, skyPlaneHeight+skyPlaneTop, skyPlaneBottom, textureRepeat);
 
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
@@ -311,7 +313,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	V(m_pEffect->GetVariableByName("g_Right")->AsVector()->SetFloatVector(right));
 	V(m_pEffect->GetVariableByName("g_Down")->AsVector()->SetFloatVector(down));
 	V(m_pEffect->GetVariableByName("g_ViewProj")->AsMatrix()->SetMatrix(world));
-	V(m_pEffect->GetVariableByName("cloudTranslation")->AsVector()->SetFloatVectorArray((float*)&textureTranslation[0],0,2));
+	V(m_pEffect->GetVariableByName("cloudTranslation")->AsVector()->SetFloatVectorArray((float*)&textureTranslation[0],0,3));
 	m_pEffect->GetVariableByName("g_CamUp")->AsVector()->SetFloatVector(*cam.GetWorldUp());
 	m_pEffect->GetVariableByName("g_CamRight")->AsVector()->SetFloatVector(*cam.GetWorldRight());
 	V(m_horizontColorEV->SetFloatVector(horizontColor));
@@ -397,6 +399,7 @@ void Skybox::OnMove(double time, float elapsedTime)
 	}
 		textureTranslation[0] += translationSpeed[0];
 		textureTranslation[1] += translationSpeed[1];
+		textureTranslation[2] += translationSpeed[2];
 
 		//textureTranslation[0].x > 1.0f ? textureTranslation[0].x -= 1.0f:NULL;
 		//textureTranslation[0].y > 1.0f ? textureTranslation[0].y -= 1.0f:NULL;

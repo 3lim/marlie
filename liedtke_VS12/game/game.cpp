@@ -1780,8 +1780,8 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	if(useDeveloperFeatures)
 	{
 		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
-		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(screenRT_SRV);
-		//g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(screenRTV->GetShaderResource());
+		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
+		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
 		
@@ -1821,7 +1821,7 @@ void placeTerrainObject(TerrainObject* o){
 	{
 		float x = 0;random(-400.f,400.f,x);
 		float z = 0;random(-400.f,400.f,z);
-		float y = g_TerrainRenderer->getHeightAtPoint(x,z);
+		float y =  o->GetPosition()->y;//g_TerrainRenderer->getHeightAtPoint(x,z);
 		o->TranslateTo(x, y, z);
 		//if(o->useNormal())
 		//{
