@@ -5,6 +5,10 @@ Mouse Left = Fire
 Mouse Right = alt Fire
 Mouse Movve = Look
 
+Press F11 for Dev. Feature
+	-Middle Mouse = Look
+	-M = Moving Camera
+
 ----Assigments---
 *All Bonus Assigments are implmenentated
 

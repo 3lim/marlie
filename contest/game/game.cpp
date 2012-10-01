@@ -1385,7 +1385,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
 		//move
-		g_StaticGameObjects[2]->Rotate(0,0,170*fElapsedTime);
+		g_StaticGameObjects[2]->Rotate(0,0,250*fElapsedTime);
 	}
 	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
