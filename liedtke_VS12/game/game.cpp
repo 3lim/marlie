@@ -939,7 +939,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	screenTex_Desc.ArraySize = 1;
 	screenTex_Desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	screenTex_Desc.SampleDesc.Count = 4;
-	screenTex_Desc.SampleDesc.Quality = 1;
+	screenTex_Desc.SampleDesc.Quality = 0;
 	screenTex_Desc.Usage = D3D11_USAGE_DEFAULT;
 	screenTex_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	screenTex_Desc.CPUAccessFlags = 0;
