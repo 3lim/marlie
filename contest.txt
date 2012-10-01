@@ -11,6 +11,7 @@ Press F11 for Dev. Feature
 
 ----Assigments---
 *All Bonus Assigments are implmenentated
+*Sprite Render does no tblend on water correclty, woh cares
 
 ----Specials----
 *Day/Night Cyles
