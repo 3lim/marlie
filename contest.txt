@@ -1,4 +1,5 @@
 Content Informations
+!!!NO WHITESPACES IN FILE PATH!!!!
 -----Hotkey------
 Mouse Left = Fire
 Mouse Right = alt Fire
