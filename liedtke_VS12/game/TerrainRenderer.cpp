@@ -327,6 +327,7 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 	// Apply the rendering pass in order to submit the necessary render state changes to the device
 	m_RenderTerrain->Apply(0, pd3dImmediateContext);
 	// Set input layout
+
 	pd3dImmediateContext->IASetInputLayout( NULL );
 	// Bind the terrain vertex buffer to the input assembler stage 
 	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
