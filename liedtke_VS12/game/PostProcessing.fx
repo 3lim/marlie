@@ -35,8 +35,8 @@ struct QuadVertex
 SamplerState samLinear
 {
 	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
+	AddressU = Wrap;
+	AddressV = Wrap;
 	BorderColor = float4(0,0,0,1);
 };
 SamplerState samBilinear
@@ -154,102 +154,79 @@ technique11 VolumetricLightScattering
 }
 
 
-// Water pixel shader
-// Copyright (C) Wojciech Toman 2009
+// Water
+// Teile von Wojciech Toman
 Texture2D heightMap;
 Texture2DMS<float4,4> depthMap;
 Texture2DMS<float4,4> screen;
 Texture2D normalMap;
 Texture2D foamMap;
-Texture2D reflectionMap;
 
-// We need this matrix to restore position in world space
 float4x4 matViewInverse;
 float4x4 matProjInverse;
 
 float4x4 matViewProj;
 
 float terrainDim;
-// Level at which water surface begins
+
 float waterLevel = 20.0f;
 
-// Position of the camera
 float3 cameraPos;
 
-// How fast will colours fade out. You can also think about this
-// values as how clear water is. Therefore use smaller values (eg. 0.05f)
-// to have crystal clear water and bigger to achieve "muddy" water.
-float fadeSpeed = 0.15f;
+//Color fade-out
+float fadeSpeed = 0.17f;
 
-// Timer
 float timer;
 
-// Normals scaling factor
-float normalScale = 0.005f;
+float normalScale = 0.001f;
 
-// R0 is a constant related to the index of refraction (IOR).
-// It should be computed on the CPU and passed to the shader.
+// IOR
 float R0 = 0.5f;
 
-// Maximum waves amplitude
-float maxAmplitude = 20.0f;
+float maxAmplitude = 30.0f;
 
-// Direction of the light
 float3 lightDir = {0.0f, 1.0f, 0.0f};
-
-// Colour of the sun
 float3 sunColor = {1.0f, 1.0f, 1.0f};
 
-// The smaller this value is, the more soft the transition between
-// shore and water. If you want hard edges use very big value.
-// Default is 1.0f.
-float shoreHardness = 1.0f;
+// smaller -> more soft
+float shoreHardness = 0.3f;
 
-// This value modifies current fresnel term. If you want to weaken
-// reflections use bigger value. If you want to empasize them use
-// value smaller then 0. Default is 0.0f.
-float refractionStrength = 0.0f;
-//float refractionStrength = -0.3f;
+// bigger -> weaker reflections
+float refractionStrength = 0.65f;
 
-// Modifies 4 sampled normals. Increase first values to have more
-// smaller "waves" or last to have more bigger "waves"
-float4 normalModifier = {2.0f, 4.0f, 8.0f, 16.0f};
+// "wave-size" modifier
+float4 normalModifier = {16.0f, 8.0f, 4.0f, 1.0f};
 
-// Strength of displacement along normal.
-float displace = 1.7f;
+float displace = 2.7f;
 
 // Describes at what depth foam starts to fade out and
 // at what it is completely invisible. The fird value is at
 // what height foam for waves appear (+ waterLevel).
-float3 foamExistence = {0.65f, 1.35f, 0.5f};
+float3 foamExistence = {0.55f, 0.6f, 0.5f};
 
-float sunScale = 3.0f;
-
+float sunScale = 100.0f;
 float4x4 matReflection =
 {
-	{0.5f, 0.0f, 0.0f, 0.5f},
-	{0.0f, 0.5f, 0.0f, 0.5f},
-	{0.0f, 0.0f, 0.0f, 0.5f},
-	{0.0f, 0.0f, 0.0f, 1.0f}
+	{-0.5f, 0.0f, 0.0f, 0.0f},
+	{0.0f, -0.5f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 1.f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 1.f}
 };
 
-float shininess = 0.7f;
+float shininess = 0.76f;
 float specular_intensity = 0.32;
 
-// Colour of the water surface
 float3 depthColour = {0.0078f, 0.5176f, 0.7f};
-// Colour of the water depth
-float3 bigDepthColour = {0.0039f, 0.00196f, 0.145f};
-float3 extinction = {7.0f, 30.0f, 40.0f};			// Horizontal
+float3 bigDepthColour = {0.0039f, 0.00196f, 0.445f};
+// Horizontal
+float3 extinction = {7.0f, 30.0f, 40.0f};			
 
-// Water transparency along eye vector.
 float visibility = 4.0f;
 
-// Increase this value to have more smaller waves.
-float2 scale = {0.005f, 0.005f};
-float refractionScale = 0.005f;
+// bigger value -> more smaller waves
+float2 scale = {0.009f, 0.009f};
 
-// Wind force in x and z axes.
+float refractionScale = 0.05f;
 float2 wind = {-0.3f, 0.7f};
 
 float3 PositionFromDepth(float2 vTexCoord)
@@ -288,6 +265,20 @@ float fresnelTerm(float3 normal, float3 eyeVec)
 		return saturate(fresnel * (1.0f - saturate(R0)) + R0 - refractionStrength);
 }
 
+float sampleFoam(float2 pos)
+{
+	float4 c = foamMap.Sample(samLinear,pos*float2(0.5f,0.5f));
+	return (c.r+c.g+c.b)/3;
+}
+
+float3 sampleFoamC(float2 p1,float2 p2)
+{
+	float4 c1 = foamMap.Sample(samLinear,p1*float2(0.5f,0.5f));
+	float4 c2 = foamMap.Sample(samLinear,p2*float2(0.5f,0.5f));
+	return (c1*0.5f+c2*0.5f).xyz;
+
+}
+
 float4 waterPS(QuadVertex IN): SV_Target0
 {
 	uint3 dims;
@@ -299,11 +290,10 @@ float4 waterPS(QuadVertex IN): SV_Target0
 	float level = waterLevel;
 	float depth = 0.0f;
 	
-	// If we are underwater let's leave out complex computations
 	if(level >= cameraPos.y)
 		return float4(color2, 1.0f);
 
-	if(position.x>terrainDim||position.x<-terrainDim||position.z>terrainDim||position.z<-terrainDim) return float4(color2, 1.0f);
+	if(position.x>terrainDim*0.66f||position.x<-terrainDim*0.66f||position.z>terrainDim*0.66f||position.z<-terrainDim*0.66f) return float4(color2, 1.0f);
 	
 	if(position.y <= level + maxAmplitude)
 	{
@@ -382,7 +372,7 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		dPos.yw = texCoordProj.yw;
 		texCoordProj = dPos;		
 		
-		float3 reflect = reflectionMap.Sample(samLinear, texCoordProj.xy/texCoordProj.w).rgb;
+		float3 reflect = screen.Load((float2(0.5f,0.6f)-texCoordProj.xy/texCoordProj.w)*dims.xy/**float2(0.1f,0.1f)*/,0).rgb;
 		
 		float fresnel = fresnelTerm(normal, eyeVecNorm);
 		
@@ -397,17 +387,17 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		float2 texCoord2 = (surfacePoint.xz + eyeVecNorm.xz * 0.1) * 0.05 + timer * 0.00002f * wind + sin(timer * 0.001 + position.z) * 0.005;
 		
 		if(depth2 < foamExistence.x)
-			foam = (foamMap.Sample(samLinear, texCoord) + foamMap.Sample(samLinear, texCoord2)) * 0.5f;
+			foam = (sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f;
 		else if(depth2 < foamExistence.y)
 		{
-			foam = lerp((foamMap.Sample(samLinear, texCoord) + foamMap.Sample(samLinear, texCoord2)) * 0.5f, 0.0f,
+			foam = lerp((sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f, 0.0f,
 						 (depth2 - foamExistence.x) / (foamExistence.y - foamExistence.x));
 			
 		}
 		
 		if(maxAmplitude - foamExistence.z > 0.0001f)
 		{
-			foam += (foamMap.Sample(samLinear, texCoord) + foamMap.Sample(samLinear, texCoord2)) * 0.5f * 
+			foam += (sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f * 
 				saturate((level - (waterLevel + foamExistence.z)) / (maxAmplitude - foamExistence.z));
 		}
 
@@ -420,7 +410,7 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		specular += specular * 25 * saturate(shininess - 0.05f) * sunColor;		
 
 		color = lerp(refraction, reflect, fresnel);
-		color = saturate(color + max(specular, foam * sunColor));
+		color = saturate(color + max(specular, 0.3f * foam * sampleFoamC(texCoord*float2(0.1f,0.1f),texCoord2*float2(0.1f,0.1f)) + sunColor * 0.02f));
 		
 		color = lerp(refraction, color, saturate(depth * shoreHardness));
 	}

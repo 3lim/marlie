@@ -190,9 +190,9 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	vector<vector<unsigned char>> data;
 	vector<D3D11_SUBRESOURCE_DATA> textureData;
 	D3D11_TEXTURE2D_DESC tex2DDesc;
-	V_RETURN(LoadNtxFromFile(m_SkyboxPath, &tex2DDesc, data, textureData, rgb));
-	pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&m_SkyboxTex);
-	pDevice->CreateShaderResourceView(m_SkyboxTex,NULL,&m_SkyboxSRV);
+	//V_RETURN(LoadNtxFromFile(m_SkyboxPath, &tex2DDesc, data, textureData, rgb));
+	//pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&m_SkyboxTex);
+	//pDevice->CreateShaderResourceView(m_SkyboxTex,NULL,&m_SkyboxSRV);
 
 	V_RETURN(LoadNtxFromFile("resources/clouds1.ntx", &tex2DDesc, data, textureData, rgb));
 	pDevice->CreateTexture2D(&tex2DDesc,&textureData[0],&cloudTex1);
@@ -267,8 +267,8 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 
 void Skybox::ReleaseResources()
 {
-	SAFE_RELEASE(m_SkyboxTex);
-	SAFE_RELEASE(m_SkyboxSRV);
+	//SAFE_RELEASE(m_SkyboxTex);
+	//SAFE_RELEASE(m_SkyboxSRV);
 	SAFE_RELEASE(cloudTex1);
 	SAFE_RELEASE(cloud1SRV);
 	SAFE_RELEASE(cloudTex2);
@@ -302,7 +302,7 @@ HRESULT Skybox::RenderSkybox(ID3D11Device* pdevice, const CFirstPersonCamera& ca
 	D3DXMATRIX world;
 	D3DXMatrixTranslation(&world, cam.GetEyePt()->x, cam.GetEyePt()->y, cam.GetEyePt()->z);
 	world = world*viewProj;//projeziert den himmer immer relativ zur Spieler Position;
-	V(m_pEffect->GetVariableByName("SkyCubeImage")->AsShaderResource()->SetResource(m_SkyboxSRV));
+	//V(m_pEffect->GetVariableByName("SkyCubeImage")->AsShaderResource()->SetResource(m_SkyboxSRV));
 	V(m_pEffect->GetVariableByName("CloudTex1")->AsShaderResource()->SetResource(cloud1SRV));
 	V(m_pEffect->GetVariableByName("CloudTex2")->AsShaderResource()->SetResource(cloud2SRV));
 	V(m_pEffect->GetVariableByName("g_SunRadius")->AsScalar()->SetFloat(m_Sun.Radius));

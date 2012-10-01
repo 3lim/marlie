@@ -339,14 +339,14 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 	pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
 	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-
-	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
+/*
+//	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
 	/*
 	D3DXPLANE reflectP = D3DXPLANE(0,1,0,1);
 	D3DXMatrixReflect(&reflectM,&reflectP);*/
-	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
-	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
-	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+//	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
+//	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
+//	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	//pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
 	m_ShadowMapEV->SetResource(0);

@@ -173,19 +173,6 @@ float4 SkyboxPS(in QuadVertex input/*, out float4 finalColor : SV_TARGET0*/, out
 	vlsColor = finalColor*0.02;
 	return finalColor;
 }
-float4 SkyboxVLSPS(in QuadVertex input) : SV_Target0
-{
-	float3 pixPosition = normalize((g_TopLeft + input.Tex.x * g_Right + input.Tex.y * g_Down) - g_Eye);
-	float height = pixPosition.y;
-	height*=2;
-	height = abs(height);
-	//float4 SkyBackColor = lerp(horizontColor, apexColor, height);
-	//float4 Cloud1 = CloudTex1.Sample(samAnisotropic, pixPosition);
-	//float4 Cloud2 = CloudTex2.Sample(samAnisotropic, pixPosition.xy+cloudTranslation[1])*0;
-	//return float4(SkyBackColor.rgb+Cloud2.rgb*Cloud2.a*cloudBrightness+Cloud1.rgb*Cloud1.a*cloudBrightness,1);
-	//return SkyCubeImage.Sample(samAnisotropic, pixPosition)+(SkyBackColor.a - 0.3);
-	return lerp(horizontColor, apexColor, height)*0.02;
-}
 
 float4 SunPS(SunVertex Input, out float4 vlsColor : SV_TARGET1) : SV_Target0 
 {
@@ -194,16 +181,7 @@ float4 SunPS(SunVertex Input, out float4 vlsColor : SV_TARGET1) : SV_Target0
 	float4 glow = SunColor;
 		glow.a = saturate((0.5f - dist))*saturate((0.5f - dist)*0.36);
 	vlsColor = float4(SunColor.rgb*1.1,alpha)+glow;
-	return float4(0,0,0,0);//wird vom Light Scattering übernommen
-}
-
-float4 SunBWPS(SunVertex Input) : SV_Target1 
-{
-	float dist = length (Input.tex - float2 (0.5f, 0.5f)); //get the distance form the center of the point-sprite
-	float alpha = saturate(sign (0.5f - dist*SUNSIZEFACTOR));
-	float4 glow = SunColor;
-		glow.a = saturate((0.5f - dist))*saturate((0.5f - dist)*0.36);
-	return float4(SunColor.rgb*1.1,alpha)+glow;
+	return vlsColor;//wird vom Light Scattering übernommen
 }
 
 QuadVertex SkydomeVS(QuadVertex input)
@@ -245,51 +223,10 @@ void CloudPS(QuadVertex input, out float4 finalColor : SV_TARGET0, out float4 vl
 	finalColor = lerp(finalColor, float4(0,0,0,0), fade);//Fade out horizont
 	vlsColor = float4(0,0,0,clamp(finalColor.a*2,0,0.96));
 }
-float4 CloudBWPS(QuadVertex input) : SV_Target0
-{
-	float4 textureColor1;
-	float4 textureColor2;
-	float4 finalColor;
-    textureColor1 = CloudTex1.Sample(samAnisotropic, input.Tex + cloudTranslation[0]);
-    textureColor2 = CloudTex2.Sample(samAnisotropic, input.Tex + cloudTranslation[1]);
-	finalColor = lerp(textureColor1, textureColor2, 0.5f);
-	finalColor = finalColor * cloudBrightness;
-	float fadeX = input.Plane.x*2-1;//;
-	fadeX = fadeX*fadeX;
-	fadeX = 1-fadeX;
-	float fadeY = ((input.Plane.y*2-1));//*(input.Plane.y*2-1));//;
-	fadeY = fadeY*fadeY;
-	fadeY = 1-fadeY;
-	float fade = saturate(1-fadeX*fadeY*10);
-	//return float4(fade,fade,fade,1);
-	float4 color = lerp(finalColor, float4(0,0,0,0), fade);
-	//float4 color = CloudTex2.Sample(samAnisotropic, input.Tex + cloudTranslation[0])*cloudBrightness;
-	//return float4(0,1,1,1);
-	return float4(0,0,0,clamp(color.a*2,0,0.96));//Fade out horizont
-}
+
 
 technique11 tSkybox
 {
-	pass sun
-	{
-		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
-		SetGeometryShader(CompileShader(gs_4_0, SunGS()));
-		SetPixelShader(CompileShader(ps_4_0, SunPS()));
-		
-		SetRasterizerState(rsCullNone);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(EnableBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
-	}
-	pass sunBW
-	{
-		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
-		SetGeometryShader(CompileShader(gs_4_0, SunGS()));
-		SetPixelShader(CompileShader(ps_4_0, SunBWPS()));
-		
-		SetRasterizerState(rsCullNone);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(EnableBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
-	}
 	pass drawSkyCube
 	{
 		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
@@ -300,15 +237,15 @@ technique11 tSkybox
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
-	pass drawSkyCubeVLS
+	pass sun
 	{
 		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
-		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
-		SetPixelShader(CompileShader(ps_4_0, SkyboxVLSPS()));
+		SetGeometryShader(CompileShader(gs_4_0, SunGS()));
+		SetPixelShader(CompileShader(ps_4_0, SunPS()));
 		
 		SetRasterizerState(rsCullNone);
-		SetDepthStencilState(EnableDepth, 0);
-		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(EnableBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
 
 	pass Clouds
@@ -316,16 +253,6 @@ technique11 tSkybox
 		SetVertexShader(CompileShader(vs_4_0, SkydomeVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, CloudPS()));
-		
-		SetRasterizerState(rsCullNone);
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(EnableBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
-	}
-	pass CloudsBW
-	{
-		SetVertexShader(CompileShader(vs_4_0, SkydomeVS()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0, CloudBWPS()));
 		
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(DisableDepth, 0);

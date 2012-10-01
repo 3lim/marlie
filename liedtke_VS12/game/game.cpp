@@ -116,9 +116,9 @@ RenderableTexture*						g_tmpShadowMap;
 ID3D11Texture2D* screenTex;
 ID3D11DepthStencilView* screenDSV;
 ID3D11ShaderResourceView* screenSRV;
-ID3D11Texture2D* screenRT_Tex;
-ID3D11ShaderResourceView* screenRT_SRV;
-ID3D11RenderTargetView* screenRT_RTV;
+//ID3D11Texture2D* screenRT_Tex;
+//ID3D11ShaderResourceView* screenRT_SRV;
+//ID3D11RenderTargetView* screenRT_RTV;
 RenderableTexture* screenRTV;
 ID3D11Texture2D* foamTex;
 ID3D11ShaderResourceView* foamSRV;
@@ -944,9 +944,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	screenTex_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	screenTex_Desc.CPUAccessFlags = 0;
 	screenTex_Desc.MiscFlags = 0;
-	V(pd3dDevice->CreateTexture2D(&screenTex_Desc, NULL, &screenRT_Tex));
-	pd3dDevice->CreateShaderResourceView(screenRT_Tex,NULL,&screenRT_SRV);
-	pd3dDevice->CreateRenderTargetView(screenRT_Tex,NULL,&screenRT_RTV);
 
 	D3D11_TEXTURE2D_DESC fDesc;
 	vector<vector<unsigned char>> textureData;
@@ -978,10 +975,10 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_RELEASE(screenDSV);
 	SAFE_RELEASE(screenTex);
 	SAFE_RELEASE(screenSRV);
-	
+	/*
 	SAFE_RELEASE(screenRT_Tex);
 	SAFE_RELEASE(screenRT_SRV);
-	SAFE_RELEASE(screenRT_RTV);
+	SAFE_RELEASE(screenRT_RTV);*/
 	SAFE_DELETE(screenRTV);
 	SAFE_RELEASE(foamTex);
 	SAFE_RELEASE(foamSRV);
@@ -1585,7 +1582,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
-	pd3dImmediateContext->ClearRenderTargetView( screenRT_RTV, g_ClearColor );
+//	pd3dImmediateContext->ClearRenderTargetView( screenRT_RTV, g_ClearColor );
 
 	pd3dImmediateContext->ClearDepthStencilView( screenDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 
@@ -1686,7 +1683,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	}
 
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
-	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap, NULL,NULL,screenRT_RTV);
+	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap, NULL,NULL,NULL);
 	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);	//
 
 
@@ -1745,10 +1742,13 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	
 	ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
 	pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, NULL);
+		//Water
+	//ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
+	//pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, pDSV);
+	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	g_Effect_VLS->GetVariableByName("depthMap")->AsShaderResource()->SetResource(screenSRV);
 	g_Effect_VLS->GetVariableByName("normalMap")->AsShaderResource()->SetResource(g_TerrainRenderer->getTerrainNormalSRV());
 	g_Effect_VLS->GetVariableByName("heightMap")->AsShaderResource()->SetResource(g_TerrainRenderer->heightSRV);
-	g_Effect_VLS->GetVariableByName("reflectionMap")->AsShaderResource()->SetResource(screenRT_SRV);
 	g_Effect_VLS->GetVariableByName("screen")->AsShaderResource()->SetResource(screenRTV->GetShaderResource());
 	g_Effect_VLS->GetVariableByName("foamMap")->AsShaderResource()->SetResource(foamSRV);
 	
@@ -1762,16 +1762,17 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	
 	g_Effect_VLS->GetVariableByName("cameraPos")->AsVector()->SetFloatVector(*g_Camera.GetEyePt());
 	g_Effect_VLS->GetVariableByName("lightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()/1000);
-	g_Effect_VLS->GetVariableByName("timer")->AsScalar()->SetFloat(fTime*1000);
+	g_Effect_VLS->GetVariableByName("timer")->AsScalar()->SetFloat(fTime*50000);
 	g_Effect_VLS->GetVariableByName("terrainDim")->AsScalar()->SetFloat(g_TerrainRenderer->m_TerrainResolution);
+	g_Effect_VLS->GetVariableByName("sunColor")->AsVector()->SetFloatVector(g_SkyboxRenderer->g_LightColor);
 
 	g_Effect_VLS->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
 
 	pd3dImmediateContext->Draw(1,0);
 	g_Effect_VLS->GetVariableByName("screen")->AsShaderResource()->SetResource(0);
 	g_Effect_VLS->GetVariableByName("depthMap")->AsShaderResource()->SetResource(0);
-	g_Effect_VLS->GetVariableByName("reflectionMap")->AsShaderResource()->SetResource(0);
 	g_Effect_VLS->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
+
 	//Display only the first target
 	ID3D11RenderTargetView* rTargets[2] = { oRTV, NULL };
 	pd3dImmediateContext->OMSetRenderTargets( 2, rTargets, pDSV );
