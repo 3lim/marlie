@@ -197,7 +197,6 @@ float4 MeshPS(T3dVertexPSIn Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 
 	float depth = lPos.z; 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
 	shadowFactor = ReduceLightBleeding(shadowFactor, 0.3);
-
 	output = (0.5 * mDiffuse * saturate(dot(n,l)) * g_LightColor
 		+ 0.7 * mSpecular * pow(saturate(dot(r,v)),20) * g_LightColor
 		+ 0.5 * mGlow + 0.2 * mDiffuse * cLightAmbient) * shadowFactor 
@@ -235,16 +234,6 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, MeshVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, MeshPS()));
-		
-		SetRasterizerState(rsCullBack);
-		SetDepthStencilState(EnableDepth, 0);
-		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
-	}
-	pass MeshBW
-	{
-		SetVertexShader(CompileShader(vs_4_0, MeshVS()));
-		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0, MeshBWPS()));
 		
 		SetRasterizerState(rsCullBack);
 		SetDepthStencilState(EnableDepth, 0);

@@ -1,7 +1,10 @@
 #include "Filter.fx"
 
-Texture2DMS<float4,4> aux1Buffer;
-Texture2DMS<float4,4> aux2Buffer;
+Texture2D aux1Buffer;
+Texture2D aux2Buffer;
+
+Texture2DMS<float4,4> aux1BufferMS4;
+Texture2DMS<float4,4> aux2BufferMS4;
 Texture2D source;
 
 cbuffer cbCommon
@@ -62,6 +65,15 @@ BlendState NoBlending
     AlphaToCoverageEnable = FALSE;
     BlendEnable[0] = FALSE;
 };
+BlendState BSBlendOver 
+{ 
+	BlendEnable[0] = TRUE;
+	SrcBlend[0] = SRC_ALPHA;
+	SrcBlendAlpha[0] = ONE;
+	DestBlend[0] = INV_SRC_ALPHA;
+	DestBlendAlpha[0] = INV_SRC_ALPHA;
+};
+
 RasterizerState rsCullNone {
 	CullMode = None; 
 };
@@ -99,8 +111,8 @@ void QuadGS(point uint vertex[1] : POINT, inout TriangleStream<QuadVertex> strea
 }
 float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 {
-	float3 dim;
-	aux1Buffer.GetDimensions(dim.x, dim.y, dim.z);
+	//float3 dim;//MS4
+	//aux1Buffer.GetDimensions(dim.x, dim.y, dim.z);//MS4
 	float4 lightScreenPos = mul(float4(g_LightPosition.xyz,0), g_WorldViewProj);
 	lightScreenPos.xy /= lightScreenPos.w;
 	lightScreenPos.x += 0.5f;
@@ -109,23 +121,26 @@ float4 LightScatteringPS(QuadVertex v) : SV_TARGET0
 	float2 deltaTexCoord = v.Tex-lightScreenPos.xy;
 		deltaTexCoord  *= 1.f/NUM_SAMPLES*g_density;
 	float illuminationDecay = 1.0f;
-	float3 result = aux1Buffer.Load(int3(v.Tex*dim.xy,0),0);
+	//float3 result = aux1Buffer.Load(int3(v.Tex*dim.xy,0),0); //MS4
+	float4 result = aux1Buffer.Sample(samBilinear, v.Tex);
 		for(int i = 0; i < NUM_SAMPLES; i++)
 		{
 			v.Tex -= deltaTexCoord;
-			float4 sample =  aux1Buffer.Load(int3(v.Tex*dim.xy,0),0);
+			//float4 sample =  aux1Buffer.Load(int3(v.Tex*dim.xy,0),0);
+			float4 sample = aux1Buffer.Sample(samBilinear, v.Tex);
 				sample *= illuminationDecay*g_weight;
 			result += sample;
 			illuminationDecay *= g_decay;
 		}
-	return float4(result * g_exposure,result.r * g_exposure);
+	return float4(result * g_exposure/*,result.r * g_exposure*/);
 }
 
-float4 AdditiveBlendBlurPS(QuadVertex v) : SV_TARGET0
+float4 AdditiveBlendPS(QuadVertex v) : SV_TARGET0
 {
-	float3 dim;
-	aux1Buffer.GetDimensions(dim.x, dim.y, dim.z);
-	float4 color = aux2Buffer.Load(int3(v.Tex*dim.xy,0),0); // aux2Buffer.Sample(samLinear, v.Tex);
+	//float3 dim;//MS4
+	//aux1Buffer.GetDimensions(dim.x, dim.y, dim.z);//MS4
+	//float4 color = aux2Buffer.Load(int3(v.Tex*dim.xy,0),0);//MS4
+	float4 color = aux2Buffer.Sample(samLinear, v.Tex);
 	return float4(color.rgb, 1);
 }
 
@@ -145,7 +160,20 @@ technique11 VolumetricLightScattering
 	{
 		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
 		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
-        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendBlurPS()));
+        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendPS()));
+        
+		SetRasterizerState(rsCullNone);
+        SetDepthStencilState(DisableDepth, 0);
+        SetBlendState(AdditiveBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+}
+technique11 AddBlend //Blends aux2 on Target0
+{
+	pass P0
+	{
+		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
+		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
+        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendPS()));
         
 		SetRasterizerState(rsCullNone);
         SetDepthStencilState(DisableDepth, 0);
@@ -153,12 +181,14 @@ technique11 VolumetricLightScattering
 	}
 }
 
-
 // Water
 // Teile von Wojciech Toman
 Texture2D heightMap;
-Texture2DMS<float4,4> depthMap;
-Texture2DMS<float4,4> screen;
+Texture2D depthMap;
+Texture2DMS<float4,4> depthMapMS4;
+Texture2DMS<float4,4> screenMS4;
+Texture2D screen;
+
 Texture2D normalMap;
 Texture2D foamMap;
 
@@ -221,7 +251,7 @@ float3 bigDepthColour = {0.0039f, 0.00196f, 0.445f};
 // Horizontal
 float3 extinction = {7.0f, 30.0f, 40.0f};			
 
-float visibility = 4.0f;
+float visibility = 1.0f;
 
 // bigger value -> more smaller waves
 float2 scale = {0.009f, 0.009f};
@@ -231,9 +261,12 @@ float2 wind = {-0.3f, 0.7f};
 
 float3 PositionFromDepth(float2 vTexCoord)
 {
-	uint3 dim;
-	depthMap.GetDimensions(dim.x, dim.y,dim.z);
-    float z = depthMap.Load(vTexCoord*dim.xy,0).r;  
+	//uint3 dim;//MS4
+	//depthMap.GetDimensions(dim.x, dim.y,dim.z);//MS4
+	uint2 dim;
+	depthMap.GetDimensions(dim.x, dim.y);
+    //float z = depthMap.Load(vTexCoord*dim.xy,0).r;  //MS4
+	float z = depthMap.Sample(samLinear, vTexCoord);
     float x = vTexCoord.x * 2 - 1;
     float y = (1 - vTexCoord.y) * 2 - 1;
     float4 vProjectedPos = float4(x, y, z, 1.0f);
@@ -281,9 +314,10 @@ float3 sampleFoamC(float2 p1,float2 p2)
 
 float4 waterPS(QuadVertex IN): SV_Target0
 {
-	uint3 dims;
-	screen.GetDimensions(dims.x,dims.y,dims.z);
-	float3 color2 = screen.Load(IN.Tex*dims.xy,0).rgb;
+	//uint3 dims;//MS4
+	//screen.GetDimensions(dims.x,dims.y,dims.z);//MS4
+	//float3 color2 = screen.Load(IN.Tex*dims.xy,0).rgb;//MS4
+	float3 color2 = screen.Sample(samBilinear, IN.Tex);
 	float3 color = color2;
 	
 	float3 position = mul(float4(PositionFromDepth(IN.Tex), 1.0f), matViewInverse).xyz;
@@ -356,7 +390,8 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		
 		texCoord = IN.Tex.xy;
 		texCoord.x += sin(timer * 0.002f + 3.0f * abs(position.y)) * (refractionScale * min(depth2, 1.0f));
-		float3 refraction = screen.Load(texCoord*dims.xy,0).rgb;
+		//float3 refraction = screen.Load(texCoord*dims.xy,0).rgb;//MS4
+			float3 refraction = screen.Sample(samBilinear, texCoord);
 		if(mul(float4(PositionFromDepth(texCoord).xyz, 1.0f), matViewInverse).y > level)
 			refraction = color2;
 
@@ -372,7 +407,8 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		dPos.yw = texCoordProj.yw;
 		texCoordProj = dPos;		
 		
-		float3 reflect = screen.Load((float2(0.5f,0.6f)-texCoordProj.xy/texCoordProj.w)*dims.xy/**float2(0.1f,0.1f)*/,0).rgb;
+		//float3 reflect = screen.Load((float2(0.5f,0.6f)-texCoordProj.xy/texCoordProj.w)*dims.xy/**float2(0.1f,0.1f)*/,0).rgb;//MS4
+		float3 reflect = screen.Sample(samBilinear, (float2(0.5, 0.6f)-texCoordProj.xy/texCoordProj.w));
 		
 		float fresnel = fresnelTerm(normal, eyeVecNorm);
 		
@@ -417,7 +453,7 @@ float4 waterPS(QuadVertex IN): SV_Target0
 	if(position.y > level)
 		color = color2;
 
-	return float4(color, 1.0f);
+	return float4(color, 1);
 }
 
 
@@ -431,6 +467,17 @@ technique11 Water
         
 		SetRasterizerState(rsCullNone);
         SetDepthStencilState(DisableDepth, 0);
-        SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+        SetBlendState(BSBlendOver, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
+		pass P1
+	{
+		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
+		SetGeometryShader(CompileShader(gs_4_0, QuadGS()));
+        SetPixelShader(CompileShader(ps_4_0, AdditiveBlendPS()));
+        
+		SetRasterizerState(rsCullNone);
+        SetDepthStencilState(DisableDepth, 0);
+        SetBlendState(AdditiveBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+
 }

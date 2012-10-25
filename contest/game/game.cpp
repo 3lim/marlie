@@ -99,7 +99,7 @@ CDXUTDialog                             g_HUD;                  // dialog for st
 CDXUTDialog                             g_SampleUI;             // dialog for sample specific controls
 
 // A D3DX rendering effect
-ID3DX11Effect*                          g_Effect_VLS = NULL; // Light scattering effect
+ID3DX11Effect*                          g_PostEffect = NULL; // Light scattering effect
 ID3DX11Effect*                          g_Effect = NULL; // The whole rendering effect
 ID3DX11EffectTechnique*					g_BillboardTechnique = NULL;
 const UINT								SHADOWMAPSIZE = 2048;
@@ -113,13 +113,16 @@ RenderableTexture*						g_VLSDestMap;
 //zwischenspeichern zum übergeben des renderTargets als textur
 RenderableTexture*						g_tmpShadowMap;
 
-ID3D11Texture2D* screenTex;
-ID3D11DepthStencilView* screenDSV;
-ID3D11ShaderResourceView* screenSRV;
+ID3D11Texture2D* screenDepthTex;
+ID3D11DepthStencilView* screenDepthDSV;
+ID3D11ShaderResourceView* screenDepthSRV;
 //ID3D11Texture2D* screenRT_Tex;
 //ID3D11ShaderResourceView* screenRT_SRV;
 //ID3D11RenderTargetView* screenRT_RTV;
-RenderableTexture* screenRTV;
+RenderableTexture* screen;
+RenderableTexture* waterRTV;
+
+
 ID3D11Texture2D* foamTex;
 ID3D11ShaderResourceView* foamSRV;
 
@@ -198,24 +201,24 @@ SpriteVertex							g_Radar;
 float									pow2Border;
 
 
-	//D3DXMATRIX worldViewNormals;
-	//D3DXMATRIX mTrans, mScale, mRot;
-	//D3DXMATRIX inverseTerrainWorldDir;
-	//D3DXVECTOR4 lightDirObj;
-	D3DXMATRIX lightProjektionMatrix;
-	D3DXMATRIX lightViewMatrix;
-	D3DXVECTOR3 lightAt(0,0,0);
-	//D3DXVECTOR3 lightEye;
-	D3DXVECTOR3 lightUp(0,1,0);
-	D3DXMATRIX lightViewProjMatrix;
-	//D3DXMATRIX inversView;
-	//D3DXVECTOR4 lightDirView;
-	D3D11_TEXTURE2D_DESC shadowMap_desc;
-	D3D11_VIEWPORT cameraVP;
-	D3D11_VIEWPORT shadowVP;
-	//ID3D11Buffer* vbs[] = { NULL, };
-	ID3D11DepthStencilView* pDSV;
-	ID3D11RenderTargetView* pRTV;
+//D3DXMATRIX worldViewNormals;
+//D3DXMATRIX mTrans, mScale, mRot;
+//D3DXMATRIX inverseTerrainWorldDir;
+//D3DXVECTOR4 lightDirObj;
+D3DXMATRIX lightProjektionMatrix;
+D3DXMATRIX lightViewMatrix;
+D3DXVECTOR3 lightAt(0,0,0);
+//D3DXVECTOR3 lightEye;
+D3DXVECTOR3 lightUp(0,1,0);
+D3DXMATRIX lightViewProjMatrix;
+//D3DXMATRIX inversView;
+//D3DXVECTOR4 lightDirView;
+D3D11_TEXTURE2D_DESC shadowMap_desc;
+D3D11_VIEWPORT cameraVP;
+D3D11_VIEWPORT shadowVP;
+//ID3D11Buffer* vbs[] = { NULL, };
+ID3D11DepthStencilView* pDSV;
+ID3D11RenderTargetView* pRTV;
 
 // Terrain rendering resources
 // BEGIN: Assignment 4.2.2 
@@ -237,7 +240,7 @@ float									pow2Border;
 // Forward declarations 
 //--------------------------------------------------------------------------------------
 LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
-	void* pUserContext );
+						 void* pUserContext );
 void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserContext );
 void CALLBACK OnMouse( bool bLeftButtonDown, bool bRightButtonDown, bool bMiddleButtonDown, bool bSide1Down, bool bSide2Down, int nMouseWheelDelta, int xPos, int yPos, void* pUserContext); 
 void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
@@ -245,15 +248,15 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* pUserContext );
 
 bool CALLBACK IsD3D11DeviceAcceptable( const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,
-	DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext );
+									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext );
 HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
-	void* pUserContext );
+									 void* pUserContext );
 HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
-	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext );
+										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext );
 void CALLBACK OnD3D11ReleasingSwapChain( void* pUserContext );
 void CALLBACK OnD3D11DestroyDevice( void* pUserContext );
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
-	float fElapsedTime, void* pUserContext );
+								 float fElapsedTime, void* pUserContext );
 HRESULT LoadFile(const char * filename, std::vector<uint8_t>& data);
 
 
@@ -315,7 +318,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	DXUTSetCursorSettings( true, true );
 
 	DXUTCreateWindow( L"The M.A.R.L.I.E. Project"); // You may change the title
-	DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 1280, 720 );
+	DXUTCreateDevice( D3D_FEATURE_LEVEL_11_0, true, 1280, 720 );
 
 	AutomaticPositioning();
 	DXUTMainLoop(); // Enter into the DXUT render loop
@@ -446,7 +449,7 @@ void LoadConfig(bool reload = false)
 				destroyeffect = "";
 			proj->AddComponent(new gcProjectile((int)damage, speed, cooldown, createEffect, destroyeffect));
 			if(mass > 0)
-					proj->AddComponent(new gcMass(mass));
+				proj->AddComponent(new gcMass(mass));
 
 			g_ProjectileTypes[name] = proj;
 		} if(var.compare("Weapon") == 0)
@@ -530,12 +533,12 @@ void InitApp()
 	iY += 24;
 	//g_SampleUI.AddCheckBox( IDC_TOGGLESPIN, L"Toggle Spinning", 0, iY += 24, 125, 22, g_TerrainSpinning );		//7.2.2
 	//**********GUI*************//
-	g_Radar.Opacity = 0.8f;
-	g_Radar.Position = D3DXVECTOR3(0.f,-0.68f,0);
-	g_Radar.Radius = .08f;
-	g_Radar.TextureIndex = 5;
-	g_Radar.AnimationProgress = 0;
-	SpriteRenderer::g_GUISprites.push_back(g_Radar);
+	//g_Radar.Opacity = 0.8f;
+	//g_Radar.Position = D3DXVECTOR3(0.f,-0.68f,0);
+	//g_Radar.Radius = .08f;
+	//g_Radar.TextureIndex = 5;
+	//g_Radar.AnimationProgress = 0;
+	//SpriteRenderer::g_GUISprites.push_back(g_Radar);
 }
 
 //5.2.6
@@ -595,7 +598,7 @@ void RenderText()
 		g_TxtHelper->DrawTextLine( DXUTGetDeviceStats() );
 		std::wstringstream out;
 		if(g_StaticGameObjects.size() > Oindex)
-		out << Oindex << " "
+			out << Oindex << " "
 			<< (*g_StaticGameObjects[Oindex]->GetName()).c_str()
 			<<"  Translation X: "
 			<< g_StaticGameObjects[Oindex]->GetPosition()->x << " Y: "
@@ -725,7 +728,7 @@ void inline pushText(string& s, TEXTPOSITION pos)
 // Reject any D3D11 devices that aren't acceptable by returning false
 //--------------------------------------------------------------------------------------
 bool CALLBACK IsD3D11DeviceAcceptable( const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,
-	DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext )
+									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext )
 {
 	return true;
 }
@@ -750,8 +753,8 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 
 	}
 	//// Enable anti aliasing
-	pDeviceSettings->d3d11.sd.SampleDesc.Count = 4;
-	pDeviceSettings->d3d11.sd.SampleDesc.Quality = 1;
+	//pDeviceSettings->d3d11.sd.SampleDesc.Count = 4;
+	//pDeviceSettings->d3d11.sd.SampleDesc.Quality = 1;
 
 	return true;
 }
@@ -760,7 +763,7 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 // Create any D3D11 resources that aren't dependant on the back buffer
 //--------------------------------------------------------------------------------------
 HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
-	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
+									 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
 {
 	HRESULT hr;
 
@@ -816,20 +819,20 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	//5.2.8
 	//g_CockpitMesh->CreateResources(pd3dDevice);
 	/*for(auto it=g_Meshes.begin(); it!=g_Meshes.end(); it++)
-		it->second->CreateResources(pd3dDevice);*/
+	it->second->CreateResources(pd3dDevice);*/
 	//Nun im MeshRenderer
 	g_MeshRenderer->CreateResources(pd3dDevice);
 
 	//terrainObjects place and set to draw Ojects
 	for(auto o = g_TerrainObjects.begin(); o != g_TerrainObjects.end(); o++)
-{		
-	placeTerrainObject(*o);
-	SAFE_DELETE(*o);
+	{		
+		placeTerrainObject(*o);
+		SAFE_DELETE(*o);
 	}
 	g_TerrainObjects.clear();
 	//Skybox
 	if(g_UseSkybox){
-		V(g_SkyboxRenderer->CreateResources(pd3dDevice, g_BoundingBoxDiagonal*0.5f,g_BoundingBoxDiagonal*0.2f));
+		V(g_SkyboxRenderer->CreateResources(pd3dDevice, g_Camera.GetFarClip(),g_BoundingBoxDiagonal*0.2f));
 	}
 	SAFE_DELETE(g_Ground);
 	g_Ground = new GameObject(0, 0, 0,0,0);
@@ -850,9 +853,6 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 		});
 	}
 	//Shadow Map
-	//Create shadow map texture desc
-	//g_ShadowMap = new RenderableTexture(pd3dDevice, SHADOWMAPSIZE, SHADOWMAPSIZE, 1, DXGI_FORMAT_R32_TYPELESS);
-	//Create shadow map texture desc
 	D3D11_TEXTURE2D_DESC shadowTex_Desc;
 	shadowTex_Desc.Width = SHADOWMAPSIZE;
 	shadowTex_Desc.Height = SHADOWMAPSIZE;
@@ -873,29 +873,20 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	shadowDSV_Desc.Texture2D.MipSlice = 0;
 	shadowDSV_Desc.Flags = 0;
 	V(pd3dDevice->CreateDepthStencilView(g_ShadowMap,&shadowDSV_Desc,&g_ShadowMapDSV)); 
-	
+
 	//Variance Shader Map
 	// Create the render target texture.
 	g_VarianceShadowMap = new RenderableTexture(pd3dDevice, SHADOWMAPSIZE, SHADOWMAPSIZE, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+	g_VarianceShadowMap->SetDebugName("shaderMap");
 	// Setup the description of the render target view.
 
 	// Create SATTExture for the shadow map with the same properties as the renderTarget
 	g_ShadowSATRenderer->CreateResources(pd3dDevice, SHADOWMAPSIZE, SHADOWMAPSIZE, DXGI_FORMAT_R32G32B32A32_FLOAT);
-	
+
 	//Volometric Light Scattering
-	ID3D11Texture2D* view;
-	//D3D11_TEXTURE2D_DESC desc;
- //   ID3D11Texture2D* pBackBuffer;
-	//IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
- //   hr = pSwapChain->GetBuffer( 0, __uuidof( *pBackBuffer ), ( LPVOID* )&pBackBuffer );
-	////pd3dDevice->->GetResource(&view);
-	//((ID3D11Texture2D*)pBackBuffer)->GetDesc(&desc);
 	g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);//Funktioniert auf dem Laptop(Sven)
 	g_VLSDestMap  = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, 1, pBackBufferSurfaceDesc->Format, &pBackBufferSurfaceDesc->SampleDesc);//same
-	//g_VLSMap = new RenderableTexture(pd3dDevice, &desc);
-	//g_VLSDestMap  = new RenderableTexture(pd3dDevice,&desc);
-	//g_VLSMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);//funktioniert auf dem PC(SVEN)
-	//g_VLSDestMap = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,  pBackBufferSurfaceDesc->Format);//funktioniert auf dem PC(SVEN)
+
 	DXUT_SetDebugName(g_VLSMap->GetRenderTarget(), "vls");
 	DXUT_SetDebugName(g_VLSMap->GetShaderResource(), "vls");
 	DXUT_SetDebugName(g_VLSMap->GetTexture(), "vls");
@@ -903,47 +894,33 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	DXUT_SetDebugName(g_VLSDestMap->GetShaderResource(), "vlsD");
 	DXUT_SetDebugName(g_VLSDestMap->GetTexture(), "vlsD");
 	//screen space DSV
-	const DXGI_SURFACE_DESC* sDesc = DXUTGetDXGIBackBufferSurfaceDesc();
-	D3D11_TEXTURE2D_DESC screenTex_Desc;
-	D3D11_DEPTH_STENCIL_VIEW_DESC screenDSV_Desc;
+	D3D11_TEXTURE2D_DESC screenDepthTex_Desc;
+	D3D11_DEPTH_STENCIL_VIEW_DESC screenDepthDSV_Desc;
 
-	screenTex_Desc.Width = sDesc->Width;
-	screenTex_Desc.Height = sDesc->Height;
-	screenTex_Desc.MipLevels = 1;
-	screenTex_Desc.ArraySize = 1;
-	screenTex_Desc.Format = DXGI_FORMAT_R32_TYPELESS;
-	screenTex_Desc.SampleDesc.Count = 4;
-	screenTex_Desc.SampleDesc.Quality = 1;
-	screenTex_Desc.Usage = D3D11_USAGE_DEFAULT;
-	screenTex_Desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	screenTex_Desc.CPUAccessFlags = 0;
-	screenTex_Desc.MiscFlags = 0;
-	V(pd3dDevice->CreateTexture2D(&screenTex_Desc, NULL, &screenTex));
+	screenDepthTex_Desc.Width = pBackBufferSurfaceDesc->Width;
+	screenDepthTex_Desc.Height = pBackBufferSurfaceDesc->Height;
+	screenDepthTex_Desc.MipLevels = 1;
+	screenDepthTex_Desc.ArraySize = 1;
+	screenDepthTex_Desc.Format = DXGI_FORMAT_R32_TYPELESS;
+	screenDepthTex_Desc.SampleDesc =  pBackBufferSurfaceDesc->SampleDesc;
+	screenDepthTex_Desc.Usage = D3D11_USAGE_DEFAULT;
+	screenDepthTex_Desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	screenDepthTex_Desc.CPUAccessFlags = 0;
+	screenDepthTex_Desc.MiscFlags = 0;
+	V(pd3dDevice->CreateTexture2D(&screenDepthTex_Desc, NULL, &screenDepthTex));
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC screenSRV_Desc;
-	screenSRV_Desc.Format = DXGI_FORMAT_R32_FLOAT;
-	screenSRV_Desc.Texture2D.MipLevels = 1;
-	screenSRV_Desc.Texture2D.MostDetailedMip = 0;
-	screenSRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-	pd3dDevice->CreateShaderResourceView(screenTex,&screenSRV_Desc,&screenSRV);
+	D3D11_SHADER_RESOURCE_VIEW_DESC screenDepthSRV_Desc;
+	screenDepthSRV_Desc.Format = DXGI_FORMAT_R32_FLOAT;
+	screenDepthSRV_Desc.Texture2D.MipLevels = 1;
+	screenDepthSRV_Desc.Texture2D.MostDetailedMip = 0;
+	screenDepthSRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	pd3dDevice->CreateShaderResourceView(screenDepthTex,&screenDepthSRV_Desc,&screenDepthSRV);
 
-	screenDSV_Desc.Format = DXGI_FORMAT_D32_FLOAT;
-	screenDSV_Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
-	screenDSV_Desc.Texture2D.MipSlice = 0;
-	screenDSV_Desc.Flags = 0;
-	V(pd3dDevice->CreateDepthStencilView(screenTex,&screenDSV_Desc,&screenDSV)); 
-
-	screenTex_Desc.Width = sDesc->Width;
-	screenTex_Desc.Height = sDesc->Height;
-	screenTex_Desc.MipLevels = 1;
-	screenTex_Desc.ArraySize = 1;
-	screenTex_Desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	screenTex_Desc.SampleDesc.Count = 4;
-	screenTex_Desc.SampleDesc.Quality = 1;
-	screenTex_Desc.Usage = D3D11_USAGE_DEFAULT;
-	screenTex_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	screenTex_Desc.CPUAccessFlags = 0;
-	screenTex_Desc.MiscFlags = 0;
+	screenDepthDSV_Desc.Format = DXGI_FORMAT_D32_FLOAT;
+	screenDepthDSV_Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	screenDepthDSV_Desc.Texture2D.MipSlice = 0;
+	screenDepthDSV_Desc.Flags = 0;
+	V(pd3dDevice->CreateDepthStencilView(screenDepthTex,&screenDepthDSV_Desc,&screenDepthDSV)); 
 
 	D3D11_TEXTURE2D_DESC fDesc;
 	vector<vector<unsigned char>> textureData;
@@ -952,8 +929,10 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	LoadNtxFromFile("resources/foam.ntx",&fDesc,textureData,subresData,sRGB);
 	pd3dDevice->CreateTexture2D(&fDesc,&subresData[0],&foamTex);
 	pd3dDevice->CreateShaderResourceView(foamTex,NULL,&foamSRV);
-	
-	screenRTV = new RenderableTexture(pd3dDevice,screenTex_Desc.Width,screenTex_Desc.Height,1,screenTex_Desc.Format,&screenTex_Desc.SampleDesc);
+
+	screen = new RenderableTexture(pd3dDevice,pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,1,DXGI_FORMAT_R32G32B32A32_FLOAT, &pBackBufferSurfaceDesc->SampleDesc);
+	waterRTV = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,1,DXGI_FORMAT_R32G32B32A32_FLOAT, &pBackBufferSurfaceDesc->SampleDesc);
+	waterRTV->SetDebugName("waterTex");
 	return S_OK;
 }
 
@@ -972,14 +951,15 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_DELETE(g_VarianceShadowMap);
 	SAFE_DELETE(g_VLSMap);
 	SAFE_DELETE(g_VLSDestMap);
-	SAFE_RELEASE(screenDSV);
-	SAFE_RELEASE(screenTex);
-	SAFE_RELEASE(screenSRV);
+	SAFE_RELEASE(screenDepthDSV);
+	SAFE_RELEASE(screenDepthTex);
+	SAFE_RELEASE(screenDepthSRV);
 	/*
 	SAFE_RELEASE(screenRT_Tex);
 	SAFE_RELEASE(screenRT_SRV);
 	SAFE_RELEASE(screenRT_RTV);*/
-	SAFE_DELETE(screenRTV);
+	SAFE_DELETE(screen);
+	SAFE_DELETE(waterRTV);
 	SAFE_RELEASE(foamTex);
 	SAFE_RELEASE(foamSRV);
 
@@ -991,15 +971,11 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	g_ShadowSATRenderer->ReleaseResources();
 	g_TerrainRenderer->ReleaseResources();
 	//5.2.8
-	//g_CockpitMesh->ReleaseResources();
-	/*for(auto it=g_Meshes.begin(); it!=g_Meshes.end(); it++)
-		it->second->ReleaseResources();*/
 	g_MeshRenderer->ReleaseResources();
 
 	//7.2.2
 	g_SpriteRenderer->ReleaseResources();
 	g_SkyboxRenderer->ReleaseResources();
-
 }
 
 
@@ -1007,7 +983,7 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 // Create any D3D11 resources that depend on the back buffer
 //--------------------------------------------------------------------------------------
 HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
-	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
+										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
 {
 	HRESULT hr;
 
@@ -1083,15 +1059,15 @@ HRESULT ReloadShader(ID3D11Device* pd3dDevice)
 
 	// Find and load the rendering effect
 	V_RETURN(DXUTFindDXSDKMediaFileCch(path, MAX_PATH, L"PostProcessing.fxo"));
-	 is=ifstream(path, ios_base::binary);
+	is=ifstream(path, ios_base::binary);
 	is.seekg(0, ios_base::end);
-	 pos = streampos(is.tellg());
+	pos = streampos(is.tellg());
 	is.seekg(0, ios_base::beg);
-	 effectBuffer=vector<char>((unsigned int)pos);
+	effectBuffer=vector<char>((unsigned int)pos);
 	is.read(&effectBuffer[0], pos);
 	is.close();
-	V_RETURN(D3DX11CreateEffectFromMemory((const void*)&effectBuffer[0], effectBuffer.size(), D3D11_CREATE_DEVICE_DEBUG, pd3dDevice, &g_Effect_VLS));    
-	assert(g_Effect_VLS->IsValid());
+	V_RETURN(D3DX11CreateEffectFromMemory((const void*)&effectBuffer[0], effectBuffer.size(), D3D11_CREATE_DEVICE_DEBUG, pd3dDevice, &g_PostEffect));    
+	assert(g_PostEffect->IsValid());
 
 	//7.2.2
 	g_TerrainRenderer->ReloadShader(pd3dDevice);
@@ -1136,7 +1112,7 @@ HRESULT ReLoadConfig(ID3D11Device* pd3dDevice)
 void ReleaseShader()
 {
 	SAFE_RELEASE( g_Effect );
-	SAFE_RELEASE(g_Effect_VLS);
+	SAFE_RELEASE(g_PostEffect);
 	g_TerrainRenderer->ReleaseShader();
 	g_MeshRenderer->ReleaseShader();
 	g_SpriteRenderer->ReleaseShader();
@@ -1148,7 +1124,7 @@ void ReleaseShader()
 // Handle messages to the application
 //--------------------------------------------------------------------------------------
 LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
-	void* pUserContext )
+						 void* pUserContext )
 {
 	// Pass messages to dialog resource manager calls so GUI state is updated correctly
 	*pbNoFurtherProcessing = g_DialogResourceManager.MsgProc( hWnd, uMsg, wParam, lParam );
@@ -1193,100 +1169,100 @@ void CALLBACK OnKeyboard( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserC
 {
 	//OnKeyPress in Mode (F11)
 	if(useDeveloperFeatures)
-	if(bKeyDown){
-		switch(nChar){
-		case 107:
-			Oindex = (++Oindex)%g_StaticGameObjects.size();
-			break;
-		case 109:
-			Oindex = (--Oindex+g_StaticGameObjects.size())%g_StaticGameObjects.size();
-			break;
-		case 'M':
-			g_CameraMoving = !g_CameraMoving;
-			g_Camera.SetEnablePositionMovement(g_CameraMoving);
-			break;
-		case 'G':
-			Omove =  true;
-			ORotate = OScale = false;
-			break;
-		case  'R':
-			Omove = OScale = false;
-			ORotate = true;
-			break;
-		case  'S':
-			Omove = ORotate = false;
-			OScale = true;
-			break;
-		case  13: //Enter
-			Omove = ORotate = OScale = false;
-			break;
-		case  38: //Arrow Up
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(0,1,0);
-			if(OScale)
-				g_StaticGameObjects[Oindex]->Scale(0.1f);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate(0, 1,0);
-			break;
-		case  40: //Arrow Down
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(0,-1,0);
-			if(OScale)
-				g_StaticGameObjects[Oindex]->Scale(-0.1f);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate(0, -1,0);
-			break;
-		case  39: //Arrow Right
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(1,0,0);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate(1, 0,0);
-			break;
-		case  37: //arrow Left
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(-1,0,0);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate( -1,0,0);
-			break;
-		case  187: // minus
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(0,0,-1);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate( 0,0,-1);
-			break;
-		case  189: // minus
-			if(Omove)
-				g_StaticGameObjects[Oindex]->Translate(0,0,1);
-			if(ORotate)
-				g_StaticGameObjects[Oindex]->Rotate( 0,0,1);
-			break;
+		if(bKeyDown){
+			switch(nChar){
+			case 107:
+				Oindex = (++Oindex)%g_StaticGameObjects.size();
+				break;
+			case 109:
+				Oindex = (--Oindex+g_StaticGameObjects.size())%g_StaticGameObjects.size();
+				break;
+			case 'M':
+				g_CameraMoving = !g_CameraMoving;
+				g_Camera.SetEnablePositionMovement(g_CameraMoving);
+				break;
+			case 'G':
+				Omove =  true;
+				ORotate = OScale = false;
+				break;
+			case  'R':
+				Omove = OScale = false;
+				ORotate = true;
+				break;
+			case  'S':
+				Omove = ORotate = false;
+				OScale = true;
+				break;
+			case  13: //Enter
+				Omove = ORotate = OScale = false;
+				break;
+			case  38: //Arrow Up
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(0,1,0);
+				if(OScale)
+					g_StaticGameObjects[Oindex]->Scale(0.1f);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate(0, 1,0);
+				break;
+			case  40: //Arrow Down
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(0,-1,0);
+				if(OScale)
+					g_StaticGameObjects[Oindex]->Scale(-0.1f);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate(0, -1,0);
+				break;
+			case  39: //Arrow Right
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(1,0,0);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate(1, 0,0);
+				break;
+			case  37: //arrow Left
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(-1,0,0);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate( -1,0,0);
+				break;
+			case  187: // minus
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(0,0,-1);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate( 0,0,-1);
+				break;
+			case  189: // minus
+				if(Omove)
+					g_StaticGameObjects[Oindex]->Translate(0,0,1);
+				if(ORotate)
+					g_StaticGameObjects[Oindex]->Rotate( 0,0,1);
+				break;
 
-		} 
-	}else{ //KeyUp
-		//switch(nChar){
-		//}
-	}
-	//immer aktiv
-	if(bKeyDown)
-	{
-		switch(nChar){
-		case VK_SPACE://fire of the first gun
-			p_Fire1 = true;
-			break;
-		case VK_F11:
-			useDeveloperFeatures = !useDeveloperFeatures;
-			ShowCursor(useDeveloperFeatures);
-			g_Camera.SetResetCursorAfterMove(!useDeveloperFeatures);
-			g_Camera.SetRotateButtons(false, useDeveloperFeatures, false, !useDeveloperFeatures);
-			break;
-		} 
-	}else{ //KeyUp
-		switch(nChar){
-		case VK_SPACE:
-			p_Fire1 = false;
-			break;
+			} 
+		}else{ //KeyUp
+			//switch(nChar){
+			//}
 		}
-	}
+		//immer aktiv
+		if(bKeyDown)
+		{
+			switch(nChar){
+			case VK_SPACE://fire of the first gun
+				p_Fire1 = true;
+				break;
+			case VK_F11:
+				useDeveloperFeatures = !useDeveloperFeatures;
+				ShowCursor(useDeveloperFeatures);
+				g_Camera.SetResetCursorAfterMove(!useDeveloperFeatures);
+				g_Camera.SetRotateButtons(false, useDeveloperFeatures, false, !useDeveloperFeatures);
+				break;
+			} 
+		}else{ //KeyUp
+			switch(nChar){
+			case VK_SPACE:
+				p_Fire1 = false;
+				break;
+			}
+		}
 
 
 }
@@ -1339,7 +1315,7 @@ list<GameObject*> g_emittedParticles;
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
-	
+
 	// Update the camera's position based on user input 
 	g_Camera.FrameMove( fElapsedTime );
 
@@ -1359,28 +1335,28 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	{
 		if(g_EnemyTypeNames.size() > 0)
 		{
-		Enemy* myEnemyType = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
-		if(myEnemyType->SpawnedEnemies < myEnemyType->GetCountMaxUnits()){
-			g_LastSpawn = fTime;
-			Enemy* newEnemy = new Enemy(myEnemyType);
-			float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
-			float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
-			D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
-			a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
-			D3DXVECTOR3 InnerPos(g_TargetCircle*cos(a), height, g_TargetCircle*sin(a));
-			D3DXVECTOR3 MovingDirection = D3DXVECTOR3(0,height,0)-outerPos;
-			D3DXVec3Normalize(&MovingDirection, &MovingDirection);
-			newEnemy->SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
-			newEnemy->AddForce(myEnemyType->GetSpeed(), MovingDirection);
-			newEnemy->TranslateTo(outerPos.x, outerPos.y, outerPos.z);
+			Enemy* myEnemyType = g_EnemyTyp[g_EnemyTypeNames[static_cast<int>((float)rand()/(RAND_MAX+1.f)*g_EnemyTypeNames.size())]];
+			if(myEnemyType->SpawnedEnemies < myEnemyType->GetCountMaxUnits()){
+				g_LastSpawn = fTime;
+				Enemy* newEnemy = new Enemy(myEnemyType);
+				float a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
+				float height = (((float)rand()/RAND_MAX)*(g_MaxHeight-g_MinHeight)*g_TerrainHeight)+ g_MinHeight*g_TerrainHeight;
+				D3DXVECTOR3 outerPos(g_SpawnCircle*cos(a), height, g_SpawnCircle*sin(a));
+				a = ((float)rand()/RAND_MAX)*2*D3DX_PI;
+				D3DXVECTOR3 InnerPos(g_TargetCircle*cos(a), height, g_TargetCircle*sin(a));
+				D3DXVECTOR3 MovingDirection = D3DXVECTOR3(0,height,0)-outerPos;
+				D3DXVec3Normalize(&MovingDirection, &MovingDirection);
+				newEnemy->SetMeshOrientation(MovingDirection.x, MovingDirection.y, MovingDirection.z);
+				newEnemy->AddForce(myEnemyType->GetSpeed(), MovingDirection);
+				newEnemy->TranslateTo(outerPos.x, outerPos.y, outerPos.z);
 
-			g_EnemyInstances.push_back(newEnemy);
-			//g_EnemyInstances[1].SetDestroyEffect(&g_ParticleEffects["Death1"]);
-			//auto g = --g_EnemyInstances.end();
-			//g->SetDestroyEffect(&ParticleEffect::g_ParticleEffects["bomb"]);
-			pushText("Achtung: Ein neuer Feind ist nun in Reichweite!", D3DXCOLOR(1.0f, 0.15f, 0.f, 1.f));
+				g_EnemyInstances.push_back(newEnemy);
+				//g_EnemyInstances[1].SetDestroyEffect(&g_ParticleEffects["Death1"]);
+				//auto g = --g_EnemyInstances.end();
+				//g->SetDestroyEffect(&ParticleEffect::g_ParticleEffects["bomb"]);
+				pushText("Achtung: Ein neuer Feind ist nun in Reichweite!", D3DXCOLOR(1.0f, 0.15f, 0.f, 1.f));
+			}
 		}
-	}
 	}
 	if(p_Fire1){
 		g_WeaponTypes[1].fire(0, &g_Camera, fTime);
@@ -1390,7 +1366,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if(p_Fire2){
 		g_WeaponTypes[0].fire(0, &g_Camera, fTime);
 		//move
- 		g_StaticGameObjects[4]->Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
+		g_StaticGameObjects[4]->Translate(0,0,static_cast<float>(10*fElapsedTime*sin(fTime*25)));
 	}
 
 	//*********************************MovingObjects
@@ -1420,7 +1396,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 			auto shoot_rem = it; 
 			it++;
-			
+
 			SAFE_DELETE(*shoot_rem);
 			g_Particles.erase(shoot_rem);
 		}
@@ -1429,7 +1405,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 			del = false;
 			for(list<Enemy*>::iterator enemy = g_EnemyInstances.begin(); enemy != g_EnemyInstances.end();){
 				//if abstand < radius
- 				gcSphereCollider* enemyCollider = static_cast<gcSphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
+				gcSphereCollider* enemyCollider = static_cast<gcSphereCollider*>((*enemy)->GetComponent(GameComponent::tSphereCollider)->at(0));
 				gcSphereCollider* shootCollider = static_cast<gcSphereCollider*>((shoot)->GetComponent(GameComponent::tSphereCollider)->at(0));
 				if(D3DXVec3Length(&(*shoot->GetPosition()-*(*enemy)->GetPosition())) < (shootCollider->GetSphereRadius() +enemyCollider->GetSphereRadius())){
 					del = true;
@@ -1510,7 +1486,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		if((*it_rem)->CheckParticles(fTime))
 		{
 			SAFE_DELETE(*it_rem)
-			ParticleSystem::g_activeParticleSystems.erase(it_rem);
+				ParticleSystem::g_activeParticleSystems.erase(it_rem);
 		}
 		else
 		{
@@ -1527,22 +1503,22 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	SpriteRenderer::g_SpritesToRender.resize(g_Particles.size()+g_emittedParticles.size());
 	int i = 0;
 	//SpriteRenderer::g_SpritesToRender.push_back(*g_SkyboxRenderer->getSun());
-	for each(auto it in g_Particles)
+	for(auto it = g_Particles.begin(); it != g_Particles.end(); it++)
 	{
 		//g_SpritesToRender.push_back(it);
-		SpriteRenderer::g_SpritesToRender[i++] = *it->GetSprite();
+		SpriteRenderer::g_SpritesToRender[i++] = *(*it)->GetSprite();
 	}
-	for each(auto it in g_emittedParticles)
-		SpriteRenderer::g_SpritesToRender[i++] = *it->GetSprite();
+	for(auto it = g_emittedParticles.begin(); it != g_emittedParticles.end(); it++)
+		SpriteRenderer::g_SpritesToRender[i++] = *(*it)->GetSprite();
 	g_emittedParticles.clear();
-	
+
 	sort(SpriteRenderer::g_SpritesToRender.begin(), SpriteRenderer::g_SpritesToRender.end(), VertexSort);
-	
+
 	/*if(g_SpritesToRender.size() > 2048)
 	{
-		g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
+	g_SpritesToRender = vector<SpriteVertex>(g_SpritesToRender.begin(), g_SpritesToRender.begin()+1023);
 	}
-*/
+	*/
 	//Neuberechnung von der Worldmatrix von statischen Objekten, theorethisch nicht nötig
 	//for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 	//{
@@ -1556,16 +1532,17 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 // Render the scene using the D3D11 device
 //--------------------------------------------------------------------------------------
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
-	float fElapsedTime, void* pUserContext )
+								 float fElapsedTime, void* pUserContext )
 {
 
+	HRESULT hr;
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if( g_SettingsDlg.IsActive() )
 	{
 		g_SettingsDlg.OnRender( fElapsedTime );
 		return;
 	}
-		if(g_Effect == NULL) {
+	if(g_Effect == NULL) {
 		g_TxtHelper->Begin();
 		g_TxtHelper->SetInsertionPos( 5, 5 );
 		g_TxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
@@ -1573,18 +1550,17 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		g_TxtHelper->End();
 		return;
 	}
-		
 //	pDSV = DXUTGetD3D11DepthStencilView();
-//	pRTV = DXUTGetD3D11RenderTargetView();//sven merge
-		pDSV = screenDSV;//screenDSV;
-	pRTV = screenRTV->GetRenderTarget();//DXUTGetD3D11RenderTargetView();
-
+	pRTV = DXUTGetD3D11RenderTargetView();//sven merge
+		pDSV = screenDepthDSV;//screenDepthDSV;
+	pRTV = screen->GetRenderTarget();//DXUTGetD3D11RenderTargetView();
 	//pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);	//
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, g_ClearColor );
-//	pd3dImmediateContext->ClearRenderTargetView( screenRT_RTV, g_ClearColor );
+	pd3dImmediateContext->ClearRenderTargetView( screen->GetRenderTarget(), g_ClearColor );
+	pd3dImmediateContext->ClearRenderTargetView( waterRTV->GetRenderTarget(), g_ClearColor);
 
-	pd3dImmediateContext->ClearDepthStencilView( screenDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
+	pd3dImmediateContext->ClearDepthStencilView( screenDepthDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 
 	UINT one = 1;
 	pd3dImmediateContext->RSGetViewports(&one, &cameraVP);
@@ -1594,9 +1570,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	shadowVP.MinDepth = 0.f;
 	shadowVP.MaxDepth = 1.f;
 	pd3dImmediateContext->ClearRenderTargetView(g_VarianceShadowMap->GetRenderTarget(), D3DXCOLOR(1,1,1,1));
-//	ID3D11RenderTargetView* shadowTarget = g_VarianceShadowMap->GetRenderTarget();
-//	pd3dImmediateContext->OMSetRenderTargets(1, &shadowTarget, g_ShadowMapDSV);
-//	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
+	//	ID3D11RenderTargetView* shadowTarget = g_VarianceShadowMap->GetRenderTarget();
+	//	pd3dImmediateContext->OMSetRenderTargets(1, &shadowTarget, g_ShadowMapDSV);
+	//	pd3dImmediateContext->RSSetViewports(1, &shadowVP);
 	pd3dImmediateContext->ClearDepthStencilView(g_ShadowMapDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
 	ID3D11RenderTargetView* shadowTarget[1] = {g_VarianceShadowMap->GetRenderTarget()};
 	pd3dImmediateContext->OMSetRenderTargets(1, shadowTarget, g_ShadowMapDSV);
@@ -1616,7 +1592,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	D3DXMATRIX invProj;
 	D3DXMatrixInverse(&invProj, NULL, proj);
 	g_Frustum.CalculateFrustum(cameraVP, &g_Camera);
-	
+
 	// Update variables that change once per frame
 	D3DXVECTOR3 vLightDir(Skybox::g_LightDir*g_BoundingBoxDiagonal*0.5f); // g_LightDir == normalize(vLightDir)
 	D3DXMatrixOrthoLH(&lightProjektionMatrix, g_BoundingBoxDiagonal, g_BoundingBoxDiagonal, 0.0001f, g_BoundingBoxDiagonal); //ProjektionMatrix
@@ -1652,15 +1628,15 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//}
 	////g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_StaticGameObjects, NULL);
 	//g_MeshRenderer->ShadowMeshes(pd3dDevice, &g_EnemyInstances, NULL);
-	for each (GameObject o in g_StaticGameObjects)
+	for(auto it = g_StaticGameObjects.begin(); it != g_StaticGameObjects.end(); it++)
 	{
-		if(g_Frustum.IsObjectInFrustum(&o))
-			g_MeshRenderer->AddToRenderPass(&o);
+		if(g_Frustum.IsObjectInFrustum(*it))
+			g_MeshRenderer->AddToRenderPass(*it);
 	}
-	for each(GameObject o in g_EnemyInstances)
+	for(auto it = g_EnemyInstances.begin(); it != g_EnemyInstances.end(); it++)
 	{
-		if(g_Frustum.IsObjectInFrustum(&o))
-			g_MeshRenderer->AddToRenderPass(&o);
+		if(g_Frustum.IsObjectInFrustum(*it))
+			g_MeshRenderer->AddToRenderPass(*it);
 	}
 	g_MeshRenderer->RenderMeshes(pd3dDevice);
 
@@ -1672,18 +1648,18 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	pd3dImmediateContext->ClearRenderTargetView( pRTV, D3DXCOLOR(0,1,0,1));
 	pd3dImmediateContext->ClearRenderTargetView( g_VLSMap->GetRenderTarget(), D3DXCOLOR(1.0,0.0,0.,1));
-	ID3D11RenderTargetView* targets[] = {pRTV,g_VLSMap->GetRenderTarget() };
+	ID3D11RenderTargetView* targets[] = {pRTV,g_VLSMap->GetRenderTarget(), waterRTV->GetRenderTarget() };
 	// Clear the depth stencil
 	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);	//
 	pd3dImmediateContext->RSSetViewports(1, &cameraVP);
 
-		//Skybox render
+	//Skybox render
 	if(g_UseSkybox){
 		g_SkyboxRenderer->RenderSkybox(pd3dDevice, g_Camera);
 	}
 
 	g_TerrainRenderer->g_ViewProj = &g_ViewProj;
-	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap, NULL,NULL,NULL);
+	g_TerrainRenderer->RenderTerrain(pd3dDevice, g_VarianceShadowMap);
 	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);	//
 
 
@@ -1695,97 +1671,111 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 
 
 	g_MeshRenderer->RenderMeshes(pd3dDevice, g_VarianceShadowMap, NULL, false);
-	g_MeshRenderer->ResetInstances();
-
-	if(SpriteRenderer::g_SpritesToRender.size() >0)
-		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
-	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
+	g_MeshRenderer->RenderCameraMeshes(pd3dDevice, g_VarianceShadowMap);
 
 	//stringstream ss;
 	//ss << "Sprites: " << g_SpritesToRender.size();
 	//pushText(ss.str(), LEFT);
 
-	//do Volumetric Light Scattering
-	ID3D11RenderTargetView* VLSTarget = g_VLSDestMap->GetRenderTarget();
-	pd3dImmediateContext->OMSetRenderTargets(1, &VLSTarget, NULL);
-	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	g_Effect_VLS->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
-	g_Effect_VLS->GetVariableByName("g_LightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()*1000);
-	g_Effect_VLS->GetVariableByName("g_WorldViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
-	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(1,0);
-
-	//ID3D11RenderTargetView* BlurTarget = g_VLSMap->GetRenderTarget();
-	//pd3dImmediateContext->OMSetRenderTargets(1, &BlurTarget, NULL);
-	//g_Effect_VLS->GetVariableByName("blurImg")->AsShaderResource()->SetResource(g_VLSDestMap->GetShaderResource());
-	//float dim[] = { 1.4,1.2 };
-	//g_Effect_VLS->GetVariableByName("g_BlurDimension")->AsVector()->SetFloatVector(dim);
-	//g_Effect_VLS->GetVariableByName("g_BlurSamples")->AsScalar()->SetInt(4);
-	//g_Effect_VLS->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
-	//pd3dImmediateContext->Draw(1,0);
-	swap(g_VLSMap, g_VLSDestMap);
-
-	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
-	//VLS Blending
-	pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, NULL);
-	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
-	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(1,0);
-
-		//avoids warning
-	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
-	g_Effect_VLS->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(0);
-	g_Effect_VLS->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(0);
-	g_Effect_VLS->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->OMSetRenderTargets( 1, &pRTV, NULL );
-	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 	
-	ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
-	pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, NULL);
-		//Water
+	//Water
 	//ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
-	//pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, pDSV);
+	//pd3dImmediateContext->OMSetRenderTargets(1, &oRTV, NULL);
+	//ID3D11RenderTargetView* oRTV = DXUTGetD3D11RenderTargetView();
+	targets[0] = DXUTGetD3D11RenderTargetView();
+	pd3dImmediateContext->OMSetRenderTargets(3, targets, NULL);
 	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	g_Effect_VLS->GetVariableByName("depthMap")->AsShaderResource()->SetResource(screenSRV);
-	g_Effect_VLS->GetVariableByName("normalMap")->AsShaderResource()->SetResource(g_TerrainRenderer->getTerrainNormalSRV());
-	g_Effect_VLS->GetVariableByName("heightMap")->AsShaderResource()->SetResource(g_TerrainRenderer->heightSRV);
-	g_Effect_VLS->GetVariableByName("screen")->AsShaderResource()->SetResource(screenRTV->GetShaderResource());
-	g_Effect_VLS->GetVariableByName("foamMap")->AsShaderResource()->SetResource(foamSRV);
-	
+	g_PostEffect->GetVariableByName("depthMap")->AsShaderResource()->SetResource(screenDepthSRV);
+	g_PostEffect->GetVariableByName("normalMap")->AsShaderResource()->SetResource(g_TerrainRenderer->getTerrainNormalSRV());
+	g_PostEffect->GetVariableByName("heightMap")->AsShaderResource()->SetResource(g_TerrainRenderer->heightSRV);
+	g_PostEffect->GetVariableByName("screen")->AsShaderResource()->SetResource(screen->GetShaderResource());
+	g_PostEffect->GetVariableByName("foamMap")->AsShaderResource()->SetResource(foamSRV);
+
 	D3DXMATRIX viewInv = D3DXMATRIX(*(g_Camera.GetViewMatrix()));
 	D3DXMatrixInverse(&viewInv,0,&viewInv);
 	D3DXMATRIX projInv = D3DXMATRIX(*(g_Camera.GetProjMatrix()));
 	D3DXMatrixInverse(&projInv,0,&projInv);
-	g_Effect_VLS->GetVariableByName("matViewInverse")->AsMatrix()->SetMatrix(viewInv);
-	g_Effect_VLS->GetVariableByName("matProjInverse")->AsMatrix()->SetMatrix(projInv);
-	g_Effect_VLS->GetVariableByName("matViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
+	g_PostEffect->GetVariableByName("matViewInverse")->AsMatrix()->SetMatrix(viewInv);
+	g_PostEffect->GetVariableByName("matProjInverse")->AsMatrix()->SetMatrix(projInv);
+	g_PostEffect->GetVariableByName("matViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
 	
-	g_Effect_VLS->GetVariableByName("cameraPos")->AsVector()->SetFloatVector(*g_Camera.GetEyePt());
-	g_Effect_VLS->GetVariableByName("lightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()/1000);
-	g_Effect_VLS->GetVariableByName("timer")->AsScalar()->SetFloat(fTime*50000);
-	g_Effect_VLS->GetVariableByName("terrainDim")->AsScalar()->SetFloat(g_TerrainRenderer->m_TerrainResolution);
-	g_Effect_VLS->GetVariableByName("sunColor")->AsVector()->SetFloatVector(g_SkyboxRenderer->g_LightColor);
+	g_PostEffect->GetVariableByName("cameraPos")->AsVector()->SetFloatVector(*g_Camera.GetEyePt());
+	g_PostEffect->GetVariableByName("lightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()/1000);
+	g_PostEffect->GetVariableByName("timer")->AsScalar()->SetFloat(fTime*50000);
+	g_PostEffect->GetVariableByName("terrainDim")->AsScalar()->SetFloat(g_TerrainRenderer->m_TerrainResolution);
+	g_PostEffect->GetVariableByName("sunColor")->AsVector()->SetFloatVector(g_SkyboxRenderer->g_LightColor);
 
-	g_Effect_VLS->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
-
+	g_PostEffect->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
-	g_Effect_VLS->GetVariableByName("screen")->AsShaderResource()->SetResource(0);
-	g_Effect_VLS->GetVariableByName("depthMap")->AsShaderResource()->SetResource(0);
-	g_Effect_VLS->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
 
+	g_PostEffect->GetVariableByName("screen")->AsShaderResource()->SetResource(0);
+	g_PostEffect->GetVariableByName("depthMap")->AsShaderResource()->SetResource(0);
+	g_PostEffect->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
+
+	////blendet wasser übers Terrain
+	//pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);
+	//pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	//V(g_PostEffect->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(waterRTV->GetShaderResource()));
+	////V(g_PostEffect->GetTechniqueByName("AddBlend")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext));
+	//g_PostEffect->GetTechniqueByName("Water")->GetPassByIndex(1)->Apply(0,pd3dImmediateContext);
+	//pd3dImmediateContext->Draw(1,0);
+	//V(g_PostEffect->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(0));
+	//g_PostEffect->GetTechniqueByName("Water")->GetPassByIndex(1)->Apply(0,pd3dImmediateContext);
+
+	pd3dImmediateContext->OMSetRenderTargets(2, targets, pDSV);
+	if(SpriteRenderer::g_SpritesToRender.size() >0)
+		g_SpriteRenderer->RenderSprites(pd3dDevice, g_Camera);
+	g_SpriteRenderer->RenderGUI(pd3dDevice, g_Camera);
+
+
+	//do Volumetric Light Scattering
+	ID3D11RenderTargetView* VLSTarget = g_VLSDestMap->GetRenderTarget();
+	pd3dImmediateContext->OMSetRenderTargets(1, &VLSTarget, NULL);
+	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	g_PostEffect->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
+	g_PostEffect->GetVariableByName("g_LightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()*1000);
+	g_PostEffect->GetVariableByName("g_WorldViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
+	g_PostEffect->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->Draw(1,0);
+
+	//ID3D11RenderTargetView* BlurTarget = g_VLSMap->GetRenderTarget();
+	//pd3dImmediateContext->OMSetRenderTargets(1, &BlurTarget, NULL);
+	//g_PostEffect->GetVariableByName("blurImg")->AsShaderResource()->SetResource(g_VLSDestMap->GetShaderResource());
+	//float dim[] = { 1.4,1.2 };
+	//g_PostEffect->GetVariableByName("g_BlurDimension")->AsVector()->SetFloatVector(dim);
+	//g_PostEffect->GetVariableByName("g_BlurSamples")->AsScalar()->SetInt(4);
+	//g_PostEffect->GetTechniqueByName("BoxBlur")->GetPassByIndex(0)->Apply(0, pd3dImmediateContext);
+	//pd3dImmediateContext->Draw(1,0);
+	swap(g_VLSMap, g_VLSDestMap);
+
+	//VLS Blending
+	pd3dImmediateContext->OMSetRenderTargets(1, &targets[0], NULL);
+	g_PostEffect->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
+	g_PostEffect->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->Draw(1,0);
+
+	//avoids warning
+	pd3dImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+	g_PostEffect->GetVariableByName("aux2Buffer")->AsShaderResource()->SetResource(0);
+	g_PostEffect->GetVariableByName("aux1Buffer")->AsShaderResource()->SetResource(0);
+	g_PostEffect->GetTechniqueByName("VolumetricLightScattering")->GetPassByIndex(1)->Apply(0, pd3dImmediateContext);
+	pd3dImmediateContext->OMSetRenderTargets( 1, &targets[0], NULL );
+	g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
+
+	g_MeshRenderer->ResetInstances();
 	//Display only the first target
-	ID3D11RenderTargetView* rTargets[2] = { oRTV, NULL };
-	pd3dImmediateContext->OMSetRenderTargets( 2, rTargets, pDSV );
+	//ID3D11RenderTargetView* rTargets[2] = { DXUTGetD3D11RenderTargetView(), NULL };
+	//pd3dImmediateContext->OMSetRenderTargets( 2, rTargets, pDSV );
 	//render shadow map billboard
 	//***************************************************************************
 	if(useDeveloperFeatures)
 	{
 		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
-		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(g_VLSMap->GetShaderResource());
+		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(waterRTV->GetShaderResource()/*g_VLSMap->GetShaderResource()*/);
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 
-		
+
 		g_BillboardTechnique->GetPassByIndex(1)->Apply( 0, pd3dImmediateContext );
 		pd3dImmediateContext->DrawIndexed(1, 0, 0);
 
@@ -1839,7 +1829,7 @@ void AutomaticPositioning()
 	{
 		if((*it)->GetRelativePosition() == GameObject::TERRAIN)
 			(*it)->TranslateTo((*it)->GetPosition()->x, g_TerrainRenderer->getHeightAtPoint((*it)->GetPosition()->x, (*it)->GetPosition()->z)+ (*it)->GetPosition()->y, (*it)->GetPosition()->z);
-//		(*it)->CalculateWorldMatrix();
+		//		(*it)->CalculateWorldMatrix();
 	}
 }
 
@@ -1853,10 +1843,10 @@ void drawShipsOnRadar()
 	pShip.TextureIndex = 0;
 	vector<SpriteVertex> radarShips;
 
-	for each(auto it in g_EnemyInstances)
+	for(auto it = g_EnemyInstances.begin(); it != g_EnemyInstances.end(); it ++)
 	{
-		float x = it->GetPosition()->x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
-		float y = it->GetPosition()->y/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float x = (*it)->GetPosition()->x/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
+		float y = (*it)->GetPosition()->y/(g_TerrainWidth*0.5f*g_MaxCircle)*g_Radar.Radius;
 		pShip.Position = D3DXVECTOR3(x,y,0);
 		radarShips.push_back(SpriteVertex(pShip));
 	}

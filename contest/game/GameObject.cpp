@@ -45,21 +45,21 @@ GameObject::GameObject(GameObject* o) : tObject(o->tObject),
 	//cheat to deep Copy
 	for(auto it = o->myComponents.begin(); it != o->myComponents.end(); it++){
 		GameComponent::componentType t = it->first;
-		for each(GameComponent* c in it->second)
+		for(auto c = it->second.begin(); c != it->second.end(); c++)
 			switch(t){
 			case(GameComponent::tSphereCollider):
-					AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(c)));
+					AddComponent(new gcSphereCollider(*static_cast<gcSphereCollider*>(*c)));
 					break;
 			case(GameComponent::tProjectile):
-				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(c)));
+				AddComponent(new gcProjectile(*static_cast<gcProjectile*>(*c)));
 				break;
 			case(GameComponent::tMass):
-				AddComponent(new gcMass(*static_cast<gcMass*>(c)));
+				AddComponent(new gcMass(*static_cast<gcMass*>(*c)));
 				break;
 		}
 	}
-	for each(auto it in o->children)
-		children.push_back(it->Clone());
+	for(auto it = o->children.begin(); it != o->children.end(); it++)
+		children.push_back((*it)->Clone());
 }
 	GameObject::GameObject(int textureIndex, float scale, float posX, float posY, float posZ, float dur, PositionType tPos) :
 //	myMesh(NULL),
@@ -143,8 +143,8 @@ void GameObject::Scale(float s)
 		myVertex.Radius += s;
 	}
 	calcScale();
-	for each(auto it in children)
-		it->ScaleTo(it->GetScale()*deltaScale);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->ScaleTo((*it)->GetScale()*deltaScale);
 }
 
 void GameObject::ScaleTo(float s)
@@ -158,8 +158,8 @@ void GameObject::ScaleTo(float s)
 		myVertex.Radius = s;
 	}
 	calcScale();
-	for each(auto it in children)
-		it->ScaleTo(it->GetScale()*deltaScale);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->ScaleTo((*it)->GetScale()*deltaScale);
 }
 
 void GameObject::Translate(float x, float y, float z)
@@ -175,8 +175,8 @@ void GameObject::Translate(float x, float y, float z)
 		myVertex.Position.z += z;
 	}
 	calcTranslation();
-	for each(auto it in children)
-		it->Translate(x,y,z);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->Translate(x,y,z);
 }
 
 void GameObject::TranslateTo(float x, float y, float z)
@@ -191,8 +191,8 @@ void GameObject::TranslateTo(float x, float y, float z)
 		myVertex.Position.z = z;
 	}
 	calcTranslation();
-	for each(auto it in children)
-		it->TranslateTo(x,y,z);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->TranslateTo(x,y,z);
 }
 void GameObject::TranslateTo(D3DXVECTOR3& p)
 {
@@ -202,8 +202,8 @@ void GameObject::TranslateTo(D3DXVECTOR3& p)
 		myVertex.Position = p;
 	}
 	calcTranslation();
-	for each(auto it in children)
-		it->TranslateTo(p);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->TranslateTo(p);
 }
 
 void GameObject::Rotate(float x, float y, float z)
@@ -211,15 +211,15 @@ void GameObject::Rotate(float x, float y, float z)
 	D3DXMATRIX tmp;
 	D3DXMatrixRotationYawPitchRoll(&tmp,   DEG2RAD(y), DEG2RAD(x), DEG2RAD(z));
 	mRotate *=tmp;
-	for each(auto it in children)
-		it->Rotate(x,y,z);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->Rotate(x,y,z);
 }
 
 void GameObject::RotateTo(float x, float y, float z)
 {
 	D3DXMatrixRotationYawPitchRoll(&mRotate,   DEG2RAD(y), DEG2RAD(x), DEG2RAD(z));
-	for each(auto it in children)
-		it->RotateTo(x,y,z);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->RotateTo(x,y,z);
 }
 
 inline void GameObject::calcScale()
@@ -239,8 +239,8 @@ void GameObject::CalculateWorldMatrix(D3DXMATRIX* inversView)
 	worldMatrix = mScale*mMeshOirentation*mRotate*mTranslation;
 	if(this->tPosition == CAMERA && inversView != NULL)
 		worldMatrix *= *inversView;
-	for each(auto it in children)
-		it->CalculateWorldMatrix(inversView);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->CalculateWorldMatrix(inversView);
 }
 
 void GameObject::OnCreate(double gameTime)
@@ -250,8 +250,8 @@ void GameObject::OnCreate(double gameTime)
 		{
 			(*it)->OnCreate(this, gameTime);
 		}
-	for each(auto it in children)
-		it->OnCreate(gameTime);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->OnCreate(gameTime);
 }
 
 void GameObject::OnMove(double time, float elapsedTime)
@@ -267,8 +267,8 @@ void GameObject::OnMove(double time, float elapsedTime)
 		myVertex.AnimationProgress += elapsedTime/duration;
 		myVertex.AnimationProgress = max(0,min(myVertex.AnimationProgress,1));
 	}
-	for each(auto it in children)
-		it->OnMove(time, elapsedTime);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->OnMove(time, elapsedTime);
 
 }
 
@@ -279,8 +279,8 @@ void GameObject::OnHit(GameObject* p)
 	{
 		(*it)->OnHit(this, p);
 	}
-	for each(auto it in children)
-		it->OnHit(p);
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->OnHit(p);
 }
 
 void GameObject::OnDestroy()
@@ -290,8 +290,8 @@ void GameObject::OnDestroy()
 	{
 		(*it)->OnDestroy(this);
 	}
-	for each(auto it in children)
-		it->OnDestroy();
+	for(auto it = children.begin(); it != children.end(); it++)
+		(*it)->OnDestroy();
 }
 
 

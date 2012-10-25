@@ -131,63 +131,69 @@ void MeshRenderer::RenderMesh(ID3D11Device* pDevice, GameObject* object, Rendera
 {
 	//if(!g_Frustum->IsObjectInFrustum(object,))
 	//	return;
+
+	HRESULT hr;
 	ID3DX11EffectTechnique* technique = drawShadow ? m_ShadowET : m_RenderET;
-	mesh = object->GetMesh();
+	Mesh* 	mesh = object->GetMesh();
+	MeshInstanceType instance;
+	D3DXMatrixTranspose(&instance.Transformation, object->GetWorld());
+	MeshInstanceType vInstance[1] = { instance};
+	ID3D11Buffer* instanceBuffer = mesh->GetInstanceBuffer();
+	D3D11_BOX box = {0,0,0,1*sizeof(MeshInstanceType),1,1};
+	pd3DContext->UpdateSubresource(instanceBuffer,0,&box, vInstance,sizeof(MeshInstanceType),0);
 	vbs[0] = mesh->GetVertexBuffer();
-	vbs[1] = mesh->GetInstanceBuffer();
+	vbs[1] = instanceBuffer;
 	offset[0] = 0;
-	offset[1] = 1;
+	offset[1] = 0;
 	stride[0] = sizeof(T3dVertex);
 	stride[1] = sizeof(MeshInstanceType);
 
-	object->CalculateWorldMatrix(g_invView);
-
 	pd3DContext->IASetInputLayout(m_MeshInputLayout);
 
-	m_DiffuseEV->SetResource(mesh->GetDiffuseSRV());
-	m_SpecularEV->SetResource(mesh->GetSpecularSRV());
-	m_GlowEV->SetResource(mesh->GetGlowSRV());
-	m_NormalEV->SetResource(mesh->GetNormalSRV());
+	V(m_DiffuseEV->SetResource(mesh->GetDiffuseSRV()));
+	V(m_SpecularEV->SetResource(mesh->GetSpecularSRV()));
+	V(m_GlowEV->SetResource(mesh->GetGlowSRV()));
+	V(m_NormalEV->SetResource(mesh->GetNormalSRV()));
 
 	m_LightColorEV->SetFloatVector(*g_LightColor);
-	m_LightDirViewEV->SetFloatVector((float*)&g_LightDirView);
+	m_LightDirViewEV->SetFloatVector(*g_LightDirView);
 	if(shadowMap != NULL)
 	m_pEffect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(shadowMap->GetShaderResource());
 	m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix);
 
-	WorldView = *object->GetWorld();
+	WorldView = D3DXMATRIX(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+	//WorldView = *object->GetWorld();
 	WorldViewProjektion = WorldView;
 	//WorldLightViewProjMatrix = object->g_World*(*g_LightViewProjMatrix);
-	if(object->GetRelativePosition() == GameObject::CAMERA){
-		//WorldViewProjektion = object->g_World *(*g_Proj);
-		WorldView *= *g_invView;
-	} else {
+	//if(object->GetRelativePosition() == GameObject::CAMERA){
+	//	//WorldViewProjektion = object->g_World *(*g_Proj);
+	//	WorldView *= *g_invView;
+	//} else {
 		WorldViewProjektion *= *g_View;
-	}
+	//}
 	WorldViewProjektion *= *g_Proj;
-	D3DXMatrixInverse(&WorldViewNormals,0,&WorldView);
-	D3DXMatrixTranspose(&WorldViewNormals,&WorldViewNormals);
-
-	WorldLightViewProjMatrix = WorldView* *g_LightViewProjMatrix;
-	//m_WorldViewEV->SetMatrix(WorldView);
-	//m_WorldViewProjektionEV->SetMatrix(WorldViewProjektion);
-	//m_WorldViewNormalsEV->SetMatrix(WorldViewNormals);
-	//m_WorldLightViewProjMatrixEV->SetMatrix(WorldLightViewProjMatrix);
+	D3DXMATRIX viewProj = *g_View* *g_Proj;
+	D3DXMATRIX invView;
+	D3DXMATRIX invProj;
+	D3DXMATRIX invViewProj;
+	D3DXMatrixInverse(&invProj,0,g_Proj);
+	D3DXMatrixInverse(&invView,0,g_View);
+	//D3DXMatrixInverse(&invViewProj,0,g_ViewProj);
+	//D3DXMatrixTranspose(&WorldViewNormals,g_ViewProj);
+	V(m_ViewEV->SetMatrix(*g_View));
+	V(m_ViewProjEV->SetMatrix(viewProj));
+	V(m_NormalsEV->SetMatrix(WorldViewNormals));
+	V(m_pEffect->GetVariableByName("mProj")->AsMatrix()->SetMatrix(*g_Proj));
+	V(m_pEffect->GetVariableByName("mProjInv")->AsMatrix()->SetMatrix(invProj));
+	V(m_pEffect->GetVariableByName("mViewInv")->AsMatrix()->SetMatrix(invView));
+	//V(m_pEffect->GetVariableByName("mViewProjInv")->AsMatrix()->SetMatrix(invViewProj));
+	V(m_LightViewProjMatrixEV->SetMatrix(*g_LightViewProjMatrix));
 	technique->GetPassByName("Mesh")->Apply(0, pd3DContext);
 	pd3DContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 	pd3DContext->IASetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexFormat(), 0);
 	pd3DContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
-	pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
-	//Light Scattering
-	if(vlsMap != NULL)
-	{
-		ID3D11RenderTargetView* vlsTarget = vlsMap->GetRenderTarget();
-		pd3DContext->OMSetRenderTargets(1, &vlsTarget, NULL);
-		technique->GetPassByName("MeshBW")->Apply(0, pd3DContext);
-		//pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), mesh->GetInstanceCount(),0, 0,0);
-		pd3DContext->DrawIndexed(mesh->GetIndexCount(), 0,0);
-	}
+	pd3DContext->DrawIndexedInstanced(mesh->GetIndexCount(), 1,0, 0,0);
+
 }
 
 void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap, RenderableTexture* vlsMap, bool drawShadow)
@@ -281,13 +287,29 @@ void MeshRenderer::RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadow
 void MeshRenderer::AddToRenderPass(GameObject* object)
 {
 	object->CalculateWorldMatrix(g_invView);
-	object->GetMesh()->AddInstance(object->GetWorld());
+	if(object->GetRelativePosition() == GameObject::CAMERA)
+		m_CameraMeshes.push_back(object);
+	else
+	{
+		object->GetMesh()->AddInstance(object->GetWorld());
+	}
 }
 
 void MeshRenderer::ResetInstances()
 {
 	for(auto m = g_Meshes.begin(); m != g_Meshes.end(); m++)
 		m->second->ResetInstances();
+	//for(auto m = m_CameraMeshes.begin(); m != m_CameraMeshes.end(); m++)
+	//	SAFE_DELETE(*m);
+	m_CameraMeshes.clear();
+}
+
+void MeshRenderer::RenderCameraMeshes(ID3D11Device* pd3dDevice, RenderableTexture* shadowMap)
+{
+	for(auto m = m_CameraMeshes.begin(); m != m_CameraMeshes.end(); m++)
+	{
+		RenderMesh(pd3dDevice, *m, shadowMap, NULL, false);
+	}
 }
 
 

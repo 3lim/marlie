@@ -12,7 +12,7 @@ using namespace std;
 vector<unsigned short> TerrainRenderer::g_TerrainHeights;
 
 TerrainRenderer::TerrainRenderer(CHAR path[], float width, float depth, float height, bool spinning, float spinningSpeed) :
-m_TerrainNumVertices(3),
+	m_TerrainNumVertices(3),
 	m_TerrainNumTriangles(1),
 	//m_TerrainPath(string(path)),
 	m_TerrainWidth(width),
@@ -26,6 +26,8 @@ m_TerrainNumVertices(3),
 {
 	vbs[0] = NULL;
 	m_TerrainPath= std::string(path);
+
+	m_trunk.trunkResolution = 1;
 }
 
 
@@ -50,7 +52,7 @@ HRESULT TerrainRenderer::CreateResources(ID3D11Device* pDevice)
 		MessageBoxA (NULL, ss.str().c_str(), "Missing file", MB_ICONERROR | MB_OK);
 		return hr;
 	}
-		// open the terrain file
+	// open the terrain file
 	FILE* file;
 	error = _wfopen_s(&file, path, TEXT("rb"));
 	if (file == nullptr) {
@@ -99,8 +101,11 @@ HRESULT TerrainRenderer::CreateResources(ID3D11Device* pDevice)
 			return E_FAIL;
 		}    
 	}
+	m_trunk.squareLength = m_TerrainResolution/m_trunk.trunkResolution;
+	m_trunk.vertexCount = m_trunk.squareLength*m_trunk.squareLength;
+	m_trunk.trunksCount = m_trunk.trunkResolution*m_trunk.trunkResolution;
 
-		// read the terrain color texture for diffuse lighting
+	// read the terrain color texture for diffuse lighting
 	std::vector<unsigned char> terraindiffusentx;
 	terraindiffusentx.resize(m_TerrainHeader.colorSize);
 	{
@@ -125,10 +130,7 @@ HRESULT TerrainRenderer::CreateResources(ID3D11Device* pDevice)
 
 	fclose(file);
 
-		// Create the vertex buffer for the terrain
-	std::vector<float> terrainVB;
-	terrainVB.resize(m_TerrainNumVertices * (4 + 4 + 2)); // Position / Normal / TexCoord
-
+	// Create the vertex buffer for the terrain
 	D3D11_SUBRESOURCE_DATA id;
 	id.pSysMem = &g_TerrainHeights[0];
 	id.SysMemPitch = sizeof(unsigned short);
@@ -148,61 +150,103 @@ HRESULT TerrainRenderer::CreateResources(ID3D11Device* pDevice)
 	V_RETURN(pDevice->CreateShaderResourceView(m_TerrainHeightBuf, &srvDesc, &m_TerrainHeightSRV));
 	// END: Assignment 4.2.6
 
-	D3D11_TEXTURE2D_DESC tex2DDesc;
-	std::vector<std::vector<unsigned char>> textureData;
-	std::vector<D3D11_SUBRESOURCE_DATA> subresourceData;
-	bool sRgb;
-	V(LoadNtx(terraindiffusentx, &tex2DDesc, textureData, subresourceData, sRgb));
-	if(FAILED(hr))
-		return hr;
-	V(pDevice->CreateTexture2D(&tex2DDesc, &subresourceData[0], &m_TerrainDiffuseTex));
-	if(FAILED(hr))
-		return hr;
-	V(pDevice->CreateShaderResourceView(m_TerrainDiffuseTex, NULL, &m_TerrainDiffuseSRV));  
-
-	D3D11_TEXTURE2D_DESC heightDesc;
-	vector<vector<float>> heightData;
-	heightData.resize(1);
-	heightData[0].resize(m_TerrainResolution*m_TerrainResolution);
-	for(int i=0;i<m_TerrainResolution*m_TerrainResolution;i++)
-	{
-		heightData[0][i] = g_TerrainHeights[i]/(float)UINT16_MAX;
-	}
-	vector<D3D11_SUBRESOURCE_DATA> heightSubres;
-	heightSubres.resize(1);
-	heightSubres[0].pSysMem = &heightData[0][0];
-	heightSubres[0].SysMemPitch = sizeof(float) * m_TerrainResolution;
-
-	heightDesc.ArraySize=1;
-	heightDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	heightDesc.CPUAccessFlags = 0;
-	heightDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	heightDesc.Height = m_TerrainResolution;
-	heightDesc.MipLevels = 1;
-	heightDesc.MiscFlags = 0;
-	heightDesc.SampleDesc.Count = 1;
-	heightDesc.SampleDesc.Quality = 0;
-	heightDesc.Usage = D3D11_USAGE_DEFAULT;
-	heightDesc.Width = m_TerrainResolution;
-	pDevice->CreateTexture2D(&heightDesc,&heightSubres[0],&heightTex);
-	pDevice->CreateShaderResourceView(heightTex,NULL,&heightSRV);
-
-
-	// END: Assignment 3.2.5
-	// BEGIN: Assigment 4.2.7
-	D3D11_TEXTURE2D_DESC normal2DDesc;
-	std::vector<std::vector<unsigned char>> normalData;
-	subresourceData.empty();
-	V(LoadNtx(terrainNormalNtx, &normal2DDesc, normalData, subresourceData, sRgb));
-	if(FAILED(hr))
-		return hr;
-	pDevice->CreateTexture2D(&normal2DDesc, &subresourceData[0], &m_TerrainNormalTex);
-	if(FAILED(hr))
-		return hr;
-	pDevice->CreateShaderResourceView(m_TerrainNormalTex, NULL, &m_TerrainNormalSRV);  
+	for(size_t y = 0; y < m_TerrainResolution; y+=m_trunk.squareLength)
+		for(size_t x = 0; x < m_TerrainResolution; x+=m_trunk.squareLength)
+		{
+			Trunk t;
+			t.TopLeftX = x;
+			t.TopLeftY = y;
+			vector<unsigned short> trunkHeights;
+			for(size_t i = 0; i < m_trunk.squareLength; i++){
+				UINT begin =  y*m_TerrainResolution+x+i*m_trunk.squareLength;
+				UINT end = begin +m_trunk.squareLength;
+				trunkHeights.insert(trunkHeights.begin()+i*(m_trunk.squareLength), g_TerrainHeights.begin() + begin, g_TerrainHeights.begin() + end);
+			}
+			//for(int trunkY = y; trunkY < y+ m_trunk.squareLength; trunkY++)
+			//for(int trunkX = x; trunkX < x+m_trunk.squareLength; trunkX++)
+			//{
+			//	trunkHeights.push_back(g_TerrainHeights[trunkY*m_TerrainResolution+trunkX]);
+			//}
+			//for(int i = 0; i < g_TerrainHeights.size(); i++)
+			//	if(trunkHeights[1024] != g_TerrainHeights[1024])
+			//		hr = -1;
+			D3D11_SUBRESOURCE_DATA id;
+			id.pSysMem = &trunkHeights[0];
+			id.SysMemPitch = sizeof(unsigned short);
+			id.SysMemSlicePitch = 0;
+			D3D11_BUFFER_DESC bd;
+			bd.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			bd.ByteWidth = m_trunk.vertexCount * id.SysMemPitch;
+			bd.CPUAccessFlags = 0;
+			bd.MiscFlags = 0;
+			bd.Usage = D3D11_USAGE_DEFAULT;	
+			pDevice->CreateBuffer(&bd, &id, &t.vbs);
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+			srvDesc.Format = DXGI_FORMAT_R16_UNORM;
+			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+			srvDesc.Buffer.FirstElement = 0;
+			srvDesc.Buffer.NumElements = m_trunk.vertexCount;
+			V_RETURN(pDevice->CreateShaderResourceView(t.vbs, &srvDesc, &t.srv));
+			m_TrunksBuffer.push_back(t);
+		}
 
 
-	return S_OK;
+
+		D3D11_TEXTURE2D_DESC tex2DDesc;
+		std::vector<std::vector<unsigned char>> textureData;
+		std::vector<D3D11_SUBRESOURCE_DATA> subresourceData;
+		bool sRgb;
+		V(LoadNtx(terraindiffusentx, &tex2DDesc, textureData, subresourceData, sRgb));
+		if(FAILED(hr))
+			return hr;
+		V(pDevice->CreateTexture2D(&tex2DDesc, &subresourceData[0], &m_TerrainDiffuseTex));
+		if(FAILED(hr))
+			return hr;
+		V(pDevice->CreateShaderResourceView(m_TerrainDiffuseTex, NULL, &m_TerrainDiffuseSRV));  
+
+		D3D11_TEXTURE2D_DESC heightDesc;
+		vector<vector<float>> heightData;
+		heightData.resize(1);
+		heightData[0].resize(m_TerrainResolution*m_TerrainResolution);
+		for(int i=0;i<m_TerrainResolution*m_TerrainResolution;i++)
+		{
+			heightData[0][i] = g_TerrainHeights[i]/(float)UINT16_MAX;
+		}
+		vector<D3D11_SUBRESOURCE_DATA> heightSubres;
+		heightSubres.resize(1);
+		heightSubres[0].pSysMem = &heightData[0][0];
+		heightSubres[0].SysMemPitch = sizeof(float) * m_TerrainResolution;
+
+		heightDesc.ArraySize=1;
+		heightDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		heightDesc.CPUAccessFlags = 0;
+		heightDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		heightDesc.Height = m_TerrainResolution;
+		heightDesc.MipLevels = 1;
+		heightDesc.MiscFlags = 0;
+		heightDesc.SampleDesc.Count = 1;
+		heightDesc.SampleDesc.Quality = 0;
+		heightDesc.Usage = D3D11_USAGE_DEFAULT;
+		heightDesc.Width = m_TerrainResolution;
+		pDevice->CreateTexture2D(&heightDesc,&heightSubres[0],&heightTex);
+		pDevice->CreateShaderResourceView(heightTex,NULL,&heightSRV);
+
+
+		// END: Assignment 3.2.5
+		// BEGIN: Assigment 4.2.7
+		D3D11_TEXTURE2D_DESC normal2DDesc;
+		std::vector<std::vector<unsigned char>> normalData;
+		subresourceData.empty();
+		V(LoadNtx(terrainNormalNtx, &normal2DDesc, normalData, subresourceData, sRgb));
+		if(FAILED(hr))
+			return hr;
+		pDevice->CreateTexture2D(&normal2DDesc, &subresourceData[0], &m_TerrainNormalTex);
+		if(FAILED(hr))
+			return hr;
+		pDevice->CreateShaderResourceView(m_TerrainNormalTex, NULL, &m_TerrainNormalSRV);  
+
+
+		return S_OK;
 }
 
 void TerrainRenderer::ReleaseResources()
@@ -215,6 +259,11 @@ void TerrainRenderer::ReleaseResources()
 	SAFE_RELEASE(m_TerrainHeightSRV);
 	SAFE_RELEASE(heightTex);
 	SAFE_RELEASE(heightSRV);
+	for(auto it = m_TrunksBuffer.begin(); it != m_TrunksBuffer.end(); it++)
+	{
+		SAFE_RELEASE(it->vbs);
+		SAFE_RELEASE(it->srv);
+	}
 }
 
 HRESULT TerrainRenderer::ReloadShader(ID3D11Device* pDevice)
@@ -253,7 +302,7 @@ HRESULT TerrainRenderer::ReloadShader(ID3D11Device* pDevice)
 	SAFE_GET_RESOURCE(m_pEffect, "g_Diffuse", m_TerrainDiffuseEV);
 
 	SAFE_GET_MATRIX(m_pEffect, "g_World", m_WorldEV);
-	
+
 	SAFE_GET_SCALAR(m_pEffect, "g_TerrainRes", m_TerrainResEV);
 	SAFE_GET_SCALAR(m_pEffect, "g_TerrainQuadRes", m_TerrainQuadsEV);
 
@@ -280,7 +329,7 @@ void TerrainRenderer::setEffectVariables()
 {
 	m_TerrainNormalEV->SetResource(m_TerrainNormalSRV);
 	m_TerrainDiffuseEV->SetResource(m_TerrainDiffuseSRV);
-	m_TerrainHeightEV->SetResource(m_TerrainHeightSRV);
+	m_TerrainHeightEV->SetResource(m_TerrainHeightSRV/*m_TrunksBuffer[0].srv*/);
 
 	m_WorldEV->SetMatrix(m_World);
 
@@ -317,36 +366,44 @@ void TerrainRenderer::OnMove(double time, float elapsedTime)
 	}
 }
 
-void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* LightBW, ID3D11DepthStencilView* dsv, ID3D11RenderTargetView* reflectionRTV)
+void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap)
 {
 	ID3D11DeviceContext* pd3dImmediateContext;
 	pDevice->GetImmediateContext(&pd3dImmediateContext);
+
 	m_ShadowMapEV->SetResource(shadowMap->GetShaderResource());
-
 	setEffectVariables();
-	// Apply the rendering pass in order to submit the necessary render state changes to the device
-	m_RenderTerrain->Apply(0, pd3dImmediateContext);
-	// Set input layout
+	m_pEffect->GetVariableByName("g_TrunkRes")->AsScalar()->SetInt(m_trunk.squareLength);
+	m_pEffect->GetVariableByName("g_TrunkQuadRes")->AsScalar()->SetInt(m_trunk.squareLength-1);
+	m_TerrainResEV->SetInt(m_trunk.squareLength);
+	m_TerrainQuadsEV->SetInt(m_trunk.squareLength-1);
+	for(int i = 0; i < m_trunk.trunksCount; i++)
+	{
+		m_TerrainHeightEV->SetResource(m_TrunksBuffer[i].srv);
+		m_pEffect->GetVariableByName("offsetIndex")->AsScalar()->SetInt(m_TrunksBuffer[i].TopLeftY*m_TerrainResolution+ m_TrunksBuffer[i].TopLeftX);
+		// Apply the rendering pass in order to submit the necessary render state changes to the device
+		//m_RenderTerrain->Apply(0, pd3dImmediateContext);
+		// Set input layout
 
-	pd3dImmediateContext->IASetInputLayout( NULL );
-	// Bind the terrain vertex buffer to the input assembler stage 
-	pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
-	// Tell the input assembler stage which primitive topology to use
-	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-
-	pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
-	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
-	pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
-/*
-//	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
+		pd3dImmediateContext->IASetInputLayout( NULL );
+		// Bind the terrain vertex buffer to the input assembler stage 
+		pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+		// Tell the input assembler stage which primitive topology to use
+		pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+		pd3dImmediateContext->Draw(m_TerrainVertexCount/m_trunk.trunksCount, 0);
+	}
+	//pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
+	//m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
+	//pd3dImmediateContext->Draw(m_TerrainVertexCount/16, 0);
+	/*
+	//	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
 	/*
 	D3DXPLANE reflectP = D3DXPLANE(0,1,0,1);
 	D3DXMatrixReflect(&reflectM,&reflectP);*/
-//	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
-//	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
-//	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+	//	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
+	//	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
+	//	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 	//pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
 	m_ShadowMapEV->SetResource(0);

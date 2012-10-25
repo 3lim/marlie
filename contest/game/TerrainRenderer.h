@@ -17,6 +17,19 @@ struct PtfHeader{
 	int32_t normalSize;	    // Normal data size
 };
 
+struct Trunk {
+	ID3D11Buffer* vbs;
+	unsigned int TopLeftX;
+	unsigned int TopLeftY;
+	ID3D11ShaderResourceView* srv;
+};
+struct TrunkSettings {
+	size_t squareLength;
+	size_t vertexCount;
+	size_t trunksCount;
+	size_t trunkResolution;
+};
+
 class TerrainRenderer
 {
 public:
@@ -27,7 +40,7 @@ public:
 	HRESULT CreateResources(ID3D11Device* pDevice);
 	void ReleaseResources();
 	void OnMove( double fTime, float fElapsedTime);
-	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap, ID3D11RenderTargetView* VolumetricLightScattering, ID3D11DepthStencilView* dsv, ID3D11RenderTargetView* reflectionRTV);
+	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap);
 	void ShadowTerrain(ID3D11Device* pDevice);
 	void Deinit();
 	static std::vector<unsigned short> g_TerrainHeights;
@@ -52,6 +65,7 @@ public:
 	int				m_TerrainResolution;
 private:
 	inline void setEffectVariables(void);
+	TrunkSettings	m_trunk;
 	// Terrain meta information
 	PtfHeader		m_TerrainHeader; 
 	int				m_TerrainNumVertices;
@@ -69,7 +83,8 @@ private:
 	ID3DX11EffectTechnique* m_ShadowET;
 
 	ID3D11DeviceContext* pd3DContext;
-	ID3D11Buffer* vbs[1];
+	ID3D11Buffer* vbs[16];
+	std::vector<Trunk> m_TrunksBuffer;
 	UINT offset;
 	UINT stride;
 

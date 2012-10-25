@@ -1,43 +1,6 @@
 #include "RenderableTexture.h"
 
 
-RenderableTexture::RenderableTexture(ID3D11Device* d3dDevice, unsigned int Width, unsigned int Height, DXGI_FORMAT Format)  
-	: m_Width(Width), m_Height(Height), m_MipLevels(1), m_Format(Format)
-  , m_Array(false), m_ArrayIndex(0)
-  , m_Texture(0), m_RenderTarget(0), m_ShaderResource(0)
-
-{
-	HRESULT hr;
-  // Create texture
-  D3D11_TEXTURE2D_DESC TexDesc;
-  TexDesc.Width              = m_Width;
-  TexDesc.Height             = m_Height;
-  TexDesc.MipLevels          = 1;
-  TexDesc.ArraySize          = 1;
-  TexDesc.Format             = m_Format;
-  //TexDesc.SampleDesc = RealSampleDesc;
-  TexDesc.SampleDesc.Count = 4;//         = RealSampleDesc;
-  TexDesc.SampleDesc.Quality = 1;
-  TexDesc.Usage              = D3D11_USAGE_DEFAULT;
-  TexDesc.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-  TexDesc.CPUAccessFlags     = 0;
-  TexDesc.MiscFlags = 0;
-	V(d3dDevice->CreateTexture2D(&TexDesc, NULL, &m_Texture));
-  // Create the render target view
-  D3D11_RENDER_TARGET_VIEW_DESC RTDesc;
-  RTDesc.Format              = TexDesc.Format;
-  RTDesc.ViewDimension       = D3D11_RTV_DIMENSION_TEXTURE2DMS;
-  RTDesc.Texture2D.MipSlice  = 0;
-	
-	V( d3dDevice->CreateRenderTargetView( m_Texture, &RTDesc, &m_RenderTarget ));
-	 D3D11_SHADER_RESOURCE_VIEW_DESC SRDesc;
-	  SRDesc.Format                    = TexDesc.Format;
-	  SRDesc.ViewDimension	           = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-	  SRDesc.Texture2D.MostDetailedMip = 0;
-	  SRDesc.Texture2D.MipLevels       = TexDesc.MipLevels;
-	 V(d3dDevice->CreateShaderResourceView(m_Texture,&SRDesc , &m_ShaderResource));
-}
-
 RenderableTexture::RenderableTexture(ID3D11Device* d3dDevice,
                                          unsigned int Width, unsigned int Height,
                                          unsigned int MipLevels, DXGI_FORMAT Format,
@@ -62,7 +25,7 @@ RenderableTexture::RenderableTexture(ID3D11Device* d3dDevice,
   D3D11_TEXTURE2D_DESC TexDesc;
   TexDesc.Width              = m_Width;
   TexDesc.Height             = m_Height;
-  TexDesc.MipLevels          = 1;
+  TexDesc.MipLevels          = MipLevels;
   TexDesc.ArraySize          = 1;
   TexDesc.Format             = m_Format;
   TexDesc.SampleDesc = RealSampleDesc;
@@ -72,7 +35,7 @@ RenderableTexture::RenderableTexture(ID3D11Device* d3dDevice,
   TexDesc.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
   TexDesc.CPUAccessFlags     = 0;
   // If they request mipmap levels, it's nice to be able to autogenerate them.
-  TexDesc.MiscFlags       = (m_MipLevels == 0 ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
+  TexDesc.MiscFlags       = (m_MipLevels > 1 ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
 
   V(d3dDevice->CreateTexture2D(&TexDesc, NULL, &m_Texture));
   // Update the description with the read number of mipmaps, etc.
@@ -139,6 +102,12 @@ RenderableTexture::RenderableTexture(ID3D11Device* d3dDevice,
   V(d3dDevice->CreateShaderResourceView(m_Texture, &SRDesc, &m_ShaderResource));
 }
 
+void RenderableTexture::SetDebugName(char* s)
+{
+	DXUT_SetDebugName(m_ShaderResource, s);
+	DXUT_SetDebugName(m_RenderTarget, s);
+	DXUT_SetDebugName(m_Texture, s);
+}
 
 
 RenderableTexture::~RenderableTexture(void)

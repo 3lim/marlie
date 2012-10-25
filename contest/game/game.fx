@@ -12,7 +12,8 @@ Texture2D g_Glow;
 TextureCube g_SkyBoxTex;
 Texture2D g_ShadowMap;
 Texture2D g_ShadowMapVSM;
-Texture2DMS<float4,4> g_VLSMap;
+Texture2DMS<float4,4> g_VLSMapMS4;
+Texture2D g_VLSMap;
 //--------------------------------------------------------------------------------------
 // Constant buffers
 //--------------------------------------------------------------------------------------
@@ -370,11 +371,13 @@ float4 SATPS_Billboard( PosTex input ) : SV_TARGET
 	//float4 SatCoord = input.Tex.xyxy + float4(0, 0, size.xy);
 	//return float4(sampleSAT(g_ShadowMap, SatCoord, dim).r,0,1);
 	int texID = (input.Tex.x > 1.f);
-	int samples=0;
-	g_VLSMap.GetDimensions(dim.x, dim.y,samples);
+	//int samples=0;
+	//g_VLSMap.GetDimensions(dim.x, dim.y,samples);//MS4
+
 	return float4( 
 		//(1-texID)*(g_ShadowMap.Sample(samAnisotropic, float3(input.Tex,0)))+
-		(1-texID)*(g_VLSMap.Load(int3(input.Tex.x * dim.x, input.Tex.y * dim.y, 0), 0))+
+		(1-texID)*(g_VLSMap.Sample(samAnisotropic, float3(input.Tex,0)))+
+		//(1-texID)*(g_VLSMap.Load(int3(input.Tex.x * dim.x, input.Tex.y * dim.y, 0), 0))+
 		//(1-texID)*(samSAT(g_ShadowMap, input.Tex, float2(2,2)).xxx+GetFPBias().xxx)+ //Displays SatImg als ursprüngliches Bild
 		(g_ShadowMapVSM.Sample(samAnisotropic, float3(input.Tex,0)).xxx+GetFPBias().xxx)*texID,1);
 }

@@ -19,6 +19,8 @@ cbuffer cbConstant
 {
 	int g_TerrainRes;
 	int g_TerrainQuadRes;
+	int g_TrunkRes;
+	int g_TrunkQuadRes;
 };
 
 cbuffer cbChangesEveryFrame
@@ -27,6 +29,11 @@ cbuffer cbChangesEveryFrame
 	float4 g_LightDir;
 	matrix g_LightViewProjMatrix;
 	float2 g_ShadowTexSize;
+};
+
+cbuffer cbTrunk
+{
+	uint offsetIndex;
 };
 
 
@@ -49,10 +56,10 @@ SamplerState samAnisotropic
 };
 SamplerState samPSVSM
 {
-    AddressU = Clamp;
-    AddressV = Clamp;
-    Filter = ANISOTROPIC;
-    MaxAnisotropy = 16;
+	AddressU = Clamp;
+	AddressV = Clamp;
+	Filter = ANISOTROPIC;
+	MaxAnisotropy = 16;
 };
 SamplerState samDepthMap
 {
@@ -83,9 +90,9 @@ RasterizerState rsCullNone {
 //--------------------------------------------------------------------------------------
 DepthStencilState EnableDepth
 {
-    DepthEnable = TRUE;
-    DepthWriteMask = ALL;
-    DepthFunc = LESS_EQUAL;
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = LESS_EQUAL;
 };
 
 BlendState NoBlending
@@ -101,18 +108,21 @@ BlendState NoBlending
 PosTex TerrainVS(uint VertexID : SV_VertexID)
 {
 	PosTex output = (PosTex) 0;
+	//VertexID += offsetIndex;
 
 	uint quadIdx = VertexID / 6;
 	uint inQuadIdx = VertexID % 6;
 	float dx = 1.f / g_TerrainRes;
+	int2 position;//in Buffer
 	int2 coords;
 	coords.x = quadIdx % g_TerrainQuadRes;
 	coords.y = quadIdx / g_TerrainQuadRes;
-	
-	if(inQuadIdx==1||inQuadIdx==4) coords.x++;
-	if(inQuadIdx==2||inQuadIdx==3) coords.y++;
-	if(inQuadIdx==5) {coords.x++;coords.y++;}
-	
+	//position = float2(quadIdx % g_TrunkQuadRes, quadIdx / g_TrunkQuadRes);
+
+	if(inQuadIdx==1||inQuadIdx==4) {coords.x++; /*position.x++;*/}
+	if(inQuadIdx==2||inQuadIdx==3) {coords.y++; /*position.y++;*/}
+	if(inQuadIdx==5) {coords.x++;coords.y++;/*position.x++; position.y++;*/}
+
 	output.Tex.x = coords.x * dx;
 	output.Tex.y = coords.y *dx;
 
@@ -135,7 +145,7 @@ float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 	n.z = sqrt(saturate(1 - n.x*n.x - n.y*n.y));
 
 	float3 lPos = Input.lightPos.xyz/Input.lightPos.w;
-	lPos.y = -lPos.y;
+		lPos.y = -lPos.y;
 	lPos.xy = lPos.xy/2.f+0.5f;
 	uint2 dimensions;
 	float i = saturate(dot(g_LightDir.xyz, n));
@@ -143,43 +153,43 @@ float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 	float4 matDiffuse = g_Diffuse.Sample(samAnisotropic, Input.Tex);
 
 		//OLD Shading
-	//g_VSMap.GetDimensions(dimensions.x,dimensions.y);
-	//float2 t = frac( lPos.xy * dimensions.x );
-	//float shadowFactor = lerp(lerp(g_VSMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z-0.01f),g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z-0.01f),t.x),
-	//					lerp(g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y+1.f/dimensions.y),lPos.z-0.01f),g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x,lPos.y+1.f/dimensions.y),lPos.z-0.01f),t.x),t.y);
-	//
-	
+		//g_VSMap.GetDimensions(dimensions.x,dimensions.y);
+		//float2 t = frac( lPos.xy * dimensions.x );
+		//float shadowFactor = lerp(lerp(g_VSMap.SampleCmpLevelZero(depthMap,lPos.xy,lPos.z-0.01f),g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y),lPos.z-0.01f),t.x),
+		//					lerp(g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x+1.f/dimensions.x,lPos.y+1.f/dimensions.y),lPos.z-0.01f),g_VSMap.SampleCmpLevelZero(depthMap,float2(lPos.x,lPos.y+1.f/dimensions.y),lPos.z-0.01f),t.x),t.y);
+		//
 
-	//VSM Shading + BilinearFiltering
-	//float2 dtdx = ddx(lPos);
-	//float2 dtdy = ddy(lPos);
-	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
-	//VSM Shading + PCF
-	//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
-	float depth = lPos.z; //distant to Lightsource
 
- //   float2 TexelSize = 1 / g_ShadowTexSize;
- //   float2 MinFilterWidth = float2(4,4);
+		//VSM Shading + BilinearFiltering
+		//float2 dtdx = ddx(lPos);
+		//float2 dtdy = ddy(lPos);
+		float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
+		//VSM Shading + PCF
+		//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
+		float depth = lPos.z; //distant to Lightsource
+
+	//   float2 TexelSize = 1 / g_ShadowTexSize;
+	//   float2 MinFilterWidth = float2(4,4);
 	//float2 MaxFilterWidth = float2(32,32);
- //   // Compute the filter tile information
- //   // Don't clamp the filter area since we have constant-time filtering!
- //   float2 Size;
- //   float2 CoordsUL = GetFilterTile(tc, dx, dy, g_ShadowTexSize,
- //                                   MinFilterWidth, MaxFilterWidth, Size);
+	//   // Compute the filter tile information
+	//   // Don't clamp the filter area since we have constant-time filtering!
+	//   float2 Size;
+	//   float2 CoordsUL = GetFilterTile(tc, dx, dy, g_ShadowTexSize,
+	//                                   MinFilterWidth, MaxFilterWidth, Size);
 
- //   // Compute bilinear weights and coordinates
- //   float4 BilWeights;
- //   float2 BilCoordsUL = GetBilCoordsAndWeights(CoordsUL, g_ShadowTexSize, BilWeights);
- //   float4 Tile = BilCoordsUL.xyxy + float4(0, 0, Size.xy);
- //   
- //   // Read the moments and compute a Chebyshev upper bound
- //   float ShadowContrib = BilinearChebyshev(Tile, BilWeights, Distance, g_VSMMinVariance);
+	//   // Compute bilinear weights and coordinates
+	//   float4 BilWeights;
+	//   float2 BilCoordsUL = GetBilCoordsAndWeights(CoordsUL, g_ShadowTexSize, BilWeights);
+	//   float4 Tile = BilCoordsUL.xyxy + float4(0, 0, Size.xy);
+	//   
+	//   // Read the moments and compute a Chebyshev upper bound
+	//   float ShadowContrib = BilinearChebyshev(Tile, BilWeights, Distance, g_VSMMinVariance);
 
 	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
 	shadowFactor = ReduceLightBleeding(shadowFactor, 0.14);
 	return i * matDiffuse * shadowFactor 
 		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
-	
+
 }
 
 float4 TerrainBWPS(void) : SV_Target0
@@ -201,7 +211,7 @@ technique11 Shadow
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(NULL);
-		
+
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
@@ -211,7 +221,7 @@ technique11 Shadow
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, VSM_DepthPS()));
-		
+
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
@@ -224,7 +234,7 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, TerrainPS()));
-		
+
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
@@ -234,7 +244,7 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0, TerrainBWPS()));
-		
+
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
@@ -244,7 +254,7 @@ technique11 Render
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(NULL);
-		
+
 		SetRasterizerState(rsCullNone);
 		SetDepthStencilState(EnableDepth, 0);
 		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);

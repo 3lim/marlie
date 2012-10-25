@@ -18,7 +18,6 @@
 class MeshRenderer
 {
 public:
-	static std::vector<GameObject*> g_MeshesToRender;
 	MeshRenderer(FrustumCulling* f);
 	~MeshRenderer(void);
 	HRESULT ReloadShader(ID3D11Device* pDevice);
@@ -33,6 +32,7 @@ public:
 	//void RenderMesh(ID3D11Device* pDevice, ObjectTransformation* object, ID3DX11EffectTechnique* technik);
 	void RenderMesh(ID3D11Device* pDevice, GameObject* object, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
 	void RenderMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap = NULL, RenderableTexture* vlsMap = NULL, bool drawShadow = true);
+	void RenderCameraMeshes(ID3D11Device* pDevice, RenderableTexture* shadowMap);
 	void Deinit();
 	static std::map<std::string, Mesh*> g_Meshes;
 	//HRESULT LoadFile(const char* filename, std::vector<uint8_t>& data);
@@ -48,6 +48,8 @@ public:
 	D3DXMATRIX* g_invView;
 	void ResetInstances();
 private:
+	static std::vector<GameObject*> g_MeshesToRender;
+	std::vector<GameObject*> m_CameraMeshes;
 	inline void setEffectVariables(void);
 	FrustumCulling* g_Frustum;
 	ID3DX11Effect* m_pEffect;
