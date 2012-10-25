@@ -222,7 +222,7 @@ float3 sunColor = {1.0f, 1.0f, 1.0f};
 float shoreHardness = 0.3f;
 
 // bigger -> weaker reflections
-float refractionStrength = 0.65f;
+float refractionStrength = 0.75f;
 
 // "wave-size" modifier
 float4 normalModifier = {16.0f, 8.0f, 4.0f, 1.0f};
