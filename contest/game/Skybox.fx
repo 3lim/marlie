@@ -210,6 +210,7 @@ void CloudPS(QuadVertex input, out float4 finalColor : SV_TARGET0, out float4 vl
 	finalColor = lerp(textureColor1, textureColor2, 0.5f);
 	finalColor.a *=CloudTex1.Sample(samAnisotropic, (float2(1,1) - input.Tex)*0.7 + cloudTranslation[2]).a*cloudBrightness+0.4;
 	finalColor.rgb = 1;
+	float fade = 0;
 	////SquareFade
 	//float fadeX = input.Plane.x*2-1;//;
 	//fadeX = fadeX*fadeX;
@@ -218,8 +219,8 @@ void CloudPS(QuadVertex input, out float4 finalColor : SV_TARGET0, out float4 vl
 	//fadeY = fadeY*fadeY;
 	//fadeY = 1-fadeY;
 	//float fade = saturate(1-fadeX*fadeY*10);
-	//CirccleFade
-	float fade = saturate(length(float2(input.Plane.x*2-1, input.Plane.y*2-1)*0.7));
+	////CirccleFade
+	fade += pow(saturate(length(float2(input.Plane.x*2-1, input.Plane.y*2-1)*10)*.1),8);
 	finalColor = lerp(finalColor, float4(0,0,0,0), fade);//Fade out horizont
 	vlsColor = float4(0,0,0,clamp(finalColor.a*2,0,0.96));
 }

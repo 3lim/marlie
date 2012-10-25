@@ -205,7 +205,7 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	m_Sun.Opacity = 1;
 	//nun im onMove
 	m_Sun.Position = (D3DXVECTOR3)(g_LightDir)*m_SunDistance;
-	m_Sun.Radius = 100.f;
+	m_Sun.Radius = 120.f;
 	m_Sun.TextureIndex = 0;
 	m_Sun.AnimationProgress = 0;
 	m_Sun.Color = g_LightColor;
@@ -228,7 +228,7 @@ HRESULT Skybox::CreateResources(ID3D11Device* pDevice, float skyPlaneWidth, floa
 	float skyPlaneBottom = skyPlaneHeight*0.4;
 	size_t textureRepeat = 2;
 
-	InitializeSkyPlane(skyPlaneResolution, skyPlaneWidth*3, skyPlaneHeight+skyPlaneTop, skyPlaneBottom, textureRepeat);
+	InitializeSkyPlane(skyPlaneResolution, skyPlaneWidth*5, skyPlaneHeight+skyPlaneTop, skyPlaneBottom, textureRepeat);
 
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
