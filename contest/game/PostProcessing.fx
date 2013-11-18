@@ -188,6 +188,7 @@ Texture2D depthMap;
 Texture2DMS<float4,4> depthMapMS4;
 Texture2DMS<float4,4> screenMS4;
 Texture2D screen;
+Texture2D reflMap;
 
 Texture2D normalMap;
 Texture2D foamMap;
@@ -199,51 +200,51 @@ float4x4 matViewProj;
 
 float terrainDim;
 
-float waterLevel = 20.0f;
+float waterLevel = 15.0f;
 
 float3 cameraPos;
 
 //Color fade-out
-float fadeSpeed = 0.17f;
+float fadeSpeed = 0.08f;
 
 float timer;
 
-float normalScale = 0.001f;
+float normalScale = 10.0f;
 
 // IOR
 float R0 = 0.5f;
 
-float maxAmplitude = 30.0f;
+float maxAmplitude = 10.0f;
 
-float3 lightDir = {0.0f, 1.0f, 0.0f};
-float3 sunColor = {1.0f, 1.0f, 1.0f};
+float3 lightDir;
+float3 sunColor;
 
 // smaller -> more soft
-float shoreHardness = 0.3f;
+float shoreHardness = 0.2f;
 
 // bigger -> weaker reflections
-float refractionStrength = 0.75f;
+float refractionStrength = 0.85f;
 
 // "wave-size" modifier
-float4 normalModifier = {16.0f, 8.0f, 4.0f, 1.0f};
+float4 normalModifier = {1.0f, 2.0f, 8.0f, 4.0f};
 
-float displace = 2.7f;
+float displace = 1.7f;
 
 // Describes at what depth foam starts to fade out and
 // at what it is completely invisible. The fird value is at
 // what height foam for waves appear (+ waterLevel).
-float3 foamExistence = {0.55f, 0.6f, 0.5f};
+float3 foamExistence = {0.55f, 0.6f, 5.0f};
 
-float sunScale = 100.0f;
+float sunScale = 1.0f;
 float4x4 matReflection =
 {
-	{-0.4f, 0.0f, 0.0f, 0.0f},
-	{0.0f, -0.4f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 1.f, 0.0f},
+	{-0.5f, 0.0f, 0.0f, 0.0f},
+	{0.0f, -0.5f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.f, 0.0f},
 	{0.0f, 0.0f, 0.0f, 1.f}
 };
 
-float shininess = 0.76f;
+float shininess = 0.66f;
 float specular_intensity = 0.32;
 
 float3 depthColour = {0.0078f, 0.5176f, 0.7f};
@@ -251,12 +252,12 @@ float3 bigDepthColour = {0.0039f, 0.00196f, 0.445f};
 // Horizontal
 float3 extinction = {7.0f, 30.0f, 40.0f};			
 
-float visibility = 1.0f;
+float visibility = 4.0f;
 
 // bigger value -> more smaller waves
 float2 scale = {0.009f, 0.009f};
 
-float refractionScale = 0.05f;
+float refractionScale = 0.005f;
 float2 wind = {-0.3f, 0.7f};
 
 float3 PositionFromDepth(float2 vTexCoord)
@@ -408,7 +409,9 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		texCoordProj = dPos;		
 		
 		//float3 reflect = screen.Load((float2(0.5f,0.6f)-texCoordProj.xy/texCoordProj.w)*dims.xy/**float2(0.1f,0.1f)*/,0).rgb;//MS4
-		float3 reflect = screen.Sample(samBilinear, (float2(0.5, 0.6f)-texCoordProj.xy/texCoordProj.w));
+		float3 reflect = lerp(reflMap.Sample(samBilinear, (float2(0.5f, 0.5f)-texCoordProj.xy / texCoordProj.w)),sunColor,0.4f);
+
+			//return float4(reflect, 1.0f);
 		
 		float fresnel = fresnelTerm(normal, eyeVecNorm);
 		
@@ -423,17 +426,17 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		float2 texCoord2 = (surfacePoint.xz + eyeVecNorm.xz * 0.1) * 0.05 + timer * 0.00002f * wind + sin(timer * 0.001 + position.z) * 0.005;
 		
 		if(depth2 < foamExistence.x)
-			foam = (sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f;
+			foam = (sampleFoam(texCoord) + sampleFoam(texCoord2)) * 0.5f;
 		else if(depth2 < foamExistence.y)
 		{
-			foam = lerp((sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f, 0.0f,
+			foam = lerp((sampleFoam(texCoord) + sampleFoam(texCoord2)) * 0.5f, 0.0f,
 						 (depth2 - foamExistence.x) / (foamExistence.y - foamExistence.x));
 			
 		}
 		
 		if(maxAmplitude - foamExistence.z > 0.0001f)
 		{
-			foam += (sampleFoam(texCoord*float2(0.05f,0.05f)) + sampleFoam(texCoord2*float2(0.05f,0.05f))) * 0.5f * 
+			foam += (sampleFoam(texCoord) + sampleFoam(texCoord2)) * 0.5f * 
 				saturate((level - (waterLevel + foamExistence.z)) / (maxAmplitude - foamExistence.z));
 		}
 
@@ -446,7 +449,7 @@ float4 waterPS(QuadVertex IN): SV_Target0
 		specular += specular * 25 * saturate(shininess - 0.05f) * sunColor;		
 
 		color = lerp(refraction, reflect, fresnel);
-		color = saturate(color + max(specular, 0.3f * foam * sampleFoamC(texCoord*float2(0.1f,0.1f),texCoord2*float2(0.1f,0.1f)) + sunColor * 0.02f));
+		color = saturate(color + max(specular, foam * sunColor));
 		
 		color = lerp(refraction, color, saturate(depth * shoreHardness));
 	}

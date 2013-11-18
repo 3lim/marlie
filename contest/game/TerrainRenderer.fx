@@ -21,6 +21,7 @@ cbuffer cbConstant
 	int g_TerrainQuadRes;
 	int g_TrunkRes;
 	int g_TrunkQuadRes;
+	float4 g_ClipPlane;
 };
 
 cbuffer cbChangesEveryFrame
@@ -42,6 +43,14 @@ struct PosTex
 	float4 Pos : SV_POSITION;
 	float4 lightPos : LIGHTPOSITION;
 	float2 Tex : TEXCOORD;
+};
+
+struct PosTexClip
+{
+	float4 Pos : SV_POSITION;
+	float4 lightPos : LIGHTPOSITION;
+	float2 Tex : TEXCOORD;
+	float clip : SV_ClipDistance0;
 };
 
 //--------------------------------------------------------------------------------------
@@ -138,6 +147,42 @@ PosTex TerrainVS(uint VertexID : SV_VertexID)
 
 	return output;
 }
+
+PosTexClip TerrainVSClip(uint VertexID : SV_VertexID)
+{
+	PosTexClip output = (PosTexClip) 0;
+	//VertexID += offsetIndex;
+
+	uint quadIdx = VertexID / 6;
+	uint inQuadIdx = VertexID % 6;
+	float dx = 1.f / g_TerrainRes;
+	int2 position;//in Buffer
+	int2 coords;
+	coords.x = quadIdx % g_TerrainQuadRes;
+	coords.y = quadIdx / g_TerrainQuadRes;
+	//position = float2(quadIdx % g_TrunkQuadRes, quadIdx / g_TrunkQuadRes);
+
+	if(inQuadIdx==1||inQuadIdx==4) {coords.x++; /*position.x++;*/}
+	if(inQuadIdx==2||inQuadIdx==3) {coords.y++; /*position.y++;*/}
+	if(inQuadIdx==5) {coords.x++;coords.y++;/*position.x++; position.y++;*/}
+
+	output.Tex.x = coords.x * dx;
+	output.Tex.y = coords.y *dx;
+
+	float4 pos;
+	pos.x = output.Tex.x;
+	pos.y = output.Tex.y;
+	pos.z = g_Height[coords.y*g_TerrainRes + coords.x];
+	pos.w = 1;
+
+	output.lightPos = mul(pos,g_LightViewProjMatrix);
+
+	output.clip = dot(mul(pos,g_World),g_ClipPlane);
+	output.Pos = mul(pos,g_ViewProjection);
+
+	return output;
+}
+
 float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 	float3 n;
 	vlsMap = 0;
@@ -192,12 +237,47 @@ float4 TerrainPS(PosTex Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
 
 }
 
+float4 TerrainPSClip(PosTexClip Input, out float4 vlsMap : SV_TARGET1) : SV_Target0 {
+	float3 n;
+	vlsMap = 0;
+	n.xy = g_Normal.Sample(samAnisotropic, Input.Tex).xy*2-1;
+	n.z = sqrt(saturate(1 - n.x*n.x - n.y*n.y));
+
+	float3 lPos = Input.lightPos.xyz/Input.lightPos.w;
+		lPos.y = -lPos.y;
+	lPos.xy = lPos.xy/2.f+0.5f;
+	uint2 dimensions;
+	float i = saturate(dot(g_LightDir.xyz, n));
+	float shadowFactor;
+	float4 matDiffuse = g_Diffuse.Sample(samAnisotropic, Input.Tex);
+	
+	float2 moments = TexturePCF(g_ShadowMap, lPos.xy, int2(10,10)).xy +GetFPBias();//g_ShadowMap.Sample(samPSVSM, lPos.xy).rg +GetFPBias();
+		//VSM Shading + PCF
+		//float4 shadowTex =g_ShadowMap.Sample(samPSVSM, lPos.xy).rg+GetFPBias();
+		float depth = lPos.z; //distant to Lightsource
+
+	shadowFactor = ChebyshevUpperBound(moments, depth, g_VSMMinVariance);
+	shadowFactor = ReduceLightBleeding(shadowFactor, 0.14);
+	return i * matDiffuse * shadowFactor 
+		+ 0.05 * i * matDiffuse * cLightAmbient * (1.f-shadowFactor);
+
+}
+
 float4 TerrainBWPS(void) : SV_Target0
+{
+	return float4(0,0,0,1);
+}
+
+float4 TerrainBWPSClip(void) : SV_Target0
 {
 	return float4(0,0,0,1);
 }
 //returns r = depth, g = moment2 of VSM Shading, b = SummendArea information
 float2 VSM_DepthPS(PosTex Input) : SV_TARGET {
+	float bias = 0.3;
+	return ComputeMoments(Input.Pos.z)-GetFPBias();//z value ist kein besonders guter tiefen wert aber muss für den anfang genügen
+}
+float2 VSM_DepthPSClip(PosTexClip Input) : SV_TARGET {
 	float bias = 0.3;
 	return ComputeMoments(Input.Pos.z)-GetFPBias();//z value ist kein besonders guter tiefen wert aber muss für den anfang genügen
 }
@@ -252,6 +332,39 @@ technique11 Render
 	pass P2
 	{
 		SetVertexShader(CompileShader(vs_4_0, TerrainVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(NULL);
+
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+}
+technique11 RenderClip
+{
+	pass P0
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVSClip()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, TerrainPSClip()));
+
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass P1//BW result for Light Scattering
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVSClip()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0, TerrainBWPSClip()));
+
+		SetRasterizerState(rsCullNone);
+		SetDepthStencilState(EnableDepth, 0);
+		SetBlendState(NoBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass P2
+	{
+		SetVertexShader(CompileShader(vs_4_0, TerrainVSClip()));
 		SetGeometryShader(NULL);
 		SetPixelShader(NULL);
 

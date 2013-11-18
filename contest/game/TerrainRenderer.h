@@ -41,6 +41,7 @@ public:
 	void ReleaseResources();
 	void OnMove( double fTime, float fElapsedTime);
 	void RenderTerrain(ID3D11Device* pDevice, RenderableTexture* shadowMap);
+	void RenderTerrainClip(ID3D11Device* pDevice, RenderableTexture* shadowMap, D3DXVECTOR4 clipPlane);
 	void ShadowTerrain(ID3D11Device* pDevice);
 	void Deinit();
 	static std::vector<unsigned short> g_TerrainHeights;

@@ -30,7 +30,7 @@ std::string out_dir;
 void scanDir(content c);
 void build(const std::string attrib,std::vector<std::string> data, const std::string cmdline);
 void addToCfg(const std::string attrib, const std::string file);
-unsigned long command(std::string cmdline, std::string path);
+unsigned long command(std::string attrib, std::string cmdline, std::string path);
 void writeMeshesToCfg(std::string fname);
 
 int main(int argc, char** argv)
@@ -91,8 +91,8 @@ int main(int argc, char** argv)
 		{
 			content dir;
 			stream>>dir.name>>dir.dir>>dir.filter.Comparer>>dir.filter.Command;
+			dir.filter = buildDefinitions.find(dir.filter.Command) != buildDefinitions.end() ? buildDefinitions[dir.filter.Command] : dir.filter;
 			dir.filter.Command = (buildDefinitions.find(dir.filter.Command)!=buildDefinitions.end())?buildDefinitions[dir.filter.Command].Command:dir.filter.Command;
-			dir.filter.Output = "%f";
 			dir.dir = sol_dir + "..\\..\\external\\art\\" + dir.dir; 
 			dir.follow = true;
 			dirsToLookAt.push_back(dir);
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
 	{
 		for each(std::string d in s.second)
 		{
-			command(s.first,d);
+			command("",s.first,d);
 		}
 	}
 
@@ -227,7 +227,7 @@ void build(const std::string attrib,std::vector<std::string> data,const std::str
 			{
 				for each(std::string s in data)
 				{
-					if(command(cmdline,s)==0) addToCfg(attrib,s.substr(s.find_last_of('\\')+1,s.find_last_of('.')-s.find_last_of('\\')-1));
+					if (command(attrib, cmdline, s) == 0) addToCfg(attrib, s.substr(s.find_last_of('\\') + 1, s.find_last_of('.') - s.find_last_of('\\') - 1));
 				}
 			}
 			else
@@ -244,14 +244,14 @@ void build(const std::string attrib,std::vector<std::string> data,const std::str
 					unsigned int t = atoi(u.c_str());
 					if(t<=data.size()&&t!=0)
 					{
-						if(command(cmdline,data[t-1])==0) addToCfg(attrib,data[t-1].substr(data[t-1].find_last_of('\\')+1,data[t-1].find_last_of('.')-data[t-1].find_last_of('\\')-1));
+						if(command(attrib,cmdline,data[t-1])==0) addToCfg(attrib,data[t-1].substr(data[t-1].find_last_of('\\')+1,data[t-1].find_last_of('.')-data[t-1].find_last_of('\\')-1));
 					}
 				}
 			}
 		}
 	else if(data.size()!=0)
 	{
-		if(command(cmdline,data[0])==0) addToCfg(attrib,data[0].substr(data[0].find_last_of('\\')+1,data[0].find_last_of('.')-data[0].find_last_of('\\')-1));
+		if (command(attrib, cmdline, data[0]) == 0) addToCfg(attrib, data[0].substr(data[0].find_last_of('\\') + 1, data[0].find_last_of('.') - data[0].find_last_of('\\') - 1));
 	}
 }
 
@@ -273,26 +273,24 @@ void addToCfg(const std::string attrib, const std::string file)
 	toCfg[name].Builds[type].push_back(outName);
 }
 
-unsigned long command(std::string cmdline, std::string path)
+unsigned long command(std::string attrib, std::string cmdline, std::string path)
 {
+	std::string outFile = attrib.length() == 0 ? "" : buildDefinitions[attrib.substr(attrib.find("/") + 1, attrib.npos)].Output;
 	std::string cmd = std::string(cmdline);
 	std::string oldFile = path.substr(path.find_last_of('\\')+1,path.find_last_of('.')-path.find_last_of('\\')-1);
 	std::transform(oldFile.begin(), oldFile.end(), oldFile.begin(), ::tolower);
 	while(cmd.find("%d")!=cmd.npos) cmd = cmd.replace(cmd.find("%d"),2,path);
 	while(cmd.find("%f")!=cmd.npos) cmd = cmd.replace(cmd.find("%f"),2,oldFile);
 	while(cmd.find("%o")!=cmd.npos) cmd = cmd.replace(cmd.find("%o"),2,out_dir);
-	while(cmd.find("%s")!=cmd.npos) cmd = cmd.replace(cmd.find("%s"),2,sol_dir);
+	while (cmd.find("%s") != cmd.npos) cmd = cmd.replace(cmd.find("%s"), 2, sol_dir);
+	while (outFile.find("%f") != outFile.npos) outFile = outFile.replace(outFile.find("%f"), 2, oldFile);
 	
-	//Check if file exists
-	int i1 = cmd.find("Output=")+7;
-	int i2 = cmd.find("\"",i1 );
-	std::string newFile = cmd.substr(i1, i2-i1);
-	std::filebuf ntxFile;
-	ntxFile.open(newFile, std::ios::in | std::ios::binary);
-	if(ntxFile.is_open())
-		return 1;
-	if(path.length() == 0)
-		path.size();
+	if (outFile.length() > 0)
+	{
+		std::ifstream f(out_dir + outFile);
+		if (f) return 0;
+	}
+
 	STARTUPINFO si;
     PROCESS_INFORMATION pi;
 

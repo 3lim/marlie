@@ -112,6 +112,9 @@ RenderableTexture*						g_VLSMap;
 RenderableTexture*						g_VLSDestMap;
 //zwischenspeichern zum übergeben des renderTargets als textur
 RenderableTexture*						g_tmpShadowMap;
+RenderableTexture* reflMap;
+ID3D11Texture2D* reflMap_DepthTex;
+ID3D11DepthStencilView* reflMap_DepthSV;
 
 ID3D11Texture2D* screenDepthTex;
 ID3D11DepthStencilView* screenDepthDSV;
@@ -933,6 +936,11 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice,
 	screen = new RenderableTexture(pd3dDevice,pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,1,DXGI_FORMAT_R32G32B32A32_FLOAT, &pBackBufferSurfaceDesc->SampleDesc);
 	waterRTV = new RenderableTexture(pd3dDevice, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,1,DXGI_FORMAT_R32G32B32A32_FLOAT, &pBackBufferSurfaceDesc->SampleDesc);
 	waterRTV->SetDebugName("waterTex");
+
+	reflMap = new RenderableTexture(pd3dDevice,pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height,1,DXGI_FORMAT_R32G32B32A32_FLOAT, &pBackBufferSurfaceDesc->SampleDesc);
+	V(pd3dDevice->CreateTexture2D(&screenDepthTex_Desc, NULL, &reflMap_DepthTex));
+	V(pd3dDevice->CreateDepthStencilView(reflMap_DepthTex,&screenDepthDSV_Desc,&reflMap_DepthSV)); 
+	
 	return S_OK;
 }
 
@@ -962,6 +970,10 @@ void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 	SAFE_DELETE(waterRTV);
 	SAFE_RELEASE(foamTex);
 	SAFE_RELEASE(foamSRV);
+	
+	SAFE_DELETE(reflMap);
+	SAFE_RELEASE(reflMap_DepthSV);
+	SAFE_RELEASE(reflMap_DepthTex);
 
 	SAFE_DELETE( g_TxtHelper );
 	SAFE_DELETE(g_leftText);
@@ -1673,6 +1685,29 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_MeshRenderer->RenderMeshes(pd3dDevice, g_VarianceShadowMap, NULL, false);
 	g_MeshRenderer->RenderCameraMeshes(pd3dDevice, g_VarianceShadowMap);
 
+	pd3dImmediateContext->ClearDepthStencilView( reflMap_DepthSV, D3D11_CLEAR_DEPTH, 1.0, 0 );
+	pd3dImmediateContext->ClearRenderTargetView( reflMap->GetRenderTarget(), D3DXCOLOR(0,1,0,1));
+
+	targets[0] = reflMap->GetRenderTarget();
+	pd3dImmediateContext->OMSetRenderTargets(1, targets, reflMap_DepthSV);
+
+	D3DXVECTOR3 reflEye(*g_Camera.GetEyePt());
+	reflEye.y = -reflEye.y + 2 * 15.0f;
+	D3DXVECTOR3 reflLookAt(*g_Camera.GetLookAtPt());
+	reflLookAt.y = -reflLookAt.y + 2 * 15.0f;
+	CFirstPersonCamera reflCam;
+	reflCam.SetViewParams(&reflEye,&reflLookAt);
+	reflCam.SetProjParams(g_CameraParams.m_Fovy, g_CameraParams.m_Aspect, g_CameraParams.m_NearPlane, g_CameraParams.m_FarPlane);
+	reflCam.FrameMove(fElapsedTime);
+
+	if(g_UseSkybox){
+		g_SkyboxRenderer->RenderSkybox(pd3dDevice, reflCam);
+	}
+
+	D3DXMATRIX reflViewProj = *reflCam.GetViewMatrix() * *reflCam.GetProjMatrix();
+	g_TerrainRenderer->g_ViewProj = &reflViewProj;
+	g_TerrainRenderer->RenderTerrainClip(pd3dDevice, g_VarianceShadowMap,D3DXVECTOR4(0.0f,1.0f,0.0f,-15.0f));
+
 	//stringstream ss;
 	//ss << "Sprites: " << g_SpritesToRender.size();
 	//pushText(ss.str(), LEFT);
@@ -1689,6 +1724,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_PostEffect->GetVariableByName("normalMap")->AsShaderResource()->SetResource(g_TerrainRenderer->getTerrainNormalSRV());
 	g_PostEffect->GetVariableByName("heightMap")->AsShaderResource()->SetResource(g_TerrainRenderer->heightSRV);
 	g_PostEffect->GetVariableByName("screen")->AsShaderResource()->SetResource(screen->GetShaderResource());
+	g_PostEffect->GetVariableByName("reflMap")->AsShaderResource()->SetResource(reflMap->GetShaderResource());
 	g_PostEffect->GetVariableByName("foamMap")->AsShaderResource()->SetResource(foamSRV);
 
 	D3DXMATRIX viewInv = D3DXMATRIX(*(g_Camera.GetViewMatrix()));
@@ -1700,10 +1736,12 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_PostEffect->GetVariableByName("matViewProj")->AsMatrix()->SetMatrix(g_ViewProj);
 	
 	g_PostEffect->GetVariableByName("cameraPos")->AsVector()->SetFloatVector(*g_Camera.GetEyePt());
-	g_PostEffect->GetVariableByName("lightPosition")->AsVector()->SetFloatVector(g_SkyboxRenderer->GetSunPosition()/1000);
+	D3DXVECTOR3 nLightDir = *g_TerrainRenderer->g_LightDir;
+	nLightDir.y = -nLightDir.y;
+	g_PostEffect->GetVariableByName("lightDir")->AsVector()->SetFloatVector(nLightDir);
 	g_PostEffect->GetVariableByName("timer")->AsScalar()->SetFloat(fTime*50000);
 	g_PostEffect->GetVariableByName("terrainDim")->AsScalar()->SetFloat(g_TerrainRenderer->m_TerrainResolution);
-	g_PostEffect->GetVariableByName("sunColor")->AsVector()->SetFloatVector(g_SkyboxRenderer->g_LightColor);
+	g_PostEffect->GetVariableByName("sunColor")->AsVector()->SetFloatVector(Skybox::g_LightColor);
 
 	g_PostEffect->GetTechniqueByName("Water")->GetPassByIndex(0)->Apply(0,pd3dImmediateContext);
 	pd3dImmediateContext->Draw(1,0);
@@ -1771,7 +1809,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	if(useDeveloperFeatures)
 	{
 		//g_Effect->GetVariableByName("g_ShadowMap")->AsShaderResource()->SetResource(satImg->GetShaderResource());
-		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(waterRTV->GetShaderResource()/*g_VLSMap->GetShaderResource()*/);
+		g_Effect->GetVariableByName("g_VLSMap")->AsShaderResource()->SetResource(reflMap->GetShaderResource()/*g_VLSMap->GetShaderResource()*/);
 		g_Effect->GetVariableByName("g_ShadowMapVSM")->AsShaderResource()->SetResource(g_VarianceShadowMap->GetShaderResource());
 		pd3dImmediateContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);	
 

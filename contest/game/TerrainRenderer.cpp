@@ -393,24 +393,48 @@ void TerrainRenderer::RenderTerrain(ID3D11Device* pDevice, RenderableTexture* sh
 		m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 		pd3dImmediateContext->Draw(m_TerrainVertexCount/m_trunk.trunksCount, 0);
 	}
-	//pd3dImmediateContext->OMSetRenderTargets(0, NULL, dsv);
-	//m_pEffect->GetTechniqueByName("Render")->GetPassByName("P2")->Apply(0, pd3dImmediateContext);
-	//pd3dImmediateContext->Draw(m_TerrainVertexCount/16, 0);
-	/*
-	//	D3DXMATRIX reflectM = D3DXMATRIX(1.f,0.f,0.f,0.f,0.f,-1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f);
-	/*
-	D3DXPLANE reflectP = D3DXPLANE(0,1,0,1);
-	D3DXMatrixReflect(&reflectM,&reflectP);*/
-	//	m_ViewProjectionEV->SetMatrix(terrainViewProj * reflectM);
-	//	pd3dImmediateContext->OMSetRenderTargets(1, &reflectionRTV, NULL);
-	//	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
-	//pd3dImmediateContext->Draw(m_TerrainVertexCount, 0);
 
 	m_ShadowMapEV->SetResource(0);
 	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
 
 	SAFE_RELEASE(pd3dImmediateContext);
 }
+
+void TerrainRenderer::RenderTerrainClip(ID3D11Device* pDevice, RenderableTexture* shadowMap, D3DXVECTOR4 clipPlane)
+{
+	ID3D11DeviceContext* pd3dImmediateContext;
+	pDevice->GetImmediateContext(&pd3dImmediateContext);
+
+	m_ShadowMapEV->SetResource(shadowMap->GetShaderResource());
+	setEffectVariables();
+	m_pEffect->GetVariableByName("g_TrunkRes")->AsScalar()->SetInt(m_trunk.squareLength);
+	m_pEffect->GetVariableByName("g_TrunkQuadRes")->AsScalar()->SetInt(m_trunk.squareLength-1);
+	m_pEffect->GetVariableByName("g_ClipPlane")->AsVector()->SetFloatVector(clipPlane);
+	m_TerrainResEV->SetInt(m_trunk.squareLength);
+	m_TerrainQuadsEV->SetInt(m_trunk.squareLength-1);
+	for(int i = 0; i < m_trunk.trunksCount; i++)
+	{
+		m_TerrainHeightEV->SetResource(m_TrunksBuffer[i].srv);
+		m_pEffect->GetVariableByName("offsetIndex")->AsScalar()->SetInt(m_TrunksBuffer[i].TopLeftY*m_TerrainResolution+ m_TrunksBuffer[i].TopLeftX);
+		// Apply the rendering pass in order to submit the necessary render state changes to the device
+		//m_RenderTerrain->Apply(0, pd3dImmediateContext);
+		// Set input layout
+
+		pd3dImmediateContext->IASetInputLayout( NULL );
+		// Bind the terrain vertex buffer to the input assembler stage 
+		pd3dImmediateContext->IASetVertexBuffers(0, 1, vbs, &stride, &offset);
+		// Tell the input assembler stage which primitive topology to use
+		pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_pEffect->GetTechniqueByName("RenderClip")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+		pd3dImmediateContext->Draw(m_TerrainVertexCount/m_trunk.trunksCount, 0);
+	}
+
+	m_ShadowMapEV->SetResource(0);
+	m_pEffect->GetTechniqueByName("Render")->GetPassByName("P0")->Apply(0, pd3dImmediateContext);
+
+	SAFE_RELEASE(pd3dImmediateContext);
+}
+
 void TerrainRenderer::ShadowTerrain(ID3D11Device* pDevice)
 {
 	ID3D11DeviceContext* pd3dImmediateContext;
